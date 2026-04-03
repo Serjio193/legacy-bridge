@@ -5,10 +5,12 @@
 #endif
 #endif
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
 #include <LittleFS.h>
 #include <Preferences.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 extern "C" {
 #include "esp_app_format.h"
@@ -1216,6 +1218,164 @@ static void handleFlashAllPackPost() {
   scheduleReboot("flash_pack_done", 900);
 }
 
+static bool packFinalizeAndStageBoot(String *outErr, String *outBody) {
+  if (!outErr || !outBody) return false;
+  *outErr = "";
+  outBody->remove(0);
+
+  if (!gPackFlash.active) {
+    *outErr = "no upload";
+    return false;
+  }
+  if (!gPackFlash.ok) {
+    *outErr = gPackFlash.err.isEmpty() ? "pack flash failed" : gPackFlash.err;
+    return false;
+  }
+  if (gPackFlash.stage != PackStage::DONE || !gPackFlash.fwDone || !gPackFlash.fsDone) {
+    *outErr = "incomplete package";
+    return false;
+  }
+
+  String sigErr;
+  if (!verifyDigestSignature(gPackFlash.fwDigest, gPackFlash.fwSig, gPackFlash.fwSigLen, &sigErr)) {
+    *outErr = String("system ") + sigErr;
+    return false;
+  }
+  if (!verifyDigestSignature(gPackFlash.fsDigest, gPackFlash.fsSig, gPackFlash.fsSigLen, &sigErr)) {
+    *outErr = String("littlefs ") + sigErr;
+    return false;
+  }
+
+  esp_err_t e = esp_ota_set_boot_partition(gPackFlash.otaTarget);
+  if (e != ESP_OK) {
+    *outErr = String("esp_ota_set_boot_partition failed: ") + String((int)e);
+    return false;
+  }
+
+  setForceRecovery(false);
+  outBody->reserve(300);
+  *outBody += F("{\"ok\":true,\"rebooting\":true,\"mode\":\"pack\",\"system_bytes\":");
+  *outBody += String((unsigned long)gPackFlash.fwWritten);
+  *outBody += F(",\"littlefs_bytes\":");
+  *outBody += String((unsigned long)gPackFlash.fsWritten);
+  *outBody += F(",\"next_url\":\"http://192.168.4.1/\",\"main_ap_ssid_hint\":\"");
+  *outBody += jsonEscape(mainApSsidHint());
+  *outBody += F("\"}");
+  return true;
+}
+
+static void handleFlashPackByUrl() {
+  String body = server.arg("plain");
+  body.trim();
+  if (body.isEmpty()) {
+    sendJsonError(400, "json body required");
+    return;
+  }
+
+  JsonDocument doc;
+  DeserializationError je = deserializeJson(doc, body);
+  if (je) {
+    sendJsonError(400, String("bad json: ") + je.c_str());
+    return;
+  }
+
+  String url = "";
+  if (!doc["url"].isNull()) url = String((const char *)doc["url"]);
+  url.trim();
+  if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+    sendJsonError(400, "url must start with http:// or https://");
+    return;
+  }
+
+  beginPackFlash(0);
+  if (!gPackFlash.ok) {
+    sendJsonError(500, gPackFlash.err.isEmpty() ? "pack init failed" : gPackFlash.err);
+    packCleanup(true);
+    return;
+  }
+
+  HTTPClient http;
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.setConnectTimeout(12000);
+  http.setTimeout(20000);
+
+  WiFiClient plain;
+  WiFiClientSecure tls;
+  bool beginOk = false;
+  if (url.startsWith("https://")) {
+    tls.setInsecure();  // package signature is verified by recovery key
+    beginOk = http.begin(tls, url);
+  } else {
+    beginOk = http.begin(plain, url);
+  }
+  if (!beginOk) {
+    sendJsonError(500, "http begin failed");
+    packCleanup(true);
+    return;
+  }
+
+  int code = http.GET();
+  if (code != HTTP_CODE_OK) {
+    String msg = String("download failed: ") + String(code);
+    sendJsonError(500, msg);
+    http.end();
+    packCleanup(true);
+    return;
+  }
+
+  WiFiClient *stream = http.getStreamPtr();
+  if (!stream) {
+    sendJsonError(500, "download stream unavailable");
+    http.end();
+    packCleanup(true);
+    return;
+  }
+
+  int remaining = http.getSize();
+  uint8_t buf[1024];
+  uint32_t lastDataMs = millis();
+
+  while (http.connected() && (remaining > 0 || remaining == -1)) {
+    size_t avail = stream->available();
+    if (avail > 0) {
+      size_t take = avail < sizeof(buf) ? avail : sizeof(buf);
+      int n = stream->readBytes((char *)buf, take);
+      if (n > 0) {
+        gPackFlash.received += (size_t)n;
+        packConsume(buf, (size_t)n);
+        if (!gPackFlash.ok) break;
+        if (remaining > 0) remaining -= n;
+        lastDataMs = millis();
+      }
+    } else {
+      if ((millis() - lastDataMs) > 20000UL) {
+        gPackFlash.ok = false;
+        gPackFlash.err = "download timeout";
+        break;
+      }
+      delay(2);
+    }
+  }
+  http.end();
+
+  if (gPackFlash.ok && gPackFlash.stage != PackStage::DONE) {
+    gPackFlash.ok = false;
+    gPackFlash.err = "incomplete package";
+  }
+
+  String err;
+  String resp;
+  if (!packFinalizeAndStageBoot(&err, &resp)) {
+    sendJsonError(500, err.isEmpty() ? "pack flash failed" : err);
+    packCleanup(true);
+    return;
+  }
+
+  sendJson(200, resp);
+  packCleanup(true);
+  scheduleReboot("flash_pack_url_done", 900);
+}
+
 static void handleRoot() {
   String ip = currentRecoveryIp();
   String apIp = WiFi.softAPIP().toString();
@@ -1259,6 +1419,9 @@ static void handleRoot() {
   page += F("<form method='POST' action='/api/recovery/flash/allpack' enctype='multipart/form-data'>");
   page += F("<div class='row'><input type='file' name='pack' required>");
   page += F("<button type='submit'>Flash Package</button></div></form>");
+  page += F("<p><b>Online update:</b> flash package directly by URL (works even if LittleFS UI is broken).</p>");
+  page += F("<div class='row'><input id='packUrl' style='min-width:420px;max-width:100%' value='https://github.com/Serjio193/legacy-bridge/releases/latest/download/update.lbpack'>");
+  page += F("<button onclick='flashUrl()'>Flash From URL</button></div>");
   page += F("<p><strong>Safety:</strong> recovery over Wi-Fi writes main firmware only via signed package. "
             "Bootloader and the recovery image are not writable over Wi-Fi.</p>");
 
@@ -1285,6 +1448,11 @@ static void handleRoot() {
             "if(!r.ok) alert('FAIL: '+(r.error||''));}"
             "async function bootMain(){const r=await j('/api/recovery/boot_main',{method:'POST',body:'{}'});"
             "if(!r.ok) alert('FAIL: '+(r.error||''));}"
+            "async function flashUrl(){const el=document.getElementById('packUrl');"
+            "const u=(el&&el.value?String(el.value).trim():'');"
+            "if(!u){alert('Enter package URL');return;}"
+            "const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});"
+            "if(!r.ok) alert('FAIL: '+(r.error||'')); else alert('OK: rebooting...');}"
             "</script>");
 
   page += F("</body></html>");
@@ -1358,6 +1526,7 @@ void setup() {
   server.on(
       "/api/recovery/flash/allpack", HTTP_POST, handleFlashAllPackPost,
       []() { uploadHandlerPack(); });
+  server.on("/api/recovery/flash/url", HTTP_POST, handleFlashPackByUrl);
 
   server.onNotFound([]() {
     if (tryServeFile(server.uri())) return;

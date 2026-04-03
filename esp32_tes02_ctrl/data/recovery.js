@@ -128,19 +128,7 @@
     const packUrl = parseAutoPackUrl();
     if (!packUrl) return;
     append(`auto update: package url detected`);
-    try {
-      setBusy(true, "AUTO UPDATE: downloading package...");
-      setBar(barPack, 0);
-      if (statsPack) statsPack.textContent = "downloading package...";
-      const f = await downloadPackFile(packUrl);
-      append(`auto update: downloaded ${f.name || "update.lbpack"} (${Math.round((f.size || 0) / 1024)} KiB)`);
-      if (filePack) setInputFile(filePack, f);
-      if (statsPack) statsPack.textContent = `${fmtBytes(0)} / ${fmtBytes(f.size || 0)} | avg ${fmtRate(0)} | now ${fmtRate(0)} | 0.0s`;
-      await flashPack(f, true);
-    } catch (e) {
-      append(`auto update FAIL: ${String((e && e.message) ? e.message : e)}`);
-      setBusy(false);
-    }
+    await flashPackFromUrl(packUrl, "AUTO UPDATE");
   }
   async function fetchLatestPackUrl() {
     const r = await fetch(kMirrorIndex, { cache: "no-store" });
@@ -173,6 +161,36 @@
       });
     });
     return out;
+  }
+  async function flashPackFromUrl(packUrl, srcLabel) {
+    const url = String(packUrl || "").trim();
+    if (!url) {
+      append(`${srcLabel || "online update"} FAIL: package url is empty`);
+      return { ok: false, error: "empty url" };
+    }
+    append(`${srcLabel || "online update"}: request device-side flash from ${url}`);
+    setBusy(true, `${srcLabel || "ONLINE UPDATE"}: flashing package from URL...`);
+    setBar(barPack, 0);
+    if (statsPack) statsPack.textContent = "device downloading and flashing package...";
+    try {
+      const r = await apiJson("/api/recovery/flash/url", {
+        method: "POST",
+        body: JSON.stringify({ url })
+      });
+      if (r && r.ok) {
+        setBar(barPack, 100);
+        append(`${srcLabel || "online update"} OK: rebooting to system...`);
+        setBusy(true, "REBOOTING... device will switch to System");
+        return r;
+      }
+      append(`${srcLabel || "online update"} FAIL: ${(r && r.error) ? r.error : "unknown"}`);
+      setBusy(false);
+      return r || { ok: false, error: "unknown" };
+    } catch (e) {
+      append(`${srcLabel || "online update"} FAIL: ${String((e && e.message) ? e.message : e)}`);
+      setBusy(false);
+      return { ok: false, error: String((e && e.message) ? e.message : e) };
+    }
   }
   function hostLooksIpv4(host) {
     return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(host || "").trim());
@@ -374,15 +392,9 @@
     btnFwOnline.addEventListener("click", async () => {
       closeFwMenu();
       try {
-        setBusy(true, "ONLINE UPDATE: finding latest package...");
         const packUrl = await fetchLatestPackUrl();
         append(`online update: latest package ${packUrl}`);
-        if (statsPack) statsPack.textContent = "downloading package...";
-        setBar(barPack, 0);
-        const f = await downloadPackFile(packUrl);
-        append(`online update: downloaded ${f.name || "update.lbpack"} (${Math.round((f.size || 0) / 1024)} KiB)`);
-        if (filePack) setInputFile(filePack, f);
-        await flashPack(f, true);
+        await flashPackFromUrl(packUrl, "ONLINE UPDATE");
       } catch (e) {
         append(`online update FAIL: ${String((e && e.message) ? e.message : e)}`);
         setBusy(false);
@@ -407,13 +419,7 @@
       }
       const chosen = list[idx];
       append(`online update: selected ${chosen.tag}`);
-      setBusy(true, "ONLINE UPDATE: downloading selected package...");
-      if (statsPack) statsPack.textContent = "downloading package...";
-      setBar(barPack, 0);
-      const f = await downloadPackFile(chosen.url);
-      append(`online update: downloaded ${f.name || "update.lbpack"} (${Math.round((f.size || 0) / 1024)} KiB)`);
-      if (filePack) setInputFile(filePack, f);
-      await flashPack(f, true);
+      await flashPackFromUrl(chosen.url, "ONLINE UPDATE");
     } catch (e) {
       append(`choose version FAIL: ${String((e && e.message) ? e.message : e)}`);
       setBusy(false);
