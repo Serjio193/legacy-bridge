@@ -85,6 +85,14 @@
     }
 
     function pickAssetsMap(rel) {
+      // Supports both GitHub API shape (assets array) and static index shape (assets object map)
+      if (rel && rel.assets && !Array.isArray(rel.assets) && typeof rel.assets === "object") {
+        const out = {};
+        Object.keys(rel.assets).forEach((k) => {
+          out[String(k)] = String(rel.assets[k] || "").trim();
+        });
+        return out;
+      }
       const map = {};
       const assets = Array.isArray(rel && rel.assets) ? rel.assets : [];
       assets.forEach((a) => {
