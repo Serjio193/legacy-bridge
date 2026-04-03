@@ -80,16 +80,16 @@
         <div style="height:12px"></div>
 
         <div class="inset">
-            <div class="label">Flash System <span class="pill cyan" style="margin-left:8px">TARGET</span></div>
-            <div class="hint small">Upload firmware <span class="mono">firmware.bin</span> built from <span class="mono">esp32c3</span> (Standard) or <span class="mono">esp32c3_hardened</span> (irreversible eFuse profile).</div>
+            <div class="label">Flash Package <span class="pill cyan" style="margin-left:8px">TARGET</span></div>
+            <div class="hint small">Upload signed package <span class="mono">update.lbpack</span> (System + LittleFS + signatures).</div>
             <div style="height:8px"></div>
-            <input id="fileA" type="file" accept=".bin,application/octet-stream" />
+            <input id="filePack" type="file" accept=".lbpack,application/octet-stream" />
             <div style="height:10px"></div>
-            <div class="prog" aria-label="Upload progress System"><i id="barA"></i></div>
-            <div id="statsA" class="hint small" style="margin-top:8px">0 / 0</div>
+            <div class="prog" aria-label="Upload progress Package"><i id="barPack"></i></div>
+            <div id="statsPack" class="hint small" style="margin-top:8px">0 / 0</div>
             <div style="height:10px"></div>
             <div class="btnRow">
-              <button id="btnA" class="primary" type="button">Flash System</button>
+              <button id="btnPack" class="primary" type="button">Flash Package</button>
             </div>
         </div>
 
@@ -109,7 +109,7 @@
       </div>
     </section>
   </div>
-  <input id="fwUpdatePicker" type="file" accept=".bin,application/octet-stream" class="hidden" />
+  <input id="fwUpdatePicker" type="file" accept=".lbpack,application/octet-stream" class="hidden" />
   <div id="fwUpdateMenuModal" class="fwUpdateMenuModal hidden" role="dialog" aria-modal="true" aria-labelledby="fwUpdateMenuTitle">
     <div class="fwUpdateMenuBox">
       <div id="fwUpdateMenuTitle" class="fwUpdateMenuTitle">Firmware Update Method</div>
