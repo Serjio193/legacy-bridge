@@ -25,6 +25,8 @@
   const otaAPill = document.getElementById("otaAPill");
 
   let lastStatus = null;
+  const kMirrorBase = "https://serjio193.github.io/legacy-bridge/";
+  const kMirrorIndex = `${kMirrorBase}releases/index.json`;
 
   function ts() {
     const d = new Date();
@@ -139,6 +141,19 @@
       append(`auto update FAIL: ${String((e && e.message) ? e.message : e)}`);
       setBusy(false);
     }
+  }
+  async function fetchLatestPackUrl() {
+    const r = await fetch(kMirrorIndex, { cache: "no-store" });
+    if (!r || !r.ok) throw new Error(`latest index failed: ${r ? r.status : "fetch"}`);
+    const arr = await r.json();
+    const src = Array.isArray(arr) ? arr : [];
+    for (const item of src) {
+      const assets = (item && item.assets && typeof item.assets === "object") ? item.assets : null;
+      const rel = String(assets && assets["update.lbpack"] ? assets["update.lbpack"] : "").trim();
+      if (!rel) continue;
+      return new URL(rel, kMirrorBase).href;
+    }
+    throw new Error("no update.lbpack in mirror index");
   }
   function hostLooksIpv4(host) {
     return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(host || "").trim());
@@ -335,11 +350,24 @@
     });
   }
   if (btnFwOnline) {
-    btnFwOnline.disabled = true;
-    btnFwOnline.title = "Not available in recovery";
-    btnFwOnline.addEventListener("click", () => {
+    btnFwOnline.disabled = false;
+    btnFwOnline.title = "Download latest update.lbpack and flash";
+    btnFwOnline.addEventListener("click", async () => {
       closeFwMenu();
-      append("online update unavailable in recovery");
+      try {
+        setBusy(true, "ONLINE UPDATE: finding latest package...");
+        const packUrl = await fetchLatestPackUrl();
+        append(`online update: latest package ${packUrl}`);
+        if (statsPack) statsPack.textContent = "downloading package...";
+        setBar(barPack, 0);
+        const f = await downloadPackFile(packUrl);
+        append(`online update: downloaded ${f.name || "update.lbpack"} (${Math.round((f.size || 0) / 1024)} KiB)`);
+        if (filePack) setInputFile(filePack, f);
+        await flashPack(f, true);
+      } catch (e) {
+        append(`online update FAIL: ${String((e && e.message) ? e.message : e)}`);
+        setBusy(false);
+      }
     });
   }
   if (btnFwManual) btnFwManual.addEventListener("click", () => {
