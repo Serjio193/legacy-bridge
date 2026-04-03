@@ -2069,6 +2069,35 @@
         const kFwRepo = "Serjio193/legacy-bridge";
         const kFwReleaseApi = `https://api.github.com/repos/${kFwRepo}/releases/latest`;
         const kFwReleasesApi = `https://api.github.com/repos/${kFwRepo}/releases?per_page=30`;
+        const kFwMirrorBase = "https://serjio193.github.io/legacy-bridge/";
+        const kFwMirrorIndex = `${kFwMirrorBase}releases/index.json`;
+        function normalizeFwTag(version) {
+          const v = String(version || "").trim().toLowerCase().replace(/^v/, "");
+          return v ? `v${v}` : "";
+        }
+        function buildMirrorPackUrl(version) {
+          const tag = normalizeFwTag(version);
+          if (!tag) return "";
+          return `${kFwMirrorBase}releases/${encodeURIComponent(tag)}/update.lbpack`;
+        }
+        async function fetchMirrorPackMap() {
+          const out = {};
+          try {
+            const r = await fetch(kFwMirrorIndex, { cache: "no-store" });
+            if (!r || !r.ok) return out;
+            const arr = await r.json();
+            const src = Array.isArray(arr) ? arr : [];
+            src.forEach((item) => {
+              const tag = normalizeFwTag(item && item.tag_name);
+              if (!tag) return;
+              const assets = (item && item.assets && typeof item.assets === "object") ? item.assets : {};
+              const rel = String(assets["update.lbpack"] || "").trim();
+              if (!rel) return;
+              out[tag] = new URL(rel, kFwMirrorBase).href;
+            });
+          } catch (_) {}
+          return out;
+        }
         function pickLbpackAsset(release) {
           const assets = Array.isArray(release && release.assets) ? release.assets : [];
           if (!assets.length) return null;
@@ -2102,12 +2131,16 @@
           if (fwReleaseCheckBusy) return fwReleaseMeta;
           fwReleaseCheckBusy = true;
           try {
+            const mirrorMap = await fetchMirrorPackMap();
             const r = await fetch(kFwReleaseApi, { cache: "no-store" });
             if (!r || !r.ok) throw new Error(`github ${r ? r.status : "fetch failed"}`);
             const j = await r.json();
             const version = extractFwVersion((j && j.tag_name) || (j && j.name) || "");
             const asset = pickLbpackAsset(j);
-            const packUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+            const tag = normalizeFwTag(version);
+            const mirrorPackUrl = String(mirrorMap[tag] || buildMirrorPackUrl(version)).trim();
+            const fallbackPackUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+            const packUrl = mirrorPackUrl || fallbackPackUrl;
             const pageUrl = String(j && j.html_url ? j.html_url : "").trim();
             const cmp = compareFwVersions(version, fwVersionCurrent);
             fwReleaseMeta = {
@@ -2139,6 +2172,7 @@
           return fwReleaseMeta;
         }
         async function fetchGithubReleasesList() {
+          const mirrorMap = await fetchMirrorPackMap();
           const r = await fetch(kFwReleasesApi, { cache: "no-store" });
           if (!r || !r.ok) throw new Error(`github ${r ? r.status : "fetch failed"}`);
           const arr = await r.json();
@@ -2148,7 +2182,10 @@
             if (!rel || rel.draft) return;
             const version = extractFwVersion((rel && rel.tag_name) || (rel && rel.name) || "");
             const asset = pickLbpackAsset(rel);
-            const packUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+            const tag = normalizeFwTag(version);
+            const mirrorPackUrl = String(mirrorMap[tag] || buildMirrorPackUrl(version)).trim();
+            const fallbackPackUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+            const packUrl = mirrorPackUrl || fallbackPackUrl;
             if (!version || !packUrl) return;
             out.push({
               version,

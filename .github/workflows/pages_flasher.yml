@@ -42,7 +42,7 @@ jobs:
 
           REPO = "Serjio193/legacy-bridge"
           API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
-          REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin"]
+          REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin", "update.lbpack"]
           SITE = "_site"
 
           if os.path.isdir(SITE):
