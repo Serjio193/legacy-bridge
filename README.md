@@ -14,6 +14,7 @@ Legacy Bridge — это система, которая автоматическ
 - Работает с Aixun / JBC-совместимыми станциями
 - Не требует модификации станции
 - Простая установка (минимум компонентов)
+- Прошивка подписывается ключом: устройство принимает только проверенные обновления
 
 **История проекта**
 
@@ -110,6 +111,7 @@ I use Aixun equipment. After buying the Aixun ES02 extractor, it became clear th
 - Extractor turns on when the iron is lifted from the stand
 - Extractor turns off when the iron is placed back
 - Extractor turns on by temperature when H312 is in use
+- Firmware is cryptographically signed, and the device installs only verified updates
 
 **Hardware modification**
 
@@ -171,6 +173,7 @@ Legacy Bridge — це модуль, який поєднує паяльні ст
 - При знятті паяльника з підставки витяжка вмикається
 - При поверненні паяльника в підставку витяжка вимикається
 - Під час роботи H312 витяжка вмикається за температурою
+- Прошивка підписується ключем: пристрій приймає лише перевірені оновлення
 
 **Модифікація**
 
@@ -257,6 +260,7 @@ If credentials were changed and lost:
 
 - GitHub Actions workflow: `.github/workflows/release_firmware.yml`
 - Builds signed `update.lbpack` and uploads it to GitHub Releases
+- Release artifacts are signed with a private key, and signature is verified on-device before install
 - Main firmware version is numeric: `v1 ... v99999`
 - Device auto-update UI reads GitHub Releases and installs `update.lbpack`
 
