@@ -2203,6 +2203,7 @@
           if (btnFw) {
             btnFw.disabled = v;
             btnFw.classList.toggle("fwBusyBtn", v);
+            if (v) btnFw.classList.remove("fwUpdateAvailable");
           }
           if (btnFwLatest) {
             btnFwLatest.disabled = v;
@@ -2218,6 +2219,7 @@
           }
           if (btnFwGithub) btnFwGithub.disabled = v;
           if (btnFwCancel) btnFwCancel.disabled = v;
+          if (!v) applyFwReleaseUi();
         }
         function uploadManualFirmware(file, confirmPass) {
           return new Promise((resolve) => {
@@ -2305,10 +2307,11 @@
             openFwMenu();
             return;
           }
+          setFwStatus("Firmware update: preparing...", 5, false);
           const pass = await askCriticalPassword();
           if (!pass) return;
           setFwUpdateBusy(true);
-          setFwStatus(tr("msg_fw_manual_need_recovery", "single-slot OTA layout: switching to Recovery mode for flashing"), null, true);
+          setFwStatus("Firmware update step 1/2: switching device to Recovery mode...", 25, false);
           append(`auto update: latest=${meta.version || "?"}`);
           append("auto update: switch to recovery");
           const rr = await apiJson("/api/fw/enter_recovery", { method: "POST", body: "{}", headers: criticalHeaders(pass) });
@@ -2316,8 +2319,11 @@
             const primary = `${location.protocol}//${location.host}/recovery.html?autopack=${encodeURIComponent(packUrl)}&v=${encodeURIComponent(meta.version || "")}`;
             const fallback = `http://192.168.4.1/recovery.html?autopack=${encodeURIComponent(packUrl)}&v=${encodeURIComponent(meta.version || "")}`;
             append("auto update: recovery requested, waiting reboot");
+            append(`auto update: opening recovery page ${primary}`);
+            append(`auto update: fallback ${fallback}`);
+            setFwStatus("Firmware update step 2/2: recovery flasher will open. Actual flashing is done on Recovery page.", 55, false);
             scheduleRecoveryAutoOpen(primary, fallback);
-            hideFwStatusLater(14000);
+            hideFwStatusLater(20000);
           } else {
             append(`auto update failed: ${(rr && rr.error) ? rr.error : "unknown"}`);
             setFwStatus(tr("msg_fw_recovery_switch_fail", "failed to switch to recovery mode"), 0, false);
