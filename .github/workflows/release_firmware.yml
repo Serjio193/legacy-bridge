@@ -107,12 +107,32 @@ jobs:
         run: |
           powershell -ExecutionPolicy Bypass -File "esp32_tes02_ctrl\\scripts\\make_update_pack.ps1" -Env esp32c3
 
+      - name: Build recovery binary
+        run: |
+          pio run -d esp32_tes02_ctrl -e esp32c3_recovery
+
       - name: Compute checksums
         working-directory: esp32_tes02_ctrl\.pio\build\esp32c3
         run: |
           certutil -hashfile update.lbpack SHA256 > update.lbpack.sha256.txt
           certutil -hashfile firmware.bin SHA256 > firmware.bin.sha256.txt
           certutil -hashfile littlefs.bin SHA256 > littlefs.bin.sha256.txt
+
+      - name: Prepare release artifacts
+        run: |
+          $out = "release_upload"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack" "$out/update.lbpack" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack.sha256.txt" "$out/update.lbpack.sha256.txt" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/bootloader.bin" "$out/bootloader.bin" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/partitions.bin" "$out/partitions.bin" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin" "$out/firmware.bin" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.sig" "$out/firmware.sig" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin.sha256.txt" "$out/firmware.bin.sha256.txt" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin" "$out/littlefs.bin" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.sig" "$out/littlefs.sig" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin.sha256.txt" "$out/littlefs.bin.sha256.txt" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin" "$out/recovery.bin" -Force
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -122,12 +142,14 @@ jobs:
           generate_release_notes: true
           make_latest: true
           files: |
-            esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack
-            esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack.sha256.txt
-            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin
-            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.sig
-            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin.sha256.txt
-            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin
-            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.sig
-            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin.sha256.txt
-
+            release_upload/update.lbpack
+            release_upload/update.lbpack.sha256.txt
+            release_upload/bootloader.bin
+            release_upload/partitions.bin
+            release_upload/firmware.bin
+            release_upload/firmware.sig
+            release_upload/firmware.bin.sha256.txt
+            release_upload/littlefs.bin
+            release_upload/littlefs.sig
+            release_upload/littlefs.bin.sha256.txt
+            release_upload/recovery.bin

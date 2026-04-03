@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legacy Bridge USB Flasher</title>
+  <style>
+    :root {
+      --bg: #0f141c;
+      --card: #1a2330;
+      --text: #e8eef8;
+      --muted: #9fb0c7;
+      --accent: #39c0ff;
+      --warn: #ffcc66;
+      --ok: #5de3a2;
+    }
+    body { margin: 0; background: radial-gradient(1200px 600px at 20% -20%, #223047, var(--bg)); color: var(--text); font: 16px/1.45 Segoe UI, system-ui, sans-serif; }
+    .wrap { max-width: 860px; margin: 28px auto; padding: 0 16px; }
+    .card { background: linear-gradient(180deg, #222d3d, var(--card)); border: 1px solid #2f3d52; border-radius: 14px; padding: 18px; box-shadow: 0 12px 32px rgba(0,0,0,.35); }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { margin: 8px 0; color: var(--muted); }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+    select, button { background: #0f1622; color: var(--text); border: 1px solid #314055; border-radius: 10px; padding: 10px 12px; }
+    button { cursor: pointer; }
+    .status { margin-top: 12px; font-size: 14px; color: var(--muted); }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .steps { margin-top: 16px; background: #111924; border: 1px solid #2a384d; border-radius: 10px; padding: 12px; }
+    .steps b { color: var(--accent); }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Legacy Bridge USB Flasher</h1>
+      <p>Прошивка "голого" ESP32-C3 по USB прямо из браузера (Chrome/Edge, HTTPS).</p>
+      <p>Источник: GitHub Releases репозитория <span class="mono">Serjio193/legacy-bridge</span>.</p>
+
+      <div class="row">
+        <label for="rel">Версия:</label>
+        <select id="rel" style="min-width:220px"></select>
+        <button id="reload">Обновить список</button>
+      </div>
+
+      <div class="row">
+        <esp-web-install-button id="installBtn" disabled></esp-web-install-button>
+      </div>
+
+      <div id="status" class="status">Загрузка списка релизов...</div>
+
+      <div class="steps">
+        <p><b>Как прошивать:</b></p>
+        <p>1. Подключите ESP32-C3 по USB.</p>
+        <p>2. При необходимости войдите в boot mode: удерживайте <span class="mono">BOOT</span>, нажмите <span class="mono">RESET</span>, отпустите <span class="mono">BOOT</span>.</p>
+        <p>3. Выберите версию и нажмите кнопку установки.</p>
+        <p>4. Дайте браузеру доступ к serial-порту устройства.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
+  <script>
+    const REPO = "Serjio193/legacy-bridge";
+    const API = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
+    const REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin"];
+    const OFFSETS = {
+      "bootloader.bin": 0x0,
+      "partitions.bin": 0x8000,
+      "firmware.bin": 0x10000,
+      "littlefs.bin": 0x238000,
+      "recovery.bin": 0x320000
+    };
+
+    const relSel = document.getElementById("rel");
+    const statusEl = document.getElementById("status");
+    const btnReload = document.getElementById("reload");
+    const installBtn = document.getElementById("installBtn");
+    let releases = [];
+    let manifestUrl = "";
+
+    function setStatus(text, cls) {
+      statusEl.className = "status" + (cls ? " " + cls : "");
+      statusEl.textContent = text;
+    }
+
+    function pickAssetsMap(rel) {
+      const map = {};
+      const assets = Array.isArray(rel && rel.assets) ? rel.assets : [];
+      assets.forEach((a) => {
+        const n = String((a && a.name) || "").trim();
+        if (n) map[n] = String(a.browser_download_url || "").trim();
+      });
+      return map;
+    }
+
+    function supportsBareFlash(rel) {
+      const map = pickAssetsMap(rel);
+      return REQUIRED.every((name) => !!map[name]);
+    }
+
+    function buildManifest(rel) {
+      const map = pickAssetsMap(rel);
+      const parts = REQUIRED.map((name) => ({ path: map[name], offset: OFFSETS[name] }));
+      return {
+        name: "Legacy Bridge",
+        version: String(rel.tag_name || "").replace(/^v/i, ""),
+        new_install_prompt_erase: true,
+        builds: [{ chipFamily: "ESP32-C3", parts }]
+      };
+    }
+
+    function setManifest(rel) {
+      if (manifestUrl) URL.revokeObjectURL(manifestUrl);
+      const manifest = buildManifest(rel);
+      const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+      manifestUrl = URL.createObjectURL(blob);
+      installBtn.manifest = manifestUrl;
+      installBtn.disabled = false;
+    }
+
+    function refreshSelect() {
+      relSel.innerHTML = "";
+      releases.forEach((r, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx);
+        const pre = r.prerelease ? " [pre]" : "";
+        opt.textContent = `${r.tag_name}${pre}`;
+        relSel.appendChild(opt);
+      });
+    }
+
+    async function loadReleases() {
+      setStatus("Загрузка релизов...", "");
+      installBtn.disabled = true;
+      try {
+        const r = await fetch(API, { cache: "no-store" });
+        if (!r.ok) throw new Error(`GitHub API ${r.status}`);
+        const arr = await r.json();
+        const all = Array.isArray(arr) ? arr : [];
+        releases = all.filter((x) => !x.draft && supportsBareFlash(x));
+        refreshSelect();
+        if (!releases.length) {
+          setStatus("Нет релизов с полным набором файлов для bare flash (bootloader/partitions/firmware/littlefs/recovery).", "warn");
+          return;
+        }
+        relSel.value = "0";
+        setManifest(releases[0]);
+        setStatus(`Готово: ${releases[0].tag_name}`, "ok");
+      } catch (e) {
+        setStatus(`Ошибка загрузки релизов: ${String((e && e.message) || e)}`, "warn");
+      }
+    }
+
+    relSel.addEventListener("change", () => {
+      const idx = Number.parseInt(relSel.value, 10);
+      const rel = releases[idx];
+      if (!rel) return;
+      setManifest(rel);
+      setStatus(`Выбрано: ${rel.tag_name}`, "ok");
+    });
+
+    btnReload.addEventListener("click", () => loadReleases());
+    loadReleases();
+  </script>
+</body>
+</html>

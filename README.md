@@ -13,6 +13,22 @@
 - Main firmware version is numeric: `v1 ... v99999`
 - Device auto-update UI reads GitHub Releases and installs `update.lbpack`
 
+## Online USB flasher page (bare ESP32-C3)
+
+- Source: `flasher/index.html`
+- Deploy workflow: `.github/workflows/pages_flasher.yml`
+- Expected URL after Pages deploy:
+  - `https://serjio193.github.io/legacy-bridge/`
+- The page pulls versions from GitHub Releases and flashes full image set:
+  - `bootloader.bin` (`0x0`)
+  - `partitions.bin` (`0x8000`)
+  - `firmware.bin` (`0x10000`)
+  - `littlefs.bin` (`0x238000`)
+  - `recovery.bin` (`0x320000`)
+- Browser requirements:
+  - Chromium browser (Chrome/Edge)
+  - HTTPS context (GitHub Pages)
+
 ## Local canonical packaging command
 
 ```powershell
