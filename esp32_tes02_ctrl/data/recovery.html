@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LB RECOVERY</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Keep it lightweight: no 3D canvases in recovery. */
+    /* Important: styles.css draws fixed pseudo-element layers with z-index >= 0.
+       The main UI uses .frame{z-index:4}; recovery must do the same to stay visible. */
+    .recoveryWrap { position:relative; z-index:4; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:18px; }
+    .recoveryCard { width:min(980px, 100%); }
+    .recoveryTitle { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .mono { font-family:var(--mono); }
+    .prog { width:100%; height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.12); }
+    .prog > i { display:block; height:100%; width:0%; background:linear-gradient(90deg, rgba(0,255,214,.6), rgba(255,204,0,.65)); }
+    .small { opacity:.85; font-size:12px; }
+    .grid2r { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 840px) { .grid2r { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="recoveryWrap">
+    <section class="card recoveryCard" aria-label="Recovery">
+      <div class="cardHeader">
+        <h2 class="cardTitle"><span class="dot warn"></span><span>Recovery Mode</span></h2>
+        <span class="pill warn">UNLOCKED AP</span>
+      </div>
+      <div class="cardBody">
+        <div class="recoveryTitle">
+          <div>
+            <div class="label">Access Point</div>
+            <div class="hint">SSID: <span class="mono">LB_RECOVERY</span> (no password)</div>
+          </div>
+          <div>
+            <div class="label">Device</div>
+            <div class="hint">IP: <span id="ip" class="mono">192.168.4.1</span></div>
+          </div>
+        </div>
+
+        <div class="cardDivider"></div>
+        <div class="btnRow" style="justify-content:flex-start; margin-top:10px;">
+          <button id="btnFwUpdate" class="primary" type="button">Firmware Update</button>
+        </div>
+
+        <div class="label">System Status</div>
+        <div class="list" style="margin-top:8px;">
+          <div class="listItem">
+            <div class="liLeft">
+              <div class="liName">Running</div>
+              <div class="liMeta mono" id="runningSlot">recovery</div>
+            </div>
+            <span class="pill warn">RECOVERY</span>
+          </div>
+          <div class="listItem">
+            <div class="liLeft">
+              <div class="liName">Next Boot</div>
+              <div class="liMeta mono" id="bootSlot">unknown</div>
+            </div>
+            <span class="pill cyan" id="bootPill">BOOT</span>
+          </div>
+          <div class="listItem">
+            <div class="liLeft">
+              <div class="liName">System</div>
+              <div class="liMeta small" id="otaAInfo">status unknown</div>
+            </div>
+            <span class="pill" id="otaAPill">N/A</span>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="label">Safety Rule</div>
+        <div class="hint">
+          Over Wi-Fi you can flash only <span class="mono">System</span>.
+          Bootloader and the recovery image are not writable over Wi-Fi.
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="inset">
+            <div class="label">Flash System <span class="pill cyan" style="margin-left:8px">TARGET</span></div>
+            <div class="hint small">Upload firmware <span class="mono">firmware.bin</span> built from <span class="mono">esp32c3</span> (Standard) or <span class="mono">esp32c3_hardened</span> (irreversible eFuse profile).</div>
+            <div style="height:8px"></div>
+            <input id="fileA" type="file" accept=".bin,application/octet-stream" />
+            <div style="height:10px"></div>
+            <div class="prog" aria-label="Upload progress System"><i id="barA"></i></div>
+            <div id="statsA" class="hint small" style="margin-top:8px">0 / 0</div>
+            <div style="height:10px"></div>
+            <div class="btnRow">
+              <button id="btnA" class="primary" type="button">Flash System</button>
+            </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="cardDivider"></div>
+
+        <div class="label">Maintenance</div>
+        <div class="btnRow">
+          <button id="btnReset" class="danger" type="button">Reset Main Settings</button>
+          <button id="btnBoot" type="button">Boot Main Firmware</button>
+          <button id="btnGithub" type="button">Visit GitHub</button>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="label">Recovery Log</div>
+        <div id="log" class="log" role="log" aria-label="Recovery log">[recovery] ready</div>
+      </div>
+    </section>
+  </div>
+  <input id="fwUpdatePicker" type="file" accept=".bin,application/octet-stream" class="hidden" />
+  <div id="fwUpdateMenuModal" class="fwUpdateMenuModal hidden" role="dialog" aria-modal="true" aria-labelledby="fwUpdateMenuTitle">
+    <div class="fwUpdateMenuBox">
+      <div id="fwUpdateMenuTitle" class="fwUpdateMenuTitle">Firmware Update Method</div>
+      <div class="fwUpdateMenuText">Choose how to update firmware.</div>
+      <div class="btnRow" style="justify-content:center; margin-top:12px;">
+        <button id="btnFwUpdateOnline" class="primary" type="button">Online</button>
+        <button id="btnFwUpdateManual" type="button">Manual</button>
+        <button id="btnFwUpdateCancel" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="recovery.js"></script>
+</body>
+</html>

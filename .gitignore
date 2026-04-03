@@ -1,0 +1,18 @@
+# Signing keys (must stay local only)
+security_private.pem
+security_public.pem
+
+# PlatformIO build artifacts
+**/.pio/
+**/.pio/**
+
+# Release/export artifacts
+esp32_tes02_ctrl/release/
+esp32_tes02_ctrl/release/**
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Local logs/dumps
+tes02_ble_dump_*.jsonl

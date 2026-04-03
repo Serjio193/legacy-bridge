@@ -1,0 +1,133 @@
+name: Release Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        description: "Firmware version number (1..99999). Leave empty to auto-increment."
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio pycryptodome
+
+      - name: Resolve firmware version
+        id: ver
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ref = context.ref || "";
+            const isTagPush = ref.startsWith("refs/tags/");
+            const inputRaw = (core.getInput("version_number") || "").trim();
+            function parseVer(s) {
+              const m = String(s || "").trim().match(/^v?(\d{1,5})$/i);
+              if (!m) return null;
+              const n = Number(m[1]);
+              if (!Number.isInteger(n) || n < 1 || n > 99999) return null;
+              return n;
+            }
+            async function latestNumericRelease() {
+              let page = 1;
+              let max = 0;
+              while (true) {
+                const { data } = await github.rest.repos.listReleases({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  per_page: 100,
+                  page
+                });
+                if (!Array.isArray(data) || data.length === 0) break;
+                for (const r of data) {
+                  const n = parseVer(r.tag_name || "");
+                  if (n && n > max) max = n;
+                }
+                if (data.length < 100) break;
+                page += 1;
+              }
+              return max;
+            }
+
+            let n = null;
+            if (isTagPush) {
+              const tag = ref.replace("refs/tags/", "");
+              n = parseVer(tag);
+              if (!n) core.setFailed(`Tag must be vN (1..99999), got: ${tag}`);
+            } else if (inputRaw) {
+              n = parseVer(inputRaw);
+              if (!n) core.setFailed(`Invalid version_number: ${inputRaw}. Use 1..99999 or v1..v99999`);
+            } else {
+              const latest = await latestNumericRelease();
+              n = latest + 1;
+              if (n > 99999) core.setFailed("Version overflow: reached 99999");
+            }
+            if (!n) return;
+            const tag = `v${n}`;
+            core.info(`Resolved firmware version: ${tag}`);
+            core.setOutput("num", String(n));
+            core.setOutput("tag", tag);
+
+      - name: Write signing keys from secrets
+        env:
+          LB_SIGN_PRIVATE_PEM: ${{ secrets.LB_SIGN_PRIVATE_PEM }}
+          LB_SIGN_PUBLIC_PEM: ${{ secrets.LB_SIGN_PUBLIC_PEM }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:LB_SIGN_PRIVATE_PEM)) { throw "Missing secret: LB_SIGN_PRIVATE_PEM" }
+          if ([string]::IsNullOrWhiteSpace($env:LB_SIGN_PUBLIC_PEM)) { throw "Missing secret: LB_SIGN_PUBLIC_PEM" }
+          Set-Content -Path "security_private.pem" -Value $env:LB_SIGN_PRIVATE_PEM -Encoding ascii
+          Set-Content -Path "security_public.pem" -Value $env:LB_SIGN_PUBLIC_PEM -Encoding ascii
+
+      - name: Build signed update package
+        env:
+          LB_FW_VERSION: ${{ steps.ver.outputs.tag }}
+        run: |
+          powershell -ExecutionPolicy Bypass -File "esp32_tes02_ctrl\\scripts\\make_update_pack.ps1" -Env esp32c3
+
+      - name: Compute checksums
+        working-directory: esp32_tes02_ctrl\.pio\build\esp32c3
+        run: |
+          certutil -hashfile update.lbpack SHA256 > update.lbpack.sha256.txt
+          certutil -hashfile firmware.bin SHA256 > firmware.bin.sha256.txt
+          certutil -hashfile littlefs.bin SHA256 > littlefs.bin.sha256.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Firmware ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack
+            esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack.sha256.txt
+            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin
+            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.sig
+            esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin.sha256.txt
+            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin
+            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.sig
+            esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin.sha256.txt
+

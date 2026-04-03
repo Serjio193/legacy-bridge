@@ -1,0 +1,17 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"e:\\\\Aixun Smoc\\\\esp32_tes02_ctrl\\\\src\" && python3 << 'EOF'\nimport difflib\n\nwith open\\('main\\.cpp', 'r', encoding='utf-8', errors='ignore'\\) as f:\n    current = f\\.readlines\\(\\)\n    \nwith open\\('main\\.cpp\\.backup', 'r', encoding='utf-8', errors='ignore'\\) as f:\n    backup = f\\.readlines\\(\\)\n\ndiff = list\\(difflib\\.unified_diff\\(backup, current, fromfile='main\\.cpp\\.backup', tofile='main\\.cpp', lineterm=''\\)\\)\n\nif not diff:\n    print\\(\"NO DIFFERENCES FOUND\"\\)\nelse:\n    print\\(f\"Found \\{len\\(diff\\)\\} lines of diff output\\\\n\"\\)\n    for i, line in enumerate\\(diff\\[:150\\]\\):\n        print\\(line\\)\n    if len\\(diff\\) > 150:\n        print\\(f\"\\\\n\\.\\.\\. and \\{len\\(diff\\) - 150\\} more lines\"\\)\nEOF\n$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd \"e:\\\\Aixun Smoc\\\\esp32_tes02_ctrl\" && pio run -e esp32c3 --target clean$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "pio": true,
+        "/^cd \"e:\\\\Aixun Smoc\\\\esp32_tes02_ctrl\\\\scripts\" && powershell -ExecutionPolicy Bypass -File \"sign_current_build\\.ps1\" -Env esp32c3$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

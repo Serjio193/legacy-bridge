@@ -1,0 +1,13 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+
+# Single OTA app slot (ota_0 only). We keep recovery as dedicated fallback image.
+# Enlarged to use space previously occupied by ota_b.
+ota_a,    app,  ota_0,   0x10000, 0x228000,
+
+# Filesystem for UI/assets (LittleFS mounted on the "spiffs" subtype partition)
+spiffs,   data, spiffs,  0x238000,0x0E8000,
+
+# Recovery image (factory partition). Flash a dedicated recovery build here.
+recovery, app,  factory, 0x320000,0x0E0000,
