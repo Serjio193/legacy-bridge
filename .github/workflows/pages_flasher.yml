@@ -6,6 +6,8 @@ on:
     paths:
       - "flasher/**"
       - ".github/workflows/pages_flasher.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -27,6 +29,92 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build static flasher site with mirrored release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import shutil
+          import urllib.request
+          import urllib.error
+
+          REPO = "Serjio193/legacy-bridge"
+          API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
+          REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin"]
+          SITE = "_site"
+
+          if os.path.isdir(SITE):
+              shutil.rmtree(SITE)
+          os.makedirs(SITE, exist_ok=True)
+
+          # Copy flasher UI to site root
+          for name in os.listdir("flasher"):
+              src = os.path.join("flasher", name)
+              dst = os.path.join(SITE, name)
+              if os.path.isdir(src):
+                  shutil.copytree(src, dst)
+              else:
+                  shutil.copy2(src, dst)
+
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          tok = os.getenv("GITHUB_TOKEN", "").strip()
+          if tok:
+              headers["Authorization"] = f"Bearer {tok}"
+
+          req = urllib.request.Request(API, headers=headers, method="GET")
+          with urllib.request.urlopen(req, timeout=60) as resp:
+              rels = json.loads(resp.read().decode("utf-8"))
+
+          out_index = []
+          rel_root = os.path.join(SITE, "releases")
+          os.makedirs(rel_root, exist_ok=True)
+
+          for r in rels:
+              if r.get("draft"):
+                  continue
+              tag = str(r.get("tag_name") or "").strip()
+              if not tag:
+                  continue
+              assets = {str(a.get("name") or ""): str(a.get("browser_download_url") or "") for a in (r.get("assets") or [])}
+              if not all(assets.get(n) for n in REQUIRED):
+                  continue
+
+              tag_dir = os.path.join(rel_root, tag)
+              os.makedirs(tag_dir, exist_ok=True)
+              local_assets = {}
+              for fname in REQUIRED:
+                  url = assets[fname]
+                  dst = os.path.join(tag_dir, fname)
+                  try:
+                      urllib.request.urlretrieve(url, dst)
+                  except (urllib.error.URLError, TimeoutError) as e:
+                      raise RuntimeError(f"Failed to mirror {tag}/{fname}: {e}")
+                  local_assets[fname] = f"./releases/{tag}/{fname}"
+
+              out_index.append({
+                  "tag_name": tag,
+                  "prerelease": bool(r.get("prerelease")),
+                  "published_at": r.get("published_at"),
+                  "assets": local_assets,
+              })
+
+          # Sort by numeric tag vN descending when possible
+          def ver_key(item):
+              t = str(item.get("tag_name", ""))
+              if t.lower().startswith("v") and t[1:].isdigit():
+                  return int(t[1:])
+              return -1
+          out_index.sort(key=ver_key, reverse=True)
+
+          with open(os.path.join(rel_root, "index.json"), "w", encoding="utf-8") as f:
+              json.dump(out_index, f, ensure_ascii=False, indent=2)
+          PY
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
@@ -35,7 +123,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: flasher
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

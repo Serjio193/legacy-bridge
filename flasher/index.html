@@ -62,8 +62,7 @@
 
   <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
   <script>
-    const REPO = "Serjio193/legacy-bridge";
-    const API = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
+    const INDEX_URL = "./releases/index.json";
     const REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin"];
     const OFFSETS = {
       "bootloader.bin": 0x0,
@@ -135,14 +134,13 @@
       setStatus("Загрузка релизов...", "");
       installBtn.disabled = true;
       try {
-        const r = await fetch(API, { cache: "no-store" });
-        if (!r.ok) throw new Error(`GitHub API ${r.status}`);
+        const r = await fetch(INDEX_URL, { cache: "no-store" });
+        if (!r.ok) throw new Error(`Index ${r.status}`);
         const arr = await r.json();
-        const all = Array.isArray(arr) ? arr : [];
-        releases = all.filter((x) => !x.draft && supportsBareFlash(x));
+        releases = (Array.isArray(arr) ? arr : []).filter((x) => supportsBareFlash(x));
         refreshSelect();
         if (!releases.length) {
-          setStatus("Нет релизов с полным набором файлов для bare flash (bootloader/partitions/firmware/littlefs/recovery).", "warn");
+          setStatus("Нет доступных версий для bare flash (проверьте workflow Deploy USB Flasher Page).", "warn");
           return;
         }
         relSel.value = "0";
