@@ -109,7 +109,10 @@
 
     function buildManifest(rel) {
       const map = pickAssetsMap(rel);
-      const parts = REQUIRED.map((name) => ({ path: map[name], offset: OFFSETS[name] }));
+      const parts = REQUIRED.map((name) => ({
+        path: new URL(map[name], window.location.href).href,
+        offset: OFFSETS[name]
+      }));
       return {
         name: "Legacy Bridge",
         version: String(rel.tag_name || "").replace(/^v/i, ""),
