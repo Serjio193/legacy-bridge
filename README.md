@@ -1,5 +1,11 @@
 # Legacy Bridge Workspace
 
+## First start (new/blank ESP32-C3)
+
+- For first-time flashing of a blank device over USB, use the online flasher page:
+  - `https://serjio193.github.io/legacy-bridge/`
+- Recommended browser: Chrome/Edge (WebSerial required).
+
 ## Structure
 
 - `esp32_tes02_ctrl/` - PlatformIO firmware project (ESP32-C3)
