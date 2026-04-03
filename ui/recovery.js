@@ -14,7 +14,7 @@
   const btnFwUpdate = document.getElementById("btnFwUpdate");
   const fwMenuModal = document.getElementById("fwUpdateMenuModal");
   const btnFwOnline = document.getElementById("btnFwUpdateOnline");
-  const btnFwManual = document.getElementById("btnFwUpdateManual");
+  const btnFwChoose = document.getElementById("btnFwUpdateChoose");
   const btnFwCancel = document.getElementById("btnFwUpdateCancel");
   const fwManualPicker = document.getElementById("fwUpdatePicker");
 
@@ -154,6 +154,25 @@
       return new URL(rel, kMirrorBase).href;
     }
     throw new Error("no update.lbpack in mirror index");
+  }
+  async function fetchPackList() {
+    const r = await fetch(kMirrorIndex, { cache: "no-store" });
+    if (!r || !r.ok) throw new Error(`release index failed: ${r ? r.status : "fetch"}`);
+    const arr = await r.json();
+    const src = Array.isArray(arr) ? arr : [];
+    const out = [];
+    src.forEach((item) => {
+      const tag = String(item && item.tag_name ? item.tag_name : "").trim();
+      const assets = (item && item.assets && typeof item.assets === "object") ? item.assets : null;
+      const rel = String(assets && assets["update.lbpack"] ? assets["update.lbpack"] : "").trim();
+      if (!tag || !rel) return;
+      out.push({
+        tag,
+        prerelease: !!(item && item.prerelease),
+        url: new URL(rel, kMirrorBase).href
+      });
+    });
+    return out;
   }
   function hostLooksIpv4(host) {
     return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(host || "").trim());
@@ -370,15 +389,35 @@
       }
     });
   }
-  if (btnFwManual) btnFwManual.addEventListener("click", () => {
+  if (btnFwChoose) btnFwChoose.addEventListener("click", async () => {
     closeFwMenu();
-    append("manual update: choose update.lbpack");
-    if (!fwManualPicker) {
-      if (filePack) filePack.click();
-      return;
+    try {
+      const list = await fetchPackList();
+      if (!Array.isArray(list) || !list.length) {
+        append("choose version FAIL: no versions in mirror index");
+        return;
+      }
+      const lines = list.map((x, i) => `${i + 1}) ${x.tag}${x.prerelease ? " [pre]" : ""}`);
+      const raw = String(window.prompt(`Select version:\n${lines.join("\n")}\n\nEnter number:`, "1") || "").trim();
+      if (!raw) return;
+      const idx = (Number.parseInt(raw, 10) || 0) - 1;
+      if (idx < 0 || idx >= list.length) {
+        append(`choose version canceled: bad index "${raw}"`);
+        return;
+      }
+      const chosen = list[idx];
+      append(`online update: selected ${chosen.tag}`);
+      setBusy(true, "ONLINE UPDATE: downloading selected package...");
+      if (statsPack) statsPack.textContent = "downloading package...";
+      setBar(barPack, 0);
+      const f = await downloadPackFile(chosen.url);
+      append(`online update: downloaded ${f.name || "update.lbpack"} (${Math.round((f.size || 0) / 1024)} KiB)`);
+      if (filePack) setInputFile(filePack, f);
+      await flashPack(f, true);
+    } catch (e) {
+      append(`choose version FAIL: ${String((e && e.message) ? e.message : e)}`);
+      setBusy(false);
     }
-    try { fwManualPicker.value = ""; } catch (_) {}
-    fwManualPicker.click();
   });
   if (fwManualPicker) fwManualPicker.addEventListener("change", async () => {
     const files = Array.from((fwManualPicker.files || [])).filter(Boolean);
@@ -388,6 +427,7 @@
       append("manual update FAIL: choose update.lbpack");
       return;
     }
+    append("manual update: selected package from file input");
     append(`package selected: ${packFile.name} (${Math.round((packFile.size || 0) / 1024)} KiB)`);
     if (filePack) setInputFile(filePack, packFile);
     await flashPack(packFile, true);
