@@ -3,7 +3,9 @@
 ## First start (new/blank ESP32-C3)
 
 - For first-time flashing of a blank device over USB, use the online flasher page:
-  - `https://serjio193.github.io/legacy-bridge/`
+  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
+- Direct link:
+  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
 - Recommended browser: Chrome/Edge (WebSerial required).
 
 ## Structure
