@@ -1,5 +1,190 @@
 # Legacy Bridge Workspace
 
+## Legacy Bridge Overview (RU / EN / UA)
+
+### RU
+
+🔥 **Legacy Bridge (LB)**
+
+Legacy Bridge — модуль, который связывает паяльные станции и дымоуловитель, добавляя автоматизацию без замены оборудования.
+
+**История создания**
+
+Я использую оборудование Aixun. После покупки вытяжки Aixun ES02 стало ясно, что она не работает с T420D без WiFi, а также нет нормальной интеграции с феном H312. Поэтому я сделал модификацию T420D с собственной платой управления. Так появился Legacy Bridge.
+
+**Что делает Legacy Bridge**
+
+- При снятии паяльника с подставки вытяжка включается
+- При возврате паяльника в подставку вытяжка выключается
+- При работе фена H312 вытяжка включается по температуре
+
+**Модификация**
+
+- ESP32 (модуль управления)
+- 4 провода
+- 2 резистора
+- 2 конденсатора
+
+Подключение выполняется без изменения штатной электроники станции.
+
+**Как это работает**
+
+- Состояние паяльника определяется по линии SENSE (подставка)
+- Состояние фена определяется по температуре (WiFi / BLE)
+- Логика работает на ESP32
+- Управление вытяжкой выполняется автоматически
+
+**Поддерживаемое оборудование**
+
+- Aixun T420D
+- Aixun H312
+- Aixun ES02
+- Другие JBC-совместимые решения (частично)
+
+**Подключение SENSE**
+
+- `SENSE ----[100k]---- GPIO (ESP32)`
+- GPIO в режиме `INPUT`
+- без `pull-up` / `pull-down`
+
+**Статус**
+
+Проект в активной разработке. Основной функционал работает, продолжается доработка BLE и оптимизация.
+
+**Поддержка**
+
+👉 https://serjio193.github.io/legacy-bridge/support.html
+
+**Автор**
+
+Serjio193
+
+**Цель**
+
+Сделать простой, надежный и практичный инструмент для объединения оборудования и автоматизации рабочего процесса.
+
+### EN
+
+🔥 **Legacy Bridge (LB)**
+
+Legacy Bridge is a module that links soldering stations and a fume extractor, adding automation without replacing existing hardware.
+
+**Project background**
+
+I use Aixun equipment. After buying the Aixun ES02 extractor, it became clear that it did not work with my T420D (no WiFi module), and there was no proper integration with the H312 hot-air tool. I decided to modify my T420D by adding a custom control board. That is how Legacy Bridge started.
+
+**What Legacy Bridge does**
+
+- Extractor turns on when the iron is lifted from the stand
+- Extractor turns off when the iron is placed back
+- Extractor turns on by temperature when H312 is in use
+
+**Hardware modification**
+
+- ESP32 (control module)
+- 4 wires
+- 2 resistors
+- 2 capacitors
+
+Connection is done without changing the station’s stock electronics.
+
+**How it works**
+
+- Iron state is detected via the SENSE stand line
+- Hot-air state is detected by temperature (WiFi / BLE)
+- Logic runs on ESP32
+- Extractor is controlled automatically
+
+**Supported equipment**
+
+- Aixun T420D
+- Aixun H312
+- Aixun ES02
+- Other JBC-compatible solutions (partial)
+
+**SENSE connection**
+
+- `SENSE ----[100k]---- GPIO (ESP32)`
+- GPIO mode: `INPUT`
+- no `pull-up` / `pull-down`
+
+**Status**
+
+Project is under active development. Core functionality works; BLE behavior and optimization are still being improved.
+
+**Support**
+
+👉 https://serjio193.github.io/legacy-bridge/support.html
+
+**Author**
+
+Serjio193
+
+**Goal**
+
+Build a simple, reliable, and practical tool that unifies hardware and automates the workflow.
+
+### UA
+
+🔥 **Legacy Bridge (LB)**
+
+Legacy Bridge — це модуль, який поєднує паяльні станції та димовловлювач, додаючи автоматизацію без заміни обладнання.
+
+**Історія створення**
+
+Я використовую обладнання Aixun. Після покупки витяжки Aixun ES02 стало зрозуміло, що вона не працює з T420D без WiFi, а також немає нормальної інтеграції з феном H312. Тому я модифікував T420D, додавши власну плату керування. Так з’явився Legacy Bridge.
+
+**Що робить Legacy Bridge**
+
+- При знятті паяльника з підставки витяжка вмикається
+- При поверненні паяльника в підставку витяжка вимикається
+- Під час роботи H312 витяжка вмикається за температурою
+
+**Модифікація**
+
+- ESP32 (модуль керування)
+- 4 дроти
+- 2 резистори
+- 2 конденсатори
+
+Підключення виконується без зміни штатної електроніки станції.
+
+**Як це працює**
+
+- Стан паяльника визначається через лінію SENSE (підставка)
+- Стан фена визначається за температурою (WiFi / BLE)
+- Логіка працює на ESP32
+- Керування витяжкою виконується автоматично
+
+**Підтримуване обладнання**
+
+- Aixun T420D
+- Aixun H312
+- Aixun ES02
+- Інші JBC-сумісні рішення (частково)
+
+**Підключення SENSE**
+
+- `SENSE ----[100k]---- GPIO (ESP32)`
+- GPIO у режимі `INPUT`
+- без `pull-up` / `pull-down`
+
+**Статус**
+
+Проєкт у активній розробці. Основний функціонал працює, триває доопрацювання BLE та оптимізація.
+
+**Підтримка**
+
+👉 https://serjio193.github.io/legacy-bridge/support.html
+
+**Автор**
+
+Serjio193
+
+**Мета**
+
+Зробити простий, надійний і практичний інструмент для об’єднання обладнання та автоматизації робочого процесу.
+
 ## First start (new/blank ESP32-C3)
 
 - For first-time flashing of a blank device over USB, use the online flasher page:
