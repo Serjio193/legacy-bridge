@@ -32,13 +32,13 @@ static const uint32_t kRecoveryStaConnectTimeoutMs = 8000;
 static const bool kRecoveryRequireSignature = true;
 static const char *kRecoverySignerPubKeyPem =
     "-----BEGIN PUBLIC KEY-----\n"
-    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0rNTtQ/faOP9YnNL0dKT\n"
-    "z3J8P/OXerLzFQDo8g7YQkYmKARCsxF44ED8cRQAW2EW7vyEYdqlIuvWP8rj0zEH\n"
-    "nkF2bWLycGzXPom3aJQtjiBJHJ7spDhzxfmE9ADSyUtW5x7tgWT4YUXm1TYrSGt8\n"
-    "TB7+wUmtnf3Esjg77Niw4fIGfAhacscPtEMDYRBAIAoTc9MtKA/mVgCi5wPxXUEe\n"
-    "4Qazmo4M0djV2PHrpQruJciGlSGiO8tp9fIZezzmiBZWuXx46C9YRw0lc/sSOuuR\n"
-    "caJynS8ohDu8mvvrHKxFmt1ArauDWR/fIBNVR26g+NccjXnzIsnBGfRGLE5w4dm3\n"
-    "cQIDAQAB\n"
+    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzLPQ1NydJzwPo3uETTNT\n"
+    "K8R5VI0tkc0MyPYQk6dle8ssxvX0l5K8Mig3Wj5h7rs5d8xHorgWDW4+YkSacAwi\n"
+    "3GedvZJtx1rUmxk0Eh5OsfmVYqV5B3faV4yf4qwBSlc0HXwvl6Db8pOz2SrYB3r1\n"
+    "FyVYC2I9s9sKlnvjoIqIUu6aUPCevZJ8LuSlkqtVEnjES0f/2lJjMseo/hmVgcOi\n"
+    "VejCarc4sFAIc8pyO7+RBThsgiZ3Toiga+s3fTKWhw9knrOmHJJ2H3uWJiTxjZUq\n"
+    "bNHA+nIVbmiMrV6OtsTy24bzxClzs2q4eZjUXg/fOr8asBiRGNwC9jxcjeMMDYFY\n"
+    "BwIDAQAB\n"
     "-----END PUBLIC KEY-----\n";
 
 static Preferences prefs;
@@ -1384,3 +1384,4 @@ void loop() {
   }
   delay(2);
 }
+
