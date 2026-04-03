@@ -54,7 +54,7 @@ If credentials were changed and lost:
   - `partitions.bin` (`0x8000`)
   - `firmware.bin` (`0x10000`)
   - `littlefs.bin` (`0x238000`)
-  - `recovery.bin` (`0x320000`)
+  - `recovery.bin` (`0x300000`)
 - Browser requirements:
   - Chromium browser (Chrome/Edge)
   - HTTPS context (GitHub Pages)
