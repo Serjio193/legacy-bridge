@@ -10,29 +10,25 @@
 
 ## Default Wi-Fi and admin access
 
-- Main firmware AP SSID format:
-  - `LB-SETUP-XXXXX`
-  - where `XXXXX` = last 5 HEX chars of device MAC (uppercase), for example `LB-SETUP-BB9E4`.
-- Default AP password (first boot):
-  - `lbxxxxx!2026`
-  - where `xxxxx` = same last 5 HEX chars, but lowercase, for example `lbbb9e4!2026`.
-- Web admin default login:
-  - Username: `admin`
-  - Password: same as AP password on first boot (`lbxxxxx!2026`).
-- Recovery AP:
-  - SSID: `LB_RECOVERY`
-  - Password: none (open AP).
+- `SSID`: `LB-SETUP-XXXXX`
+- `Password`: `lbxxxxx!2026`
+- `Web login`: `admin`
+- `Recovery AP`: `LB_RECOVERY` (no password)
 
-How to get the correct password for your device:
-1. Connect to device AP and read SSID suffix `XXXXX`.
-2. Convert suffix to lowercase -> `xxxxx`.
-3. Use password `lbxxxxx!2026`.
+<details>
+<summary>How to calculate password and recover access</summary>
 
-If access was changed and lost:
+- `XXXXX` = last 5 HEX chars of device MAC in uppercase (example: `BB9E4`).
+- `xxxxx` = same suffix in lowercase (example: `bb9e4`).
+- So default password is `lbxxxxx!2026` (example: `lbbb9e4!2026`).
+
+If credentials were changed and lost:
 1. Enter Recovery mode.
 2. Press `Reset Main Settings`.
-3. Reboot main firmware.
-4. Credentials return to default pattern above.
+3. Reboot to main firmware.
+4. Defaults above are restored.
+
+</details>
 
 ## Structure
 
