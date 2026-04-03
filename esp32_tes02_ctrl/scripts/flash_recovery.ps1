@@ -30,8 +30,8 @@ try {
   }
   if ([string]::IsNullOrWhiteSpace($Port)) { throw "Specify -Port COMxx" }
 
-  # Factory(recovery) partition offset from partitions_4mb_ota_fs_recovery.csv is 0x320000.
-  $addr = "0x320000"
+  # Factory(recovery) partition offset from partitions_4mb_ota_fs_recovery.csv is 0x300000.
+  $addr = "0x300000"
 
   Write-Host "Flashing recovery firmware to factory partition @ $addr on $Port ..."
   & $py $tool --chip esp32c3 --port $Port --baud $Baud write_flash -z $addr $fw | Out-Host

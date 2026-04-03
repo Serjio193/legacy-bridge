@@ -60,7 +60,7 @@ try {
     "0x8000", $partitionTable,
     "0x10000", $firmware,
     "0x238000", $littlefs,
-    "0x320000", $recovery
+    "0x300000", $recovery
   )
 
   Write-Host "Command: $($cmd -join ' ')"
@@ -80,7 +80,7 @@ try {
       0x8000 $partitionTable `
       0x10000 $firmware `
       0x238000 $littlefs `
-      0x320000 $recovery
+      0x300000 $recovery
   }
 
   Write-Host ""

@@ -7,7 +7,9 @@ otadata,  data, ota,     0xe000,  0x2000,
 ota_a,    app,  ota_0,   0x10000, 0x228000,
 
 # Filesystem for UI/assets (LittleFS mounted on the "spiffs" subtype partition)
-spiffs,   data, spiffs,  0x238000,0x0E8000,
+# Reduced to make room for a larger recovery image.
+spiffs,   data, spiffs,  0x238000,0x0C8000,
 
 # Recovery image (factory partition). Flash a dedicated recovery build here.
-recovery, app,  factory, 0x320000,0x0E0000,
+# Increased to 1 MiB to avoid overflow from current recovery build.
+recovery, app,  factory, 0x300000,0x100000,
