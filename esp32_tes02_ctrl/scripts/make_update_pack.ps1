@@ -34,18 +34,22 @@ try {
   if (-not $SkipBuild) {
     Write-Host "Build: firmware ($Env)"
     pio run -e $Env | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "build firmware failed" }
     Write-Host "Build: littlefs ($Env)"
     pio run -e $Env -t buildfs | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "build littlefs failed" }
   }
 
   powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "sign_current_build.ps1") -Env $Env | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "sign_current_build failed" }
 
-  py -3 $packTool `
+  python $packTool `
     --firmware $fwBin `
     --firmware-sig $fwSig `
     --littlefs $fsBin `
     --littlefs-sig $fsSig `
     --out $OutFile | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "make_update_pack.py failed" }
 
   Write-Host ""
   Write-Host "Done: $OutFile"

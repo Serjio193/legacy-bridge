@@ -28,11 +28,15 @@ try {
   Write-Host "  public : $pubKey"
   Write-Host "  env    : $Env"
 
-  py -3 $signTool sign --bin $littlefsBin --private $privKey --sig $littlefsSig | Out-Host
-  py -3 $signTool sign --bin $firmwareBin --private $privKey --sig $firmwareSig | Out-Host
+  python $signTool sign --bin $littlefsBin --private $privKey --sig $littlefsSig | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "sign littlefs failed" }
+  python $signTool sign --bin $firmwareBin --private $privKey --sig $firmwareSig | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "sign firmware failed" }
 
-  py -3 $signTool verify --bin $littlefsBin --public $pubKey --sig $littlefsSig | Out-Host
-  py -3 $signTool verify --bin $firmwareBin --public $pubKey --sig $firmwareSig | Out-Host
+  python $signTool verify --bin $littlefsBin --public $pubKey --sig $littlefsSig | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "verify littlefs failed" }
+  python $signTool verify --bin $firmwareBin --public $pubKey --sig $firmwareSig | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "verify firmware failed" }
 
   Write-Host ""
   Write-Host "Done:"
