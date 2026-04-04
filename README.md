@@ -2,9 +2,9 @@
 
 ## Legacy Bridge Overview (RU / EN / UA)
 
-**Choose language:** [Русский](#lang-ru) | [English](#lang-en) | [Українська](#lang-ua)
+**Choose language (click to expand):**
 
-<details open>
+<details>
 <summary><b>Русский</b></summary>
 
 <a id="lang-ru"></a>
