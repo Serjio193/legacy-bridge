@@ -1922,6 +1922,25 @@
             try { window.location.href = url; } catch (_) {}
           }
         };
+        const probeReachable = async (url, timeoutMs = 2800) => {
+          const ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+          let timer = null;
+          try {
+            if (ctrl) timer = setTimeout(() => { try { ctrl.abort(); } catch (_) {} }, timeoutMs);
+            await fetch(String(url || ""), {
+              method: "GET",
+              mode: "no-cors",
+              cache: "no-store",
+              credentials: "omit",
+              signal: ctrl ? ctrl.signal : undefined
+            });
+            return true;
+          } catch (_) {
+            return false;
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
+        };
         const buildCandidates = async () => {
           const candidates = [];
           let statusIp = "";
@@ -1946,16 +1965,20 @@
           return uniq(candidates);
         };
         buildCandidates().then((candidates) => {
-          if (!candidates.length) {
-            nav(primaryDefault);
-            return;
-          }
-          // Device reboots to recovery; try several hosts sequentially.
-          const steps = [8000, 14000, 22000, 30000, 38000];
-          for (let i = 0; i < steps.length; i++) {
-            const target = candidates[Math.min(i, candidates.length - 1)];
-            setTimeout(() => nav(target), steps[i]);
-          }
+          if (!candidates.length) return nav(primaryDefault);
+          // Wait reboot window, then probe each candidate while staying on the current page.
+          setTimeout(async () => {
+            for (let i = 0; i < candidates.length; i++) {
+              const target = candidates[i];
+              const ok = await probeReachable(target);
+              if (ok) {
+                nav(target);
+                return;
+              }
+            }
+            // Last resort: still open AP default.
+            nav("http://192.168.4.1/recovery.html");
+          }, 8500);
         }).catch(() => {
           setTimeout(() => nav(primaryDefault), 8000);
           setTimeout(() => nav(fallbackDefault), 18000);
