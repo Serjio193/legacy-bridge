@@ -84,12 +84,16 @@ Legacy Bridge — это система, которая автоматическ
 **Поддержка**
 
 [![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-ru)
 
+<details id="usdt-trc20-ru">
+<summary>USDT TRC20</summary>
 
-USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
 ![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
+
+</details>
 
 Подробнее: https://serjio193.github.io/legacy-bridge/support.html
 
@@ -157,12 +161,16 @@ Project is under active development. Core functionality works; BLE behavior and 
 **Support**
 
 [![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-en)
 
+<details id="usdt-trc20-en">
+<summary>USDT TRC20</summary>
 
-USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
 ![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
+
+</details>
 
 Details: https://serjio193.github.io/legacy-bridge/support.html
 
@@ -227,12 +235,16 @@ Legacy Bridge — це модуль, який поєднує паяльні ст
 **Підтримка**
 
 [![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-ua)
 
+<details id="usdt-trc20-ua">
+<summary>USDT TRC20</summary>
 
-USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
 ![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
+
+</details>
 
 Детальніше: https://serjio193.github.io/legacy-bridge/support.html
 
