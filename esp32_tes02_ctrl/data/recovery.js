@@ -102,6 +102,13 @@
     const p = Math.max(0, Math.min(100, pct || 0));
     bar.style.width = `${p.toFixed(1)}%`;
   }
+  function setPackPhase(phase, pct, detail) {
+    if (statsPack) {
+      const d = String(detail || "").trim();
+      statsPack.textContent = d ? `${phase}: ${d}` : String(phase || "");
+    }
+    if (Number.isFinite(Number(pct))) setBar(barPack, Number(pct));
+  }
 
   function setBusy(on, what) {
     const v = !!on;
@@ -220,7 +227,7 @@
     append(`${srcLabel || "online update"}: request device-side flash from ${url}`);
     setBusy(true, `${srcLabel || "ONLINE UPDATE"}: flashing package from URL...`);
     setBar(barPack, 0);
-    if (statsPack) statsPack.textContent = "device downloading and flashing package...";
+    setPackPhase("Загрузка", 3, "инициализация");
     urlFlashInFlight = true;
     try {
       const r = await apiJsonWithTimeout("/api/recovery/flash/url", {
@@ -232,7 +239,9 @@
         setBar(barPack, 100);
         append(`${srcLabel || "online update"} OK: rebooting to system...`);
         setBusy(true, "REBOOTING... device will switch to System");
+        setPackPhase("Перезагрузка", 98, "переход в систему");
         redirectToMainWithFallback(r, 3500);
+        setTimeout(() => setPackPhase("Вход в систему", 100, "открытие main UI"), 1800);
         releaseBusyLater(14000, "reboot not detected yet: controls re-enabled");
         return r;
       }
@@ -429,12 +438,24 @@
       const fsT = Number(r.pack_fs_total || 0);
       const stage = String(r.pack_stage || "");
       if (packActive) {
-        let pct = 3;
-        if (tot > 0) pct = Math.max(1, Math.min(99, (rec / tot) * 100));
-        else if ((fwT + fsT) > 0) pct = Math.max(1, Math.min(99, ((fwW + fsW) / (fwT + fsT)) * 100));
-        setBar(barPack, pct);
-        statsPack.textContent =
-          `stage=${stage} rx ${fmtBytes(rec)}${tot > 0 ? (" / " + fmtBytes(tot)) : ""} | fw ${fmtBytes(fwW)} / ${fmtBytes(fwT)} | fs ${fmtBytes(fsW)} / ${fmtBytes(fsT)}`;
+        const dlStages = (stage === "hdr" || stage === "fw_sig" || stage === "fs_sig");
+        const wrStages = (stage === "fw_data" || stage === "fs_data");
+        let pct = 5;
+        if (dlStages) {
+          const dlp = (tot > 0) ? (rec / tot) : 0;
+          pct = Math.max(3, Math.min(45, 3 + dlp * 42));
+          setPackPhase("Загрузка", pct, `${fmtBytes(rec)}${tot > 0 ? (" / " + fmtBytes(tot)) : ""}`);
+        } else if (wrStages) {
+          const allW = fwW + fsW;
+          const allT = Math.max(1, fwT + fsT);
+          const wrp = allW / allT;
+          pct = Math.max(45, Math.min(95, 45 + wrp * 50));
+          setPackPhase("Обновление", pct, `fw ${fmtBytes(fwW)} / ${fmtBytes(fwT)} | fs ${fmtBytes(fsW)} / ${fmtBytes(fsT)}`);
+        } else if (stage === "done") {
+          setPackPhase("Перезагрузка", 98, "подготовка перезагрузки");
+        } else {
+          setPackPhase(`Обработка (${stage || "?"})`, pct, `rx ${fmtBytes(rec)}`);
+        }
       } else if (!urlFlashInFlight && String(statsPack.textContent || "").includes("device downloading and flashing package")) {
         const err = String(r.pack_err || "").trim();
         statsPack.textContent = err ? `last error: ${err}` : "idle";
