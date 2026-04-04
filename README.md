@@ -87,6 +87,10 @@ Legacy Bridge — это система, которая автоматическ
 [![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
 
+USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
+
 Подробнее: https://serjio193.github.io/legacy-bridge/support.html
 
 **Автор**
@@ -156,6 +160,10 @@ Project is under active development. Core functionality works; BLE behavior and 
 [![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
 
+USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
+
 Details: https://serjio193.github.io/legacy-bridge/support.html
 
 **Author**
@@ -221,6 +229,10 @@ Legacy Bridge — це модуль, який поєднує паяльні ст
 [![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
 [![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
+
+USDT TRC20 wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
 
 Детальніше: https://serjio193.github.io/legacy-bridge/support.html
 
