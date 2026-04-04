@@ -26,6 +26,7 @@
 
   let lastStatus = null;
   let urlFlashInFlight = false;
+  let pendingAutoPackUrl = "";
   const kFwRepo = "Serjio193/legacy-bridge";
   const kFwReleaseApi = `https://api.github.com/repos/${kFwRepo}/releases/latest`;
   const kFwReleasesApi = `https://api.github.com/repos/${kFwRepo}/releases?per_page=30`;
@@ -165,8 +166,9 @@
     const packUrl = parseAutoPackUrl();
     if (!packUrl) return;
     clearAutoPackQuery();
+    pendingAutoPackUrl = String(packUrl || "").trim();
     append(`auto update: package url detected`);
-    await flashPackFromUrl(packUrl, "AUTO UPDATE");
+    append("auto update: package prepared, choose update method (Online / Choose Version)");
   }
   function pickLbpackAsset(release) {
     const assets = Array.isArray(release && release.assets) ? release.assets : [];
@@ -466,7 +468,8 @@
     btnFwOnline.addEventListener("click", async () => {
       closeFwMenu();
       try {
-        const packUrl = await fetchLatestPackUrl();
+        const packUrl = pendingAutoPackUrl || await fetchLatestPackUrl();
+        pendingAutoPackUrl = "";
         append(`online update: latest package ${packUrl}`);
         await flashPackFromUrl(packUrl, "ONLINE UPDATE");
       } catch (e) {
