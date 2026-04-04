@@ -1,7 +1,8 @@
 param(
   [string]$Src = "..\\ui",
   [string]$Dst = "data",
-  [string[]]$ImmutableGzipFiles = @("three.min.js")
+  [string[]]$ImmutableGzipFiles = @("three.min.js", "app.js", "styles.css", "index.html"),
+  [string[]]$ExcludeFromLittleFS = @("recovery.html", "recovery.js", "recovery")
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,4 +47,13 @@ foreach ($name in $ImmutableGzipFiles) {
   $gzCount++
 }
 
-Write-Host "Synced UI from $srcPath to $dstPath (gzip immutable files: $gzCount)"
+$excludedCount = 0
+foreach ($name in $ExcludeFromLittleFS) {
+  if ([string]::IsNullOrWhiteSpace($name)) { continue }
+  $target = Join-Path $dstPath $name
+  if (-not (Test-Path $target)) { continue }
+  Remove-Item -LiteralPath $target -Recurse -Force
+  $excludedCount++
+}
+
+Write-Host "Synced UI from $srcPath to $dstPath (gzip immutable files: $gzCount, excluded: $excludedCount)"

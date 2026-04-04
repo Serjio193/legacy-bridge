@@ -4266,6 +4266,10 @@ static bool tryServeFile(String path) {
   if (!f) return false;
 
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  if (servePath.endsWith(".gz")) {
+    server.sendHeader("Content-Encoding", "gzip");
+    server.sendHeader("Vary", "Accept-Encoding");
+  }
   server.streamFile(f, contentTypeFor(servePath));
   f.close();
   return true;
