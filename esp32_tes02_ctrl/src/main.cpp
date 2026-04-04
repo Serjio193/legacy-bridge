@@ -6692,6 +6692,17 @@ static void handleApiFwSwitchSlot() {
 
 static void handleApiFwEnterRecovery() {
   const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+  const String mdnsHost = gStaHostname + ".local";
+  const String recSuffix = "/recovery.html?autopack=latest";
+  const String recMdns = String("http://") + mdnsHost + recSuffix;
+  const String recLb = String("http://lb-bridge.local") + recSuffix;
+  String recIp = "";
+  wifi_mode_t m = WiFi.getMode();
+  if (m == WIFI_AP) recIp = WiFi.softAPIP().toString();
+  else if (m == WIFI_AP_STA) recIp = (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
+  else recIp = WiFi.localIP().toString();
+  String recPrimary = recMdns;
+  if (recIp.length()) recPrimary = String("http://") + recIp + recSuffix;
 
   // Always remember the intent; if no factory partition exists, we'll just boot in SAFE MODE (same image).
   prefs.begin(kPrefsNs, false);
@@ -6711,7 +6722,14 @@ static void handleApiFwEnterRecovery() {
     }
   }
 
-  sendJson(200, "{\"ok\":true}");
+  String out = F("{\"ok\":true,\"recovery_url\":\"");
+  out += jsonEscape(recPrimary);
+  out += F("\",\"recovery_fallback\":\"");
+  out += jsonEscape(recLb);
+  out += F("\",\"recovery_mdns\":\"");
+  out += jsonEscape(recMdns);
+  out += F("\"}");
+  sendJson(200, out);
   delay(250);
   ESP.restart();
 }

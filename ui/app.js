@@ -1901,7 +1901,11 @@
       function scheduleRecoveryAutoOpen(primaryUrl, fallbackUrl) {
         const primaryDefault = String(primaryUrl || `${location.protocol}//${location.host}/recovery.html`);
         const fallbackDefault = String(fallbackUrl || "http://lb-bridge.local/recovery.html");
-        const mkRecoveryUrl = (host) => `http://${host}/recovery.html`;
+        const query = (() => {
+          try { return String(new URL(primaryDefault).search || ""); } catch (_) { return ""; }
+        })();
+        const suffix = `/recovery.html${query}`;
+        const mkRecoveryUrl = (host) => `http://${host}${suffix}`;
         const hostFromUrl = (u) => {
           try { return String(new URL(String(u || "")).hostname || "").trim(); } catch (_) { return ""; }
         };
@@ -1966,18 +1970,22 @@
         };
         buildCandidates().then((candidates) => {
           if (!candidates.length) return nav(primaryDefault);
-          // Wait reboot window, then probe each candidate while staying on the current page.
+          // Wait reboot window, then probe candidates in rounds until recovery is back.
           setTimeout(async () => {
-            for (let i = 0; i < candidates.length; i++) {
-              const target = candidates[i];
-              const ok = await probeReachable(target);
-              if (ok) {
-                nav(target);
-                return;
+            const deadline = Date.now() + 70000;
+            while (Date.now() < deadline) {
+              for (let i = 0; i < candidates.length; i++) {
+                const target = candidates[i];
+                const ok = await probeReachable(target);
+                if (ok) {
+                  nav(target);
+                  return;
+                }
               }
+              await new Promise((r) => setTimeout(r, 1300));
             }
             // Last resort: still open AP default.
-            nav("http://192.168.4.1/recovery.html");
+            nav(`http://192.168.4.1${suffix}`);
           }, 8500);
         }).catch(() => {
           setTimeout(() => nav(primaryDefault), 8000);
@@ -2376,9 +2384,11 @@
           append("firmware update: switch to recovery requested");
           const rr = await apiJson("/api/fw/enter_recovery", { method: "POST", body: "{}", headers: criticalHeaders(pass) });
           if (rr && rr.ok) {
+            const autoPrimary = String((rr && rr.recovery_url) ? rr.recovery_url : recoveryUrl);
+            const autoFallback = String((rr && rr.recovery_fallback) ? rr.recovery_fallback : "http://lb-bridge.local/recovery.html?autopack=latest");
             append("firmware update: recovery requested, rebooting");
             setFwStatus("Firmware update: opening Recovery and starting latest update...", 65, false);
-            scheduleRecoveryAutoOpen(recoveryUrl, "http://lb-bridge.local/recovery.html");
+            scheduleRecoveryAutoOpen(autoPrimary, autoFallback);
             hideFwStatusLater(15000);
             return;
           }
