@@ -1417,85 +1417,86 @@ static void handleFlashPackByUrl() {
 }
 
 static void handleRoot() {
-  String ip = currentRecoveryIp();
-  String apIp = WiFi.softAPIP().toString();
-  String staIp = (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : String();
-  String which;
-  const esp_partition_t *bootable = pickBootableMainSlot(&which);
-
   String page;
-  page.reserve(2600);
+  page.reserve(22000);
   page += F("<!doctype html><html><head><meta charset='utf-8'>");
   page += F("<meta name='viewport' content='width=device-width,initial-scale=1'>");
   page += F("<title>LB RECOVERY</title>");
   page += F("<style>"
-            "body{font-family:system-ui,Segoe UI,Arial;margin:16px;max-width:860px}"
-            ".card{border:1px solid #ddd;border-radius:12px;padding:14px;margin:12px 0}"
-            "code{background:#f3f3f3;padding:2px 6px;border-radius:6px}"
-            "button{padding:10px 14px;font-size:15px}"
-            "input[type=file]{width:100%}"
-            ".row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}"
-            ".danger{background:#b00020;color:#fff;border:none;border-radius:10px}"
+            "body{margin:0;background:#0f1420;color:#d9e6ff;font-family:Segoe UI,Arial,sans-serif}"
+            ".w{max-width:980px;margin:18px auto;padding:0 12px}"
+            ".c{background:#1a2233;border:1px solid #30425f;border-radius:14px;padding:14px}"
+            ".h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}"
+            ".t{font-size:24px;font-weight:700}"
+            ".m{color:#9cb0d0;font-size:13px}"
+            ".r{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}"
+            "button{background:#111a2a;border:1px solid #3b557b;color:#e7f1ff;border-radius:10px;padding:9px 12px;cursor:pointer}"
+            "button.primary{background:#143b63;border-color:#2d76bc}"
+            "button.danger{background:#4b2230;border-color:#b8506b}"
+            "button:disabled{opacity:.55;cursor:default}"
+            ".k{margin-top:12px;padding:10px;border:1px solid #2d3f5b;border-radius:10px;background:#121b2a}"
+            ".k b{color:#6fddff}"
+            ".prog{height:10px;border:1px solid #2f445f;background:#0d1522;border-radius:999px;overflow:hidden}"
+            ".prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2ad3ff,#49ff9f)}"
+            ".log{margin-top:10px;background:#0e1521;border:1px solid #2a3d57;border-radius:10px;padding:10px;white-space:pre-wrap;max-height:220px;overflow:auto;font:12px/1.4 Consolas,monospace}"
+            ".in{width:100%;box-sizing:border-box;background:#0f1726;border:1px solid #324969;color:#e7f1ff;border-radius:10px;padding:9px}"
+            ".menu{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px}"
+            ".menu.show{display:flex}"
+            ".box{width:min(520px,100%);background:#1a2233;border:1px solid #35507b;border-radius:14px;padding:14px}"
+            ".s{font-size:12px;color:#9ab0cf}"
             "</style></head><body>");
-
-  page += F("<h2>RECOVERY MODE</h2>");
-  page += F("<div>Recovery: <code>");
+  page += F("<div class='w'><section class='c'>");
+  page += F("<div class='h'><div><div class='t'>RECOVERY MODE</div><div class='m'>");
+  page += F("Recovery: <code>");
   page += jsonEscape(kRecoveryVersion);
-  page += F("</code> | Package format: <code>LBPACK v");
+  page += F("</code> | LBPACK v");
   page += String((unsigned long)kPackVersion);
-  page += F("</code></div>");
-  page += F("<div>AP: <code>");
+  page += F("</div></div><div class='m'>AP: ");
   page += kRecoverySsid;
-  page += F("</code> IP: <code>");
-  page += ip;
-  page += F("</code> AP: <code>");
-  page += apIp;
-  page += F("</code> STA: <code>");
-  page += (staIp.length() ? staIp : String("-"));
-  page += F("</code></div>");
-
-  page += F("<div class='card'><h3>Flash Firmware</h3>");
-  page += F("<p><b>One-file update:</b> upload <code>update.lbpack</code> (contains System + LittleFS + signatures).</p>");
-  page += F("<form method='POST' action='/api/recovery/flash/allpack' enctype='multipart/form-data'>");
-  page += F("<div class='row'><input type='file' name='pack' required>");
-  page += F("<button type='submit'>Flash Package</button></div></form>");
-  page += F("<p><b>Online update:</b> flash package directly by URL (works even if LittleFS UI is broken).</p>");
-  page += F("<div class='row'><input id='packUrl' style='min-width:420px;max-width:100%' value='https://github.com/Serjio193/legacy-bridge/releases/latest/download/update.lbpack'>");
-  page += F("<button onclick='flashUrl()'>Flash From URL</button></div>");
-  page += F("<p><strong>Safety:</strong> recovery over Wi-Fi writes main firmware only via signed package. "
-            "Bootloader and the recovery image are not writable over Wi-Fi.</p>");
-
-  page += F("</div>");
-
-  page += F("<div class='card'><h3>Maintenance</h3>");
-  page += F("<div class='row'>");
-  page += F("<button class='danger' onclick='resetSettings()'>Reset Main Settings</button>");
-  page += F("<button onclick='rebootRecovery()'>Reboot Recovery</button>");
-  page += F("<button onclick='bootMain()'>Boot Main Firmware</button>");
-  page += F("</div>");
-  page += F("<p>Bootable slot: <code>");
-  page += (bootable ? which : "none");
-  page += F("</code></p>");
-  page += F("</div>");
+  page += F(" | IP: <span id='ip'>-</span></div></div>");
+  page += F("<div class='r'><button id='btnFw' class='primary'>Firmware Update</button><button id='btnBoot'>Boot Main Firmware</button><button id='btnReset' class='danger'>Reset Main Settings</button></div>");
+  page += F("<div class='k'><b>Status:</b> <span id='phase'>Ожидание</span><div class='prog' style='margin-top:8px'><i id='bar'></i></div><div id='detail' class='s' style='margin-top:7px'>0%</div></div>");
+  page += F("<div class='k'><b>Flash package вручную</b><div class='s'>Файл <code>update.lbpack</code> (System + LittleFS + signatures)</div>");
+  page += F("<input id='file' class='in' type='file' accept='.lbpack,application/octet-stream' style='margin-top:8px'/>");
+  page += F("<div class='r'><button id='btnPack' class='primary'>Flash Package</button></div></div>");
+  page += F("<div id='log' class='log'>[recovery] embedded ui ready</div>");
+  page += F("</section></div>");
+  page += F("<div id='menu' class='menu'><div class='box'><div style='font-size:18px;font-weight:700'>Firmware Update</div><div class='m'>Выберите способ обновления</div>"
+            "<div class='r' style='margin-top:12px;justify-content:center'><button id='btnLatest' class='primary'>Online (Latest)</button><button id='btnChoose'>Choose Version</button><button id='btnCancel'>Cancel</button></div></div></div>");
 
   page += F("<script>"
-            "async function j(u,o){const r=await fetch(u,Object.assign({headers:{'Content-Type':'application/json'}},o||{}));"
-            "const t=await r.text(); try{return JSON.parse(t)}catch(e){return {ok:false,error:t||'bad json'}}}"
-            "async function resetSettings(){if(!confirm('Reset main settings?'))return;"
-            "const r=await j('/api/recovery/reset_settings',{method:'POST',body:'{}'});"
-            "alert(r.ok?'OK':'FAIL: '+(r.error||''));}"
-            "async function rebootRecovery(){const r=await j('/api/recovery/reboot',{method:'POST',body:'{}'});"
-            "if(!r.ok) alert('FAIL: '+(r.error||''));}"
-            "async function bootMain(){const r=await j('/api/recovery/boot_main',{method:'POST',body:'{}'});"
-            "if(!r.ok) alert('FAIL: '+(r.error||''));}"
-            "async function flashUrl(){const el=document.getElementById('packUrl');"
-            "const u=(el&&el.value?String(el.value).trim():'');"
-            "if(!u){alert('Enter package URL');return;}"
-            "const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});"
-            "if(!r.ok) alert('FAIL: '+(r.error||'')); else alert('OK: rebooting...');}"
+            "const q=(id)=>document.getElementById(id);"
+            "const el={ip:q('ip'),phase:q('phase'),detail:q('detail'),bar:q('bar'),log:q('log'),menu:q('menu'),btnFw:q('btnFw'),btnLatest:q('btnLatest'),btnChoose:q('btnChoose'),btnCancel:q('btnCancel'),btnBoot:q('btnBoot'),btnReset:q('btnReset'),btnPack:q('btnPack'),file:q('file')};"
+            "let busy=false;"
+            "let autoPack='';"
+            "const repo='Serjio193/legacy-bridge';"
+            "function ts(){const d=new Date();const p=(n)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}"
+            "function log(s){el.log.textContent+=`\\n[ui] ${ts()} ${s}`;el.log.scrollTop=el.log.scrollHeight;}"
+            "function setPhase(name,pct,detail){el.phase.textContent=name||'';el.bar.style.width=`${Math.max(0,Math.min(100,Number(pct||0))).toFixed(1)}%`;el.detail.textContent=detail||`${Math.round(Number(pct||0))}%`;}"
+            "function setBusy(v){busy=!!v;[el.btnFw,el.btnLatest,el.btnChoose,el.btnCancel,el.btnBoot,el.btnReset,el.btnPack].forEach(b=>{if(b)b.disabled=busy;});}"
+            "async function j(url,opts){const o=Object.assign({},opts||{});o.headers=Object.assign({'Content-Type':'application/json'},o.headers||{});try{const r=await fetch(url,o);const t=await r.text();try{return JSON.parse(t||'{}')}catch(_){return {ok:false,error:t||'bad json'}}}catch(e){return {ok:false,error:String(e&&e.message?e.message:e)}}}"
+            "function parseAuto(){try{const u=new URL(location.href);const p=String(u.searchParams.get('autopack')||'').trim();u.searchParams.delete('autopack');u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||''));return p;}catch(_){return '';}}"
+            "function pickLbpackAsset(rel){const a=Array.isArray(rel&&rel.assets)?rel.assets:[];return a.find(x=>String((x&&x.name)||'').toLowerCase()==='update.lbpack')||a.find(x=>String((x&&x.name)||'').toLowerCase().endsWith('.lbpack'))||null;}"
+            "async function latestUrl(){try{const r=await fetch(`https://api.github.com/repos/${repo}/releases/latest`,{cache:'no-store'});if(r&&r.ok){const rel=await r.json();const a=pickLbpackAsset(rel);const u=String(a&&a.browser_download_url||'').trim();if(u)return u;}}catch(_){} return `https://github.com/${repo}/releases/latest/download/update.lbpack`;}"
+            "async function listVersions(){const r=await fetch(`https://api.github.com/repos/${repo}/releases?per_page=30`,{cache:'no-store'});if(!r||!r.ok)throw new Error('github list failed');const arr=await r.json();const out=[];(Array.isArray(arr)?arr:[]).forEach(rel=>{if(!rel||rel.draft)return;const t=String(rel.tag_name||'').trim();const a=pickLbpackAsset(rel);const u=String(a&&a.browser_download_url||'').trim();if(t&&u)out.push({tag:t,url:u,pre:!!rel.prerelease});});return out;}"
+            "function openMenu(){if(el.menu)el.menu.classList.add('show');}"
+            "function closeMenu(){if(el.menu)el.menu.classList.remove('show');}"
+            "async function flashUrl(url,label){const u=String(url||'').trim();if(!u){log(`${label}: empty url`);return;}setBusy(true);setPhase('Загрузка',4,'инициализация');log(`${label}: ${u}`);const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log(`${label}: ok, rebooting`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=String(r.next_url||'http://192.168.4.1/');},1800);setTimeout(()=>{setBusy(false);},12000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'unknown'));log(`${label} FAIL: ${(r&&r.error)||'unknown'}`);}"
+            "async function refresh(){const s=await j('/api/status',{method:'GET'});if(!s||!s.ok)return;el.ip.textContent=String(s.ip||'-');const st=String(s.pack_stage||'');const pa=!!s.pack_active;const rec=Number(s.pack_received||0),tot=Number(s.pack_total||0),fwW=Number(s.pack_fw_written||0),fwT=Number(s.pack_fw_total||0),fsW=Number(s.pack_fs_written||0),fsT=Number(s.pack_fs_total||0);"
+            "if(pa){if(st==='hdr'||st==='fw_sig'||st==='fs_sig'){const p=tot>0?(3+(rec/tot)*42):8;setPhase('Загрузка',Math.max(3,Math.min(45,p)),tot>0?`${Math.round((rec/tot)*100)}%`:`${rec} bytes`);}else if(st==='fw_data'||st==='fs_data'){const allT=Math.max(1,fwT+fsT);const p=45+((fwW+fsW)/allT)*50;setPhase('Обновление',Math.max(45,Math.min(95,p)),`fw ${fwW}/${fwT} | fs ${fsW}/${fsT}`);}else if(st==='done'){setPhase('Перезагрузка',98,'подготовка');}}"
+            "}"
+            "async function flashFile(){const f=el.file&&el.file.files&&el.file.files[0]?el.file.files[0]:null;if(!f){log('manual FAIL: choose update.lbpack');return;}setBusy(true);setPhase('Загрузка',2,'отправка файла');const x=new XMLHttpRequest();const fd=new FormData();fd.append('pack',f,f.name||'update.lbpack');x.upload.onprogress=(e)=>{if(e.lengthComputable){const p=Math.max(2,Math.min(40,(e.loaded/e.total)*40));setPhase('Загрузка',p,`${Math.round((e.loaded/e.total)*100)}%`);}};x.onload=()=>{let r={ok:false,error:'bad json'};try{r=JSON.parse(x.responseText||'{}')}catch(_){} if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log('manual OK: rebooting');setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=String(r.next_url||'http://192.168.4.1/');},1800);setTimeout(()=>setBusy(false),12000);}else{setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'upload failed'));log(`manual FAIL: ${(r&&r.error)||'unknown'}`);}};x.onerror=()=>{setBusy(false);setPhase('Ошибка',0,'network error');log('manual FAIL: network error');};x.open('POST','/api/recovery/flash/allpack',true);x.send(fd);}"
+            "el.btnFw.onclick=()=>openMenu(); el.btnCancel.onclick=()=>closeMenu(); el.menu.onclick=(e)=>{if(e.target===el.menu)closeMenu();};"
+            "el.btnLatest.onclick=async()=>{closeMenu();const u=autoPack||await latestUrl();autoPack='';await flashUrl(u,'ONLINE UPDATE');};"
+            "el.btnChoose.onclick=async()=>{closeMenu();try{const list=await listVersions();if(!list.length){log('choose FAIL: no versions');return;}const lines=list.map((x,i)=>`${i+1}) ${x.tag}${x.pre?' [pre]':''}`);const raw=String(prompt(`Select version:\\n${lines.join('\\n')}\\n\\nEnter number:`,'1')||'').trim();if(!raw)return;const idx=(parseInt(raw,10)||0)-1;if(idx<0||idx>=list.length){log('choose canceled: bad index');return;}await flashUrl(list[idx].url,`ONLINE UPDATE ${list[idx].tag}`);}catch(e){log(`choose FAIL: ${String(e&&e.message?e.message:e)}`);}};"
+            "el.btnBoot.onclick=async()=>{setBusy(true);setPhase('Перезагрузка',96,'запрос boot main');const r=await j('/api/recovery/boot_main',{method:'POST',body:'{}'});if(r&&r.ok){setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=String(r.next_url||'http://192.168.4.1/');},1500);setTimeout(()=>setBusy(false),10000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'boot main failed'));};"
+            "el.btnReset.onclick=async()=>{if(!confirm('Reset main settings?'))return;const r=await j('/api/recovery/reset_settings',{method:'POST',body:'{}'});log(r&&r.ok?'reset OK':`reset FAIL: ${(r&&r.error)||'unknown'}`);};"
+            "el.btnPack.onclick=()=>flashFile();"
+            "autoPack=parseAuto(); if(autoPack){log('auto update: package prepared, choose method');}"
+            "refresh(); setInterval(refresh,1200);"
             "</script>");
-
   page += F("</body></html>");
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   server.send(200, "text/html", page);
 }
 
@@ -1547,10 +1548,10 @@ void setup() {
     Serial.println("LittleFS: mount failed (recovery)");
   }
 
-  server.on("/", HTTP_GET, []() {
-    if (tryServeFile("/recovery.html")) return;
-    handleRoot();  // fallback embedded page
-  });
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/recovery", HTTP_GET, handleRoot);
+  server.on("/recovery/", HTTP_GET, handleRoot);
+  server.on("/recovery.html", HTTP_GET, handleRoot);
   server.on("/api/status", HTTP_GET, handleStatus);
 
   server.on("/api/recovery/reset_settings", HTTP_POST, handleResetSettings);
@@ -1569,8 +1570,11 @@ void setup() {
   server.on("/api/recovery/flash/url", HTTP_POST, handleFlashPackByUrl);
 
   server.onNotFound([]() {
-    if (tryServeFile(server.uri())) return;
-    sendJsonError(404, "not found");
+    if (server.uri().startsWith("/api/")) {
+      sendJsonError(404, "not found");
+      return;
+    }
+    handleRoot();
   });
   server.begin();
 
