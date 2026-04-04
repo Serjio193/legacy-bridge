@@ -25,6 +25,7 @@
   const otaAPill = document.getElementById("otaAPill");
 
   let lastStatus = null;
+  let urlFlashInFlight = false;
   const kFwRepo = "Serjio193/legacy-bridge";
   const kFwReleaseApi = `https://api.github.com/repos/${kFwRepo}/releases/latest`;
   const kFwReleasesApi = `https://api.github.com/repos/${kFwRepo}/releases?per_page=30`;
@@ -108,6 +109,15 @@
     if (btnReset) btnReset.disabled = v;
     if (btnBoot) btnBoot.disabled = v;
     if (v && what) append(what);
+  }
+  function releaseBusyLater(ms, reason) {
+    const delay = Math.max(1000, Number(ms || 0) || 12000);
+    setTimeout(() => {
+      if (!urlFlashInFlight) {
+        setBusy(false);
+        if (reason) append(reason);
+      }
+    }, delay);
   }
   function parseAutoPackUrl() {
     try {
@@ -209,21 +219,26 @@
     setBusy(true, `${srcLabel || "ONLINE UPDATE"}: flashing package from URL...`);
     setBar(barPack, 0);
     if (statsPack) statsPack.textContent = "device downloading and flashing package...";
+    urlFlashInFlight = true;
     try {
       const r = await apiJsonWithTimeout("/api/recovery/flash/url", {
         method: "POST",
         body: JSON.stringify({ url })
       }, 240000);
+      urlFlashInFlight = false;
       if (r && r.ok) {
         setBar(barPack, 100);
         append(`${srcLabel || "online update"} OK: rebooting to system...`);
         setBusy(true, "REBOOTING... device will switch to System");
+        redirectToMainWithFallback(r, 3500);
+        releaseBusyLater(14000, "reboot not detected yet: controls re-enabled");
         return r;
       }
       append(`${srcLabel || "online update"} FAIL: ${(r && r.error) ? r.error : "unknown"}`);
       setBusy(false);
       return r || { ok: false, error: "unknown" };
     } catch (e) {
+      urlFlashInFlight = false;
       append(`${srcLabel || "online update"} FAIL: ${String((e && e.message) ? e.message : e)}`);
       setBusy(false);
       return { ok: false, error: String((e && e.message) ? e.message : e) };
@@ -401,6 +416,28 @@
     const systemValid = aValid || bValid;
     pillSet(otaAPill, systemValid ? "VALID" : "EMPTY", systemValid ? "good" : "warn");
     if (otaAInfo) otaAInfo.textContent = systemValid ? "contains valid image" : "no valid image header";
+
+    if (statsPack) {
+      const packActive = !!r.pack_active;
+      const rec = Number(r.pack_received || 0);
+      const tot = Number(r.pack_total || 0);
+      const fwW = Number(r.pack_fw_written || 0);
+      const fwT = Number(r.pack_fw_total || 0);
+      const fsW = Number(r.pack_fs_written || 0);
+      const fsT = Number(r.pack_fs_total || 0);
+      const stage = String(r.pack_stage || "");
+      if (packActive) {
+        let pct = 3;
+        if (tot > 0) pct = Math.max(1, Math.min(99, (rec / tot) * 100));
+        else if ((fwT + fsT) > 0) pct = Math.max(1, Math.min(99, ((fwW + fsW) / (fwT + fsT)) * 100));
+        setBar(barPack, pct);
+        statsPack.textContent =
+          `stage=${stage} rx ${fmtBytes(rec)}${tot > 0 ? (" / " + fmtBytes(tot)) : ""} | fw ${fmtBytes(fwW)} / ${fmtBytes(fwT)} | fs ${fmtBytes(fsW)} / ${fmtBytes(fsT)}`;
+      } else if (!urlFlashInFlight && String(statsPack.textContent || "").includes("device downloading and flashing package")) {
+        const err = String(r.pack_err || "").trim();
+        statsPack.textContent = err ? `last error: ${err}` : "idle";
+      }
+    }
   }
 
   function bindFileInfo(input, stats) {
@@ -505,6 +542,7 @@
       return;
     }
     redirectToMainWithFallback(r, 3500);
+    releaseBusyLater(12000, "boot main: no redirect detected yet, controls re-enabled");
   });
 
   if (btnGithub) btnGithub.addEventListener("click", () => {

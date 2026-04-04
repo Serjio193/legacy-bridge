@@ -106,6 +106,18 @@ enum class PackStage : uint8_t {
   DONE = 5
 };
 
+static const char *packStageName(PackStage s) {
+  switch (s) {
+    case PackStage::HDR: return "hdr";
+    case PackStage::FW_SIG: return "fw_sig";
+    case PackStage::FS_SIG: return "fs_sig";
+    case PackStage::FW_DATA: return "fw_data";
+    case PackStage::FS_DATA: return "fs_data";
+    case PackStage::DONE: return "done";
+  }
+  return "unknown";
+}
+
 struct PackFlashCtx {
   bool active = false;
   bool ok = false;
@@ -666,7 +678,7 @@ static void handleStatus() {
   bool forceRecovery = getForceRecovery();
 
   String body;
-  body.reserve(560);
+  body.reserve(840);
   body += F("{\"ok\":true");
   body += F(",\"mode\":\"recovery\"");
   body += F(",\"recovery_version\":\"");
@@ -723,6 +735,27 @@ static void handleStatus() {
   body += F("\"");
   body += F(",\"main_ap_ssid_hint\":\"");
   body += jsonEscape(mainApSsidHint());
+  body += F("\"");
+  body += F(",\"pack_active\":");
+  body += (gPackFlash.active ? "true" : "false");
+  body += F(",\"pack_ok\":");
+  body += (gPackFlash.ok ? "true" : "false");
+  body += F(",\"pack_stage\":\"");
+  body += packStageName(gPackFlash.stage);
+  body += F("\",\"pack_received\":");
+  body += String((unsigned long)gPackFlash.received);
+  body += F(",\"pack_total\":");
+  body += String((unsigned long)gPackFlash.totalExpected);
+  body += F(",\"pack_fw_written\":");
+  body += String((unsigned long)gPackFlash.fwWritten);
+  body += F(",\"pack_fw_total\":");
+  body += String((unsigned long)gPackFlash.fwSize);
+  body += F(",\"pack_fs_written\":");
+  body += String((unsigned long)gPackFlash.fsWritten);
+  body += F(",\"pack_fs_total\":");
+  body += String((unsigned long)gPackFlash.fsSize);
+  body += F(",\"pack_err\":\"");
+  body += jsonEscape(gPackFlash.err);
   body += F("\"");
 
   body += F("}");
