@@ -78,6 +78,22 @@
       return { ok: false, error: String((e && e.message) ? e.message : e) };
     }
   }
+  async function apiJsonWithTimeout(path, opts, timeoutMs) {
+    const ms = Math.max(1000, Number(timeoutMs || 0) || 120000);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      try { ctrl.abort(); } catch (_) {}
+    }, ms);
+    try {
+      const init = Object.assign({}, opts || {});
+      init.signal = ctrl.signal;
+      return await apiJson(path, init);
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) ? e.message : e) };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   function setBar(bar, pct) {
     if (!bar) return;
@@ -100,6 +116,15 @@
     } catch (_) {
       return "";
     }
+  }
+  function clearAutoPackQuery() {
+    try {
+      const u = new URL(String(window.location.href || ""));
+      if (!u.searchParams.has("autopack") && !u.searchParams.has("v")) return;
+      u.searchParams.delete("autopack");
+      u.searchParams.delete("v");
+      history.replaceState(null, "", u.pathname + (u.search ? u.search : "") + (u.hash ? u.hash : ""));
+    } catch (_) {}
   }
   function packFilenameFromUrl(url) {
     const s = String(url || "").trim();
@@ -129,6 +154,7 @@
   async function maybeRunAutoPackUpdate() {
     const packUrl = parseAutoPackUrl();
     if (!packUrl) return;
+    clearAutoPackQuery();
     append(`auto update: package url detected`);
     await flashPackFromUrl(packUrl, "AUTO UPDATE");
   }
@@ -184,10 +210,10 @@
     setBar(barPack, 0);
     if (statsPack) statsPack.textContent = "device downloading and flashing package...";
     try {
-      const r = await apiJson("/api/recovery/flash/url", {
+      const r = await apiJsonWithTimeout("/api/recovery/flash/url", {
         method: "POST",
         body: JSON.stringify({ url })
-      });
+      }, 240000);
       if (r && r.ok) {
         setBar(barPack, 100);
         append(`${srcLabel || "online update"} OK: rebooting to system...`);

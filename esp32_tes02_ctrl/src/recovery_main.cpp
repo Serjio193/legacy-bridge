@@ -1334,8 +1334,15 @@ static void handleFlashPackByUrl() {
   int remaining = http.getSize();
   uint8_t buf[1024];
   uint32_t lastDataMs = millis();
+  const uint32_t startedMs = millis();
+  const uint32_t kTotalDownloadTimeoutMs = 180000UL;
 
   while (http.connected() && (remaining > 0 || remaining == -1)) {
+    if ((millis() - startedMs) > kTotalDownloadTimeoutMs) {
+      gPackFlash.ok = false;
+      gPackFlash.err = "download timeout";
+      break;
+    }
     size_t avail = stream->available();
     if (avail > 0) {
       size_t take = avail < sizeof(buf) ? avail : sizeof(buf);
