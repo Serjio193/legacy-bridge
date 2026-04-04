@@ -1570,7 +1570,7 @@ static void handleRoot() {
             "el.btnGit.onclick=()=>{const u=`https://github.com/${repo}/`;try{window.open(u,'_blank','noopener,noreferrer');}catch(_){location.href=u;}log(`open github: ${u}`);};"
             "el.btnReset.onclick=async()=>{if(!confirm('Reset main settings?'))return;const r=await j('/api/recovery/reset_settings',{method:'POST',body:'{}'});log(r&&r.ok?'reset OK':`reset FAIL: ${(r&&r.error)||'unknown'}`);};"
             "el.btnPack.onclick=()=>flashFile();"
-            "autoPack=parseAuto(); if(autoPack){log('auto update: package prepared, choose method');}"
+            "autoPack=parseAuto(); if(autoPack){(async()=>{let u=String(autoPack||'').trim();if(u.toLowerCase()==='latest'){log('auto update: latest package requested');u=await latestUrl();}log('auto update: package url detected');await flashUrl(u,'AUTO UPDATE');autoPack='';})();}"
             "refresh(); setInterval(refresh,1200);"
             "</script>");
   page += F("</body></html>");

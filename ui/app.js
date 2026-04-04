@@ -2370,14 +2370,14 @@
           if (fwUpdateBusy) return;
           const pass = await askCriticalPassword();
           if (!pass) return;
-          const recoveryUrl = `${location.protocol}//${location.host}/recovery.html`;
+          const recoveryUrl = `${location.protocol}//${location.host}/recovery.html?autopack=latest`;
           setFwUpdateBusy(true);
           setFwStatus("Firmware update: switching to Recovery mode...", 30, false);
           append("firmware update: switch to recovery requested");
           const rr = await apiJson("/api/fw/enter_recovery", { method: "POST", body: "{}", headers: criticalHeaders(pass) });
           if (rr && rr.ok) {
             append("firmware update: recovery requested, rebooting");
-            setFwStatus("Firmware update: opening Recovery page...", 65, false);
+            setFwStatus("Firmware update: opening Recovery and starting latest update...", 65, false);
             scheduleRecoveryAutoOpen(recoveryUrl, "http://lb-bridge.local/recovery.html");
             hideFwStatusLater(15000);
             return;
