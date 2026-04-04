@@ -83,8 +83,8 @@ Legacy Bridge — это система, которая автоматическ
 
 **Поддержка**
 
-[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-ru)
+[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-ru)
 
 <details id="usdt-trc20-ru">
 <summary>USDT TRC20</summary>
@@ -160,8 +160,8 @@ Project is under active development. Core functionality works; BLE behavior and 
 
 **Support**
 
-[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-en)
+[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-en)
 
 <details id="usdt-trc20-en">
 <summary>USDT TRC20</summary>
@@ -234,8 +234,8 @@ Legacy Bridge — це модуль, який поєднує паяльні ст
 
 **Підтримка**
 
-[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26a17b?style=for-the-badge&logo=tether)](#usdt-trc20-ua)
+[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-ua)
 
 <details id="usdt-trc20-ua">
 <summary>USDT TRC20</summary>
