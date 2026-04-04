@@ -4083,7 +4083,7 @@
               ? tr("label_hotair_ip", "H310/H312 IP")
               : tr("label_hotair_ble_addr", "H310/H312 BLE MAC");
           }
-          ipEl.placeholder = wifiOn ? "192.168.1.122" : "48:31:B7:B6:2B:86";
+          ipEl.placeholder = wifiOn ? "192.168.1.122" : "";
           if (btnScan) btnScan.textContent = wifiOn
             ? tr("btn_scan_hotair", "Scan H310/H312")
             : tr("btn_scan_hotair_ble", "Scan H310/H312 BLE");
