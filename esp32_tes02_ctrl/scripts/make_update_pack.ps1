@@ -18,6 +18,8 @@ try {
   $fsBin = Join-Path $buildDir "littlefs.bin"
   $fsSig = Join-Path $buildDir "littlefs.sig"
   $packTool = Join-Path $projRoot "tools\\make_update_pack.py"
+  $pyExe = "py"
+  $pyArgs = @("-3")
 
   if ([string]::IsNullOrWhiteSpace($OutFile)) {
     $OutFile = Join-Path $buildDir "update.lbpack"
@@ -43,7 +45,14 @@ try {
   powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "sign_current_build.ps1") -Env $Env | Out-Host
   if ($LASTEXITCODE -ne 0) { throw "sign_current_build failed" }
 
-  py -3 $packTool `
+  # Prefer py launcher on Windows; fallback to python when py is unavailable.
+  & $pyExe @pyArgs -c "import sys" 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    $pyExe = "python"
+    $pyArgs = @()
+  }
+
+  & $pyExe @pyArgs $packTool `
     --firmware $fwBin `
     --firmware-sig $fwSig `
     --littlefs $fsBin `

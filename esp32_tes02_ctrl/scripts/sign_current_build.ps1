@@ -17,6 +17,8 @@ try {
   $firmwareSig = Join-Path $buildDir "firmware.sig"
   $littlefsSig = Join-Path $buildDir "littlefs.sig"
   $signTool = Join-Path $projRoot "tools\\sign_bin.py"
+  $pyExe = "python"
+  $pyArgs = @()
 
   if (!(Test-Path $privKey)) { throw "Missing key: $privKey" }
   if (!(Test-Path $pubKey)) { throw "Missing key: $pubKey" }
@@ -28,14 +30,25 @@ try {
   Write-Host "  public : $pubKey"
   Write-Host "  env    : $Env"
 
-  & py -3 $signTool sign --bin $littlefsBin --private $privKey --sig $littlefsSig
+  # Prefer the Python from PATH (used in CI by setup-python), fallback to py -3 for local Windows.
+  & $pyExe @pyArgs -c "import Crypto" 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    $pyExe = "py"
+    $pyArgs = @("-3")
+    & $pyExe @pyArgs -c "import Crypto" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+      throw "Python with pycryptodome is not available (module Crypto not found)"
+    }
+  }
+
+  & $pyExe @pyArgs $signTool sign --bin $littlefsBin --private $privKey --sig $littlefsSig
   if ($LASTEXITCODE -ne 0) { throw "sign littlefs failed" }
-  & py -3 $signTool sign --bin $firmwareBin --private $privKey --sig $firmwareSig
+  & $pyExe @pyArgs $signTool sign --bin $firmwareBin --private $privKey --sig $firmwareSig
   if ($LASTEXITCODE -ne 0) { throw "sign firmware failed" }
 
-  & py -3 $signTool verify --bin $littlefsBin --public $pubKey --sig $littlefsSig
+  & $pyExe @pyArgs $signTool verify --bin $littlefsBin --public $pubKey --sig $littlefsSig
   if ($LASTEXITCODE -ne 0) { throw "verify littlefs failed" }
-  & py -3 $signTool verify --bin $firmwareBin --public $pubKey --sig $firmwareSig
+  & $pyExe @pyArgs $signTool verify --bin $firmwareBin --public $pubKey --sig $firmwareSig
   if ($LASTEXITCODE -ne 0) { throw "verify firmware failed" }
 
   Write-Host ""
