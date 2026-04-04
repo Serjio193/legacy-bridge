@@ -83,7 +83,11 @@ Legacy Bridge — это система, которая автоматическ
 
 **Поддержка**
 
-👉 https://serjio193.github.io/legacy-bridge/support.html
+[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
+[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
+
+Подробнее: https://serjio193.github.io/legacy-bridge/support.html
 
 **Автор**
 
@@ -148,7 +152,11 @@ Project is under active development. Core functionality works; BLE behavior and 
 
 **Support**
 
-👉 https://serjio193.github.io/legacy-bridge/support.html
+[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
+[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
+
+Details: https://serjio193.github.io/legacy-bridge/support.html
 
 **Author**
 
@@ -210,7 +218,11 @@ Legacy Bridge — це модуль, який поєднує паяльні ст
 
 **Підтримка**
 
-👉 https://serjio193.github.io/legacy-bridge/support.html
+[![Support via PayPal](https://img.shields.io/badge/PayPal-Support-0070ba?style=for-the-badge&logo=paypal)](https://paypal.me/SerhiiTarnopovych)
+[![Support via Crypto](https://img.shields.io/badge/Crypto-USDT%20TRC20-26a17b?style=for-the-badge&logo=tether)](https://serjio193.github.io/legacy-bridge/support.html)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/Serjio193)
+
+Детальніше: https://serjio193.github.io/legacy-bridge/support.html
 
 **Автор**
 
