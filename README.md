@@ -1,179 +1,204 @@
 # Legacy Bridge Workspace
 
-## Legacy Bridge Overview (RU / EN / UA)
+## 🔥 Legacy Bridge (LB)
 
-**Choose language (click to expand):**
+![Тут фото: общий вид всей системы на рабочем столе — паяльная станция, вытяжка и подключённый ESP32]
 
-<details>
-<summary><b>Русский</b></summary>
+Интеллектуальный мост между паяльной станцией и дымоуловителем.  
+Автоматизация без замены оборудования.
 
-<a id="lang-ru"></a>
+## 🚀 Что это такое
 
-🔥 **Legacy Bridge (LB)**
+Дымоуловитель не включается автоматически?  
+Паяльник и фен не связаны между собой?
 
-Legacy Bridge — это система, которая автоматически управляет дымоуловителем в зависимости от работы паяльной станции и фена.
+Legacy Bridge решает эту проблему без замены оборудования.
 
-**Быстрый обзор**
+Это внешний модуль на базе ESP32, который автоматически управляет вытяжкой в зависимости от состояния паяльной станции и фена.
 
-- Автоматически включает вытяжку при работе
-- Работает с Aixun / JBC-совместимыми станциями
-- Не требует модификации станции
-- Простая установка (минимум компонентов)
-- Прошивка подписывается ключом: устройство принимает только проверенные обновления
+## 📖 История создания
 
-**История проекта**
+Я использую оборудование Aixun в работе.
 
-Я являюсь поклонником оборудования Aixun.
+После покупки дымоуловителя Aixun ES02 выяснилось, что он не работает с паяльной станцией T420D, так как в ней отсутствует Wi-Fi модуль. Также не было нормальной интеграции с феном H312.
 
-После покупки вытяжки Aixun ES02 я был разочарован тем, что она не работает с моей паяльной станцией T420D, так как в ней отсутствует WiFi модуль. На тот момент я даже не знал, что существует версия с WiFi.
+Фактически: оборудование есть, но взаимодействия между устройствами нет.
 
-Также оказалось, что вытяжка не работает и с феном H312.
-
-В итоге стало понятно, что оборудование есть, но между ним нет нормальной интеграции.
-
-Поэтому я решил создать внешний модуль управления, который сможет связать устройства между собой.
+Было принято решение реализовать внешний модуль, который объединяет устройства и добавляет автоматизацию без замены техники.
 
 Так появился Legacy Bridge.
 
-**Что делает Legacy Bridge**
+## ⚙️ Функциональность
 
-Система автоматически управляет дымоуловителем:
+- Автоматическое управление дымоуловителем
+- Реакция на состояние паяльника (SENSE)
+- Реакция на работу фена (Wi-Fi / BLE)
+- Регулировка мощности вытяжки
+- Регулировка подсветки
+- Автоматическое выключение по времени
+- Веб-интерфейс управления
 
-- Паяльник снят с подставки -> вытяжка включается
-- Паяльник возвращён в подставку -> вытяжка выключается
-- Фен (H312) нагревается -> вытяжка включается
+## 🧠 Принцип работы
 
-**Пример работы**
-
-- Паяльник снят -> вытяжка включена
-- Паяльник в подставке -> вытяжка выключена
-- Фен нагревается -> вытяжка включена
-
-**Как устроена система**
-
-Решение максимально простое:
-
-- ESP32 (модуль управления)
-- 4 провода
-- 2 резистора
-- 2 конденсатора
-
-Подключение выполняется без изменения штатной электроники станции.
-
-**Принцип работы**
-
-- Состояние паяльника определяется через линию SENSE
-- Состояние фена определяется по температуре (WiFi / BLE)
-- Логика обрабатывается на ESP32
+- Состояние паяльника определяется по линии SENSE
+- Состояние фена — по температуре
+- Логика выполняется на ESP32
 - Управление вытяжкой происходит автоматически
 
-**Поддерживаемое оборудование**
+## 🧩 Аппаратная часть
+
+- ESP32-C3 Pro Mini
+- R1, R2 — 100 кОм
+- C1, C2 — 100 нФ
+
+## 🔌 Схема подключения
+
+```text
+Signal 1 -> R1 100k -> GPIO1
+GPIO1    -> C1 100nF -> GND
+
+Signal 2 -> R2 100k -> GPIO3
+GPIO3    -> C2 100nF -> GND
+
+5V  -> ESP32 5V
+GND -> ESP32 GND
+```
+
+![Тут фото: крупный план ESP32 с припаянными проводами (GPIO1, GPIO3, 5V, GND)]
+![Тут фото: подключение к плате станции — где именно взят SENSE сигнал]
+![Тут фото: точка подключения питания 5V на плате станции]
+
+## 🔌 USB подключение
+
+ESP32 подключается по USB только для первичной прошивки.
+
+Дальнейшая работа:
+
+- обновление по Wi-Fi (OTA)
+- автономная работа без USB
+
+## 🌐 Веб-интерфейс
+
+![Тут фото: скрин веб-интерфейса (основной экран с настройками)]
+
+Интерфейс сделан так, чтобы к нему не приходилось постоянно возвращаться.
+
+### Что это даёт в работе
+
+- Меньше шума на рабочем месте
+- Вытяжка работает только тогда, когда это действительно нужно
+- Меньше потери электроэнергии
+- Нет постоянной работы “на всякий случай”
+- Автоматизация без контроля
+- Не нужно помнить включить или выключить вытяжку
+
+### Что можно контролировать
+
+`🎛 Управление`
+
+- мощность дымоуловителя
+- яркость подсветки
+
+`🧠 Логика`
+
+- задержка включения
+- задержка выключения
+- реакция на паяльник и фен
+- температурные условия
+
+`📡 Подключение`
+
+- Wi-Fi сеть
+- поиск и подключение устройств
+
+`🛠 Система`
+
+- логи
+- reboot
+- recovery
+- reset
+
+## 🚀 Live Demo
+
+📌 Демо работает в браузере и показывает интерфейс в режиме эмуляции.
+
+## 📡 Первый запуск
+
+👉 https://serjio193.github.io/legacy-bridge/
+
+Требуется Chromium-браузер (Chrome / Edge).
+
+### Данные по умолчанию
+
+- SSID: `LB-SETUP-XXXXX`
+- Пароль: `lbxxxxx!2026`
+- Логин: `admin`
+- Recovery: `LB_RECOVERY`
+
+### Генерация пароля
+
+- `XXXXX` — последние 5 символов MAC (HEX, uppercase)
+- `xxxxx` — те же символы в lowercase
+
+## 📡 Сеть
+
+После настройки:
+
+- точка доступа отключается
+- устройство работает в основной сети
+
+## 🌡 Интеграция фена
+
+Подключение:
+
+- Wi-Fi
+- Bluetooth (BLE)
+
+Вытяжка включается по температуре.
+
+## 🔐 Безопасность
+
+- Прошивка подписана приватным ключом
+- Устройство принимает только подписанные обновления
+- Boot и Recovery защищены от записи по Wi-Fi
+
+## 📦 Обновления
+
+- OTA через Wi-Fi
+- Пакет: `update.lbpack`
+- Источник: GitHub Releases
+
+## 🧪 Поддерживаемое оборудование
 
 - Aixun T420D
 - Aixun H312
 - Aixun ES02
-- JBC-совместимые станции
+- JBC-совместимые станции (частично)
 
-**Подключение SENSE**
+## 🚧 План развития
 
-- `SENSE ----[100k]---- GPIO (ESP32)`
-- GPIO в режиме `INPUT`
-- без `pull-up` / `pull-down`
+Планируется:
 
-**Статус**
+- Поддержка slave-устройств на ESP32
+- Интеграция дополнительного оборудования (Aixun, JCID и др.)
 
-Проект находится в активной разработке.
+## 👨‍🔧 Автор
 
-Основной функционал уже реализован, продолжается улучшение стабильности и поддержка BLE.
-
-**Поддержка**
-
-[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-ru)
-
-<details id="usdt-trc20-ru">
-<summary>USDT TRC20</summary>
-
-Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
-
-![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
-
-</details>
-
-Подробнее: https://serjio193.github.io/legacy-bridge/support.html
-
-**Автор**
-
-Serjio193
+Serjio193  
 Embedded developer
 
-Проект основан на реальных задачах ремонта и работы с оборудованием.
+Проект основан на практическом опыте ремонта.
 
-**Цель проекта**
+## 🎯 Цель проекта
 
-Создать простой, надёжный и практичный инструмент, который объединяет оборудование и автоматизирует рабочий процесс.
+Создать простой и надёжный инструмент, автоматизирующий рабочий процесс.
 
-</details>
-
-<details>
-<summary><b>English</b></summary>
-
-<a id="lang-en"></a>
-
-🔥 **Legacy Bridge (LB)**
-
-Legacy Bridge is a module that links soldering stations and a fume extractor, adding automation without replacing existing hardware.
-
-**Project background**
-
-I use Aixun equipment. After buying the Aixun ES02 extractor, it became clear that it did not work with my T420D (no WiFi module), and there was no proper integration with the H312 hot-air tool. I decided to modify my T420D by adding a custom control board. That is how Legacy Bridge started.
-
-**What Legacy Bridge does**
-
-- Extractor turns on when the iron is lifted from the stand
-- Extractor turns off when the iron is placed back
-- Extractor turns on by temperature when H312 is in use
-- Firmware is cryptographically signed, and the device installs only verified updates
-
-**Hardware modification**
-
-- ESP32 (control module)
-- 4 wires
-- 2 resistors
-- 2 capacitors
-
-Connection is done without changing the station’s stock electronics.
-
-**How it works**
-
-- Iron state is detected via the SENSE stand line
-- Hot-air state is detected by temperature (WiFi / BLE)
-- Logic runs on ESP32
-- Extractor is controlled automatically
-
-**Supported equipment**
-
-- Aixun T420D
-- Aixun H312
-- Aixun ES02
-- Other JBC-compatible solutions (partial)
-
-**SENSE connection**
-
-- `SENSE ----[100k]---- GPIO (ESP32)`
-- GPIO mode: `INPUT`
-- no `pull-up` / `pull-down`
-
-**Status**
-
-Project is under active development. Core functionality works; BLE behavior and optimization are still being improved.
-
-**Support**
+## ❤️ Поддержка
 
 [![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-en)
+[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20)
 
-<details id="usdt-trc20-en">
+<details id="usdt-trc20">
 <summary>USDT TRC20</summary>
 
 Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
@@ -182,200 +207,13 @@ Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
 </details>
 
-Details: https://serjio193.github.io/legacy-bridge/support.html
+## 🧨 Итог
 
-**Author**
+Legacy Bridge — это инструмент, который:
 
-Serjio193
-
-**Goal**
-
-Build a simple, reliable, and practical tool that unifies hardware and automates the workflow.
-
-</details>
-
-<details>
-<summary><b>Українська</b></summary>
-
-<a id="lang-ua"></a>
-
-🔥 **Legacy Bridge (LB)**
-
-Legacy Bridge — це модуль, який поєднує паяльні станції та димовловлювач, додаючи автоматизацію без заміни обладнання.
-
-**Історія створення**
-
-Я використовую обладнання Aixun. Після покупки витяжки Aixun ES02 стало зрозуміло, що вона не працює з T420D без WiFi, а також немає нормальної інтеграції з феном H312. Тому я модифікував T420D, додавши власну плату керування. Так з’явився Legacy Bridge.
-
-**Що робить Legacy Bridge**
-
-- При знятті паяльника з підставки витяжка вмикається
-- При поверненні паяльника в підставку витяжка вимикається
-- Під час роботи H312 витяжка вмикається за температурою
-- Прошивка підписується ключем: пристрій приймає лише перевірені оновлення
-
-**Модифікація**
-
-- ESP32 (модуль керування)
-- 4 дроти
-- 2 резистори
-- 2 конденсатори
-
-Підключення виконується без зміни штатної електроніки станції.
-
-**Як це працює**
-
-- Стан паяльника визначається через лінію SENSE (підставка)
-- Стан фена визначається за температурою (WiFi / BLE)
-- Логіка працює на ESP32
-- Керування витяжкою виконується автоматично
-
-**Підтримуване обладнання**
-
-- Aixun T420D
-- Aixun H312
-- Aixun ES02
-- Інші JBC-сумісні рішення (частково)
-
-**Підключення SENSE**
-
-- `SENSE ----[100k]---- GPIO (ESP32)`
-- GPIO у режимі `INPUT`
-- без `pull-up` / `pull-down`
-
-**Статус**
-
-Проєкт у активній розробці. Основний функціонал працює, триває доопрацювання BLE та оптимізація.
-
-**Підтримка**
-
-[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20-ua)
-
-<details id="usdt-trc20-ua">
-<summary>USDT TRC20</summary>
-
-Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
-
-![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
-
-</details>
-
-Детальніше: https://serjio193.github.io/legacy-bridge/support.html
-
-**Автор**
-
-Serjio193
-
-**Мета**
-
-Зробити простий, надійний і практичний інструмент для об’єднання обладнання та автоматизації робочого процесу.
-
-</details>
-
-## First start / Первий запуск / Перший запуск
-
-<details>
-<summary><b>Русский</b></summary>
-
-### Первый запуск (новый/чистый ESP32-C3)
-
-- Для первой прошивки чистого устройства по USB используйте онлайн-прошивальщик:
-  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
-- Прямая ссылка:
-  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
-- Рекомендуемый браузер: Chrome/Edge (нужен WebSerial).
-
-### Стандартный Wi-Fi и доступ к админке
-
-- `SSID`: `LB-SETUP-XXXXX`
-- `Пароль`: `lbxxxxx!2026`
-- `Логин веб-интерфейса`: `admin`
-- `Recovery AP`: `LB_RECOVERY` (без пароля)
-
-<details>
-<summary>Как вычислить пароль и восстановить доступ</summary>
-
-- `XXXXX` = последние 5 HEX-символов MAC устройства в верхнем регистре (пример: `BB9E4`).
-- `xxxxx` = те же 5 символов в нижнем регистре (пример: `bb9e4`).
-- Итоговый пароль по умолчанию: `lbxxxxx!2026` (пример: `lbbb9e4!2026`).
-
-Если логин/пароль изменены и утеряны:
-1. Перейдите в Recovery mode.
-2. Нажмите `Reset Main Settings`.
-3. Перезагрузитесь в основную прошивку.
-4. Значения по умолчанию восстановятся.
-
-</details>
-</details>
-
-<details>
-<summary><b>English</b></summary>
-
-### First start (new/blank ESP32-C3)
-
-- For first-time flashing of a blank device over USB, use the online flasher page:
-  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
-- Direct link:
-  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
-- Recommended browser: Chrome/Edge (WebSerial required).
-
-### Default Wi-Fi and admin access
-
-- `SSID`: `LB-SETUP-XXXXX`
-- `Password`: `lbxxxxx!2026`
-- `Web login`: `admin`
-- `Recovery AP`: `LB_RECOVERY` (no password)
-
-<details>
-<summary>How to calculate password and recover access</summary>
-
-- `XXXXX` = last 5 HEX chars of device MAC in uppercase (example: `BB9E4`).
-- `xxxxx` = same suffix in lowercase (example: `bb9e4`).
-- So default password is `lbxxxxx!2026` (example: `lbbb9e4!2026`).
-
-If credentials were changed and lost:
-1. Enter Recovery mode.
-2. Press `Reset Main Settings`.
-3. Reboot to main firmware.
-4. Defaults above are restored.
-
-</details>
-</details>
-
-<details>
-<summary><b>Українська</b></summary>
-
-### Перший запуск (новий/чистий ESP32-C3)
-
-- Для першого прошивання чистого пристрою через USB використовуйте онлайн-прошивальник:
-  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
-- Пряме посилання:
-  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
-- Рекомендований браузер: Chrome/Edge (потрібен WebSerial).
-
-### Стандартний Wi-Fi і доступ до адмінки
-
-- `SSID`: `LB-SETUP-XXXXX`
-- `Пароль`: `lbxxxxx!2026`
-- `Логін веб-інтерфейсу`: `admin`
-- `Recovery AP`: `LB_RECOVERY` (без пароля)
-
-<details>
-<summary>Як обчислити пароль і відновити доступ</summary>
-
-- `XXXXX` = останні 5 HEX-символів MAC пристрою у верхньому регістрі (приклад: `BB9E4`).
-- `xxxxx` = ті самі 5 символів у нижньому регістрі (приклад: `bb9e4`).
-- Підсумковий пароль за замовчуванням: `lbxxxxx!2026` (приклад: `lbbb9e4!2026`).
-
-Якщо логін/пароль змінено і втрачено:
-1. Перейдіть у Recovery mode.
-2. Натисніть `Reset Main Settings`.
-3. Перезавантажтеся в основну прошивку.
-4. Значення за замовчуванням буде відновлено.
-
-</details>
-</details>
+- убирает ручное управление вытяжкой
+- объединяет оборудование
+- делает рабочее место предсказуемым и удобным
 
 ## Structure
 
