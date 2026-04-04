@@ -273,7 +273,46 @@ Serjio193
 
 </details>
 
-## First start (new/blank ESP32-C3)
+## First start / Первий запуск / Перший запуск
+
+<details>
+<summary><b>Русский</b></summary>
+
+### Первый запуск (новый/чистый ESP32-C3)
+
+- Для первой прошивки чистого устройства по USB используйте онлайн-прошивальщик:
+  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
+- Прямая ссылка:
+  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
+- Рекомендуемый браузер: Chrome/Edge (нужен WebSerial).
+
+### Стандартный Wi-Fi и доступ к админке
+
+- `SSID`: `LB-SETUP-XXXXX`
+- `Пароль`: `lbxxxxx!2026`
+- `Логин веб-интерфейса`: `admin`
+- `Recovery AP`: `LB_RECOVERY` (без пароля)
+
+<details>
+<summary>Как вычислить пароль и восстановить доступ</summary>
+
+- `XXXXX` = последние 5 HEX-символов MAC устройства в верхнем регистре (пример: `BB9E4`).
+- `xxxxx` = те же 5 символов в нижнем регистре (пример: `bb9e4`).
+- Итоговый пароль по умолчанию: `lbxxxxx!2026` (пример: `lbbb9e4!2026`).
+
+Если логин/пароль изменены и утеряны:
+1. Перейдите в Recovery mode.
+2. Нажмите `Reset Main Settings`.
+3. Перезагрузитесь в основную прошивку.
+4. Значения по умолчанию восстановятся.
+
+</details>
+</details>
+
+<details>
+<summary><b>English</b></summary>
+
+### First start (new/blank ESP32-C3)
 
 - For first-time flashing of a blank device over USB, use the online flasher page:
   - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
@@ -281,7 +320,7 @@ Serjio193
   - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
 - Recommended browser: Chrome/Edge (WebSerial required).
 
-## Default Wi-Fi and admin access
+### Default Wi-Fi and admin access
 
 - `SSID`: `LB-SETUP-XXXXX`
 - `Password`: `lbxxxxx!2026`
@@ -301,6 +340,41 @@ If credentials were changed and lost:
 3. Reboot to main firmware.
 4. Defaults above are restored.
 
+</details>
+</details>
+
+<details>
+<summary><b>Українська</b></summary>
+
+### Перший запуск (новий/чистий ESP32-C3)
+
+- Для першого прошивання чистого пристрою через USB використовуйте онлайн-прошивальник:
+  - [![Open Online USB Flasher](https://img.shields.io/badge/Open%20Online%20USB%20Flasher-2ea44f?style=for-the-badge)](https://serjio193.github.io/legacy-bridge/)
+- Пряме посилання:
+  - [https://serjio193.github.io/legacy-bridge/](https://serjio193.github.io/legacy-bridge/)
+- Рекомендований браузер: Chrome/Edge (потрібен WebSerial).
+
+### Стандартний Wi-Fi і доступ до адмінки
+
+- `SSID`: `LB-SETUP-XXXXX`
+- `Пароль`: `lbxxxxx!2026`
+- `Логін веб-інтерфейсу`: `admin`
+- `Recovery AP`: `LB_RECOVERY` (без пароля)
+
+<details>
+<summary>Як обчислити пароль і відновити доступ</summary>
+
+- `XXXXX` = останні 5 HEX-символів MAC пристрою у верхньому регістрі (приклад: `BB9E4`).
+- `xxxxx` = ті самі 5 символів у нижньому регістрі (приклад: `bb9e4`).
+- Підсумковий пароль за замовчуванням: `lbxxxxx!2026` (приклад: `lbbb9e4!2026`).
+
+Якщо логін/пароль змінено і втрачено:
+1. Перейдіть у Recovery mode.
+2. Натисніть `Reset Main Settings`.
+3. Перезавантажтеся в основну прошивку.
+4. Значення за замовчуванням буде відновлено.
+
+</details>
 </details>
 
 ## Structure
