@@ -2140,7 +2140,7 @@
             const tag = normalizeFwTag(version);
             const mirrorPackUrl = String(mirrorMap[tag] || buildMirrorPackUrl(version)).trim();
             const fallbackPackUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
-            const packUrl = mirrorPackUrl || fallbackPackUrl;
+            const packUrl = fallbackPackUrl || mirrorPackUrl;
             const pageUrl = String(j && j.html_url ? j.html_url : "").trim();
             const cmp = compareFwVersions(version, fwVersionCurrent);
             fwReleaseMeta = {
@@ -2185,7 +2185,7 @@
             const tag = normalizeFwTag(version);
             const mirrorPackUrl = String(mirrorMap[tag] || buildMirrorPackUrl(version)).trim();
             const fallbackPackUrl = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
-            const packUrl = mirrorPackUrl || fallbackPackUrl;
+            const packUrl = fallbackPackUrl || mirrorPackUrl;
             if (!version || !packUrl) return;
             out.push({
               version,

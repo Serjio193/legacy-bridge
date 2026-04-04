@@ -25,8 +25,10 @@
   const otaAPill = document.getElementById("otaAPill");
 
   let lastStatus = null;
-  const kMirrorBase = "https://serjio193.github.io/legacy-bridge/";
-  const kMirrorIndex = `${kMirrorBase}releases/index.json`;
+  const kFwRepo = "Serjio193/legacy-bridge";
+  const kFwReleaseApi = `https://api.github.com/repos/${kFwRepo}/releases/latest`;
+  const kFwReleasesApi = `https://api.github.com/repos/${kFwRepo}/releases?per_page=30`;
+  const kFwLatestDirect = `https://github.com/${kFwRepo}/releases/latest/download/update.lbpack`;
 
   function ts() {
     const d = new Date();
@@ -130,34 +132,43 @@
     append(`auto update: package url detected`);
     await flashPackFromUrl(packUrl, "AUTO UPDATE");
   }
+  function pickLbpackAsset(release) {
+    const assets = Array.isArray(release && release.assets) ? release.assets : [];
+    if (!assets.length) return null;
+    const exact = assets.find((a) => String((a && a.name) || "").toLowerCase() === "update.lbpack");
+    if (exact && exact.browser_download_url) return exact;
+    const anyPack = assets.find((a) => String((a && a.name) || "").toLowerCase().endsWith(".lbpack"));
+    if (anyPack && anyPack.browser_download_url) return anyPack;
+    return null;
+  }
   async function fetchLatestPackUrl() {
-    const r = await fetch(kMirrorIndex, { cache: "no-store" });
-    if (!r || !r.ok) throw new Error(`latest index failed: ${r ? r.status : "fetch"}`);
-    const arr = await r.json();
-    const src = Array.isArray(arr) ? arr : [];
-    for (const item of src) {
-      const assets = (item && item.assets && typeof item.assets === "object") ? item.assets : null;
-      const rel = String(assets && assets["update.lbpack"] ? assets["update.lbpack"] : "").trim();
-      if (!rel) continue;
-      return new URL(rel, kMirrorBase).href;
-    }
-    throw new Error("no update.lbpack in mirror index");
+    try {
+      const r = await fetch(kFwReleaseApi, { cache: "no-store" });
+      if (r && r.ok) {
+        const rel = await r.json();
+        const asset = pickLbpackAsset(rel);
+        const url = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+        if (url) return url;
+      }
+    } catch (_) {}
+    return kFwLatestDirect;
   }
   async function fetchPackList() {
-    const r = await fetch(kMirrorIndex, { cache: "no-store" });
-    if (!r || !r.ok) throw new Error(`release index failed: ${r ? r.status : "fetch"}`);
+    const r = await fetch(kFwReleasesApi, { cache: "no-store" });
+    if (!r || !r.ok) throw new Error(`github ${r ? r.status : "fetch failed"}`);
     const arr = await r.json();
     const src = Array.isArray(arr) ? arr : [];
     const out = [];
     src.forEach((item) => {
-      const tag = String(item && item.tag_name ? item.tag_name : "").trim();
-      const assets = (item && item.assets && typeof item.assets === "object") ? item.assets : null;
-      const rel = String(assets && assets["update.lbpack"] ? assets["update.lbpack"] : "").trim();
-      if (!tag || !rel) return;
+      if (!item || item.draft) return;
+      const tag = String((item && item.tag_name) || "").trim();
+      const asset = pickLbpackAsset(item);
+      const url = String(asset && asset.browser_download_url ? asset.browser_download_url : "").trim();
+      if (!tag || !url) return;
       out.push({
         tag,
         prerelease: !!(item && item.prerelease),
-        url: new URL(rel, kMirrorBase).href
+        url
       });
     });
     return out;
