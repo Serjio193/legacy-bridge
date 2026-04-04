@@ -1163,8 +1163,8 @@
       animation: toggleLatch .22s ease-out;
     }
     .footerSupportBtn{position:relative;}
-    .supportIcon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;}
-    .supportIcon svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;}
+    .supportIcon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:rgba(255,210,120,.98);}
+    .supportIcon svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
     .supportQuickPanel{
       position:absolute;
       top:100%;
@@ -1192,14 +1192,35 @@
       color:rgba(231,238,247,.96);
       background:rgba(7,12,18,.82);
       cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+    }
+    .supportBadgeIcon{
+      width:14px;
+      height:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 auto;
+    }
+    .supportBadgeIcon svg{
+      width:14px;
+      height:14px;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linejoin:round;
+      stroke-linecap:round;
     }
     .supportBadgePaypal{
       border-color:rgba(0,112,186,.55);
       background:linear-gradient(180deg, rgba(0,112,186,.30), rgba(0,112,186,.10));
+      color:rgba(185,227,255,.98);
     }
     .supportBadgeUsdt{
       border-color:rgba(38,161,123,.55);
       background:linear-gradient(180deg, rgba(38,161,123,.30), rgba(38,161,123,.10));
+      color:rgba(180,255,220,.98);
     }
     .supportUsdtBox{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);}
     .supportUsdtLine{font-size:12px;color:rgba(231,238,247,.9);word-break:break-all;text-align:left;}
