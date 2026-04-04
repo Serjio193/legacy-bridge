@@ -1900,29 +1900,65 @@
       }
       function scheduleRecoveryAutoOpen(primaryUrl, fallbackUrl) {
         const primaryDefault = String(primaryUrl || `${location.protocol}//${location.host}/recovery.html`);
-        const fallback = String(fallbackUrl || "http://lb-bridge.local/recovery.html");
-        let primaryResolved = primaryDefault;
-        function nav(url) {
+        const fallbackDefault = String(fallbackUrl || "http://lb-bridge.local/recovery.html");
+        const mkRecoveryUrl = (host) => `http://${host}/recovery.html`;
+        const hostFromUrl = (u) => {
+          try { return String(new URL(String(u || "")).hostname || "").trim(); } catch (_) { return ""; }
+        };
+        const isIp = (h) => /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(h || ""));
+        const uniq = (arr) => {
+          const out = [];
+          const seen = new Set();
+          (arr || []).forEach((u) => {
+            const s = String(u || "").trim();
+            if (!s || seen.has(s)) return;
+            seen.add(s);
+            out.push(s);
+          });
+          return out;
+        };
+        const nav = (url) => {
           try { window.location.assign(url); } catch (_) {
             try { window.location.href = url; } catch (_) {}
           }
-        }
-        async function resolvePrimaryMdns() {
+        };
+        const buildCandidates = async () => {
+          const candidates = [];
+          let statusIp = "";
+          let statusMdnsHost = "";
           try {
             const r = await fetch("/api/status", { method: "GET", credentials: "same-origin", cache: "no-store" });
-            if (!r || !r.ok) return;
-            const j = await r.json();
-            const mdnsHost = String((j && j.mdns_host) ? j.mdns_host : "").trim();
-            if (!mdnsHost) return;
-            const mdnsUrl = `http://${mdnsHost}/recovery.html`;
-            primaryResolved = mdnsUrl;
+            if (r && r.ok) {
+              const j = await r.json();
+              statusIp = String((j && j.ip) ? j.ip : "").trim();
+              statusMdnsHost = String((j && j.mdns_host) ? j.mdns_host : "").trim();
+            }
           } catch (_) {}
-        }
-        resolvePrimaryMdns().finally(() => {
-          // Device reboots to recovery; avoid opening too early.
-          setTimeout(() => { nav(primaryResolved); }, 8000);
-          setTimeout(() => { nav(primaryResolved); }, 14000);
-          setTimeout(() => { nav(fallback); }, 22000);
+          if (statusIp && isIp(statusIp)) candidates.push(mkRecoveryUrl(statusIp));
+          const curHost = String(location.hostname || "").trim();
+          if (curHost && isIp(curHost)) candidates.push(mkRecoveryUrl(curHost));
+          if (statusMdnsHost) candidates.push(mkRecoveryUrl(statusMdnsHost));
+          if (primaryDefault) candidates.push(primaryDefault);
+          if (curHost && !isIp(curHost)) candidates.push(mkRecoveryUrl(curHost));
+          const fallbackHost = hostFromUrl(fallbackDefault);
+          if (fallbackHost) candidates.push(mkRecoveryUrl(fallbackHost));
+          candidates.push("http://192.168.4.1/recovery.html");
+          return uniq(candidates);
+        };
+        buildCandidates().then((candidates) => {
+          if (!candidates.length) {
+            nav(primaryDefault);
+            return;
+          }
+          // Device reboots to recovery; try several hosts sequentially.
+          const steps = [8000, 14000, 22000, 30000, 38000];
+          for (let i = 0; i < steps.length; i++) {
+            const target = candidates[Math.min(i, candidates.length - 1)];
+            setTimeout(() => nav(target), steps[i]);
+          }
+        }).catch(() => {
+          setTimeout(() => nav(primaryDefault), 8000);
+          setTimeout(() => nav(fallbackDefault), 18000);
         });
       }
       function extractFwVersion(raw) {
