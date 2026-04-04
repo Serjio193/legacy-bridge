@@ -1125,7 +1125,7 @@
 
     .log{border-radius:12px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.24);padding:12px;font-family:var(--mono);font-size:11px;line-height:1.45;color:rgba(231,238,247,.88);max-height:300px;overflow:auto;white-space:pre;}
 
-    .footerNote{margin-top:14px;color:rgba(159,176,196,.72);font-size:12px;text-align:center;letter-spacing:.25px;}
+    .footerNote{margin-top:14px;color:rgba(159,176,196,.72);font-size:12px;text-align:center;letter-spacing:.25px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;position:relative;}
     .footerLink{
       display:inline-flex;
       align-items:center;
@@ -1161,6 +1161,57 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 0 0 2px rgba(var(--cyan-ui-rgb),.26), 0 0 22px rgba(var(--cyan-ui-rgb),.24), 0 10px 22px rgba(var(--cyan-ui-rgb),.18);
       filter: saturate(1.14) contrast(1.04);
       animation: toggleLatch .22s ease-out;
+    }
+    .footerSupportBtn{position:relative;}
+    .supportIcon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;}
+    .supportIcon svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;}
+    .supportQuickPanel{
+      position:absolute;
+      top:100%;
+      margin-top:8px;
+      left:50%;
+      transform:translateX(-50%);
+      min-width:280px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(180deg, rgba(9,14,22,.96), rgba(6,10,16,.92));
+      box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.35) inset;
+      padding:10px;
+      z-index:30;
+    }
+    .supportQuickPanel.hidden{display:none;}
+    .supportQuickRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+    .supportBadge{
+      border-radius:999px;
+      padding:8px 12px;
+      font-family:var(--mono);
+      font-size:12px;
+      letter-spacing:.25px;
+      border:1px solid rgba(255,255,255,.16);
+      text-decoration:none;
+      color:rgba(231,238,247,.96);
+      background:rgba(7,12,18,.82);
+      cursor:pointer;
+    }
+    .supportBadgePaypal{
+      border-color:rgba(0,112,186,.55);
+      background:linear-gradient(180deg, rgba(0,112,186,.30), rgba(0,112,186,.10));
+    }
+    .supportBadgeUsdt{
+      border-color:rgba(38,161,123,.55);
+      background:linear-gradient(180deg, rgba(38,161,123,.30), rgba(38,161,123,.10));
+    }
+    .supportUsdtBox{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);}
+    .supportUsdtLine{font-size:12px;color:rgba(231,238,247,.9);word-break:break-all;text-align:left;}
+    .supportMiniBtn{
+      border-radius:10px;
+      border:1px solid rgba(var(--cyan-ui-rgb),.32);
+      background:linear-gradient(180deg, rgba(var(--cyan-ui-rgb),.18), rgba(var(--cyan-ui-rgb),.06));
+      color:rgba(231,238,247,.96);
+      padding:7px 10px;
+      font-size:12px;
+      cursor:pointer;
+      margin-top:8px;
     }
 
     .seg{

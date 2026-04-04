@@ -307,6 +307,11 @@
           fw_current: "Current FW",
           fw_server: "Server FW",
           footer_github: "Visit GitHub",
+          footer_support: "Support Project",
+          tooltip_support: "If this project helps you, you can support it",
+          label_wallet: "Wallet",
+          btn_copy_wallet: "Copy Wallet",
+          btn_copied: "Copied",
           section_fw_map: "Firmware Partition Map",
           pill_service: "Service",
           hint_fw_map: "Shows bootloader, OTA slots, NVS and recovery readiness.",
@@ -621,6 +626,11 @@
           fw_current: "Текущее ПО",
           fw_server: "ПО на сервере",
           footer_github: "Посетить GitHub",
+          footer_support: "Поддержать проект",
+          tooltip_support: "Если проект оказался полезным — можно поддержать",
+          label_wallet: "Кошелек",
+          btn_copy_wallet: "Скопировать кошелек",
+          btn_copied: "Скопировано",
           section_fw_map: "Карта разделов прошивки",
           pill_service: "Сервис",
           hint_fw_map: "Показывает bootloader, OTA слоты, NVS и готовность Recovery.",
@@ -935,6 +945,11 @@
           fw_current: "Поточне ПЗ",
           fw_server: "ПЗ на сервері",
           footer_github: "Відвідати GitHub",
+          footer_support: "Підтримати проєкт",
+          tooltip_support: "Якщо проєкт був корисним — його можна підтримати",
+          label_wallet: "Гаманець",
+          btn_copy_wallet: "Скопіювати гаманець",
+          btn_copied: "Скопійовано",
           section_fw_map: "Карта розділів прошивки",
           pill_service: "Сервіс",
           hint_fw_map: "Показує bootloader, OTA слоти, NVS та готовність Recovery.",
@@ -965,6 +980,11 @@
           const key = el.getAttribute("data-i18n-value");
           const v = pack[key];
           if (typeof v === "string") el.value = v;
+        });
+        document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+          const key = el.getAttribute("data-i18n-title");
+          const v = pack[key];
+          if (typeof v === "string") el.setAttribute("title", v);
         });
         renderFormatted(pack);
       }
@@ -6192,6 +6212,60 @@
           });
         }
       }
+      function initFooterSupport() {
+        const btnSupport = document.getElementById("btnSupportProject");
+        const panel = document.getElementById("supportQuickPanel");
+        const btnUsdt = document.getElementById("supportUsdtBtn");
+        const boxUsdt = document.getElementById("supportUsdtBox");
+        const btnCopy = document.getElementById("supportUsdtCopy");
+        const walletEl = document.getElementById("supportUsdtWallet");
+        if (!btnSupport || !panel) return;
+        function setOpen(on) {
+          panel.classList.toggle("hidden", !on);
+          if (!on && boxUsdt) boxUsdt.classList.add("hidden");
+        }
+        btnSupport.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          setOpen(panel.classList.contains("hidden"));
+        });
+        if (btnUsdt && boxUsdt) {
+          btnUsdt.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            boxUsdt.classList.toggle("hidden");
+          });
+        }
+        if (btnCopy && walletEl) {
+          btnCopy.addEventListener("click", async (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const wallet = String(walletEl.textContent || "").trim();
+            if (!wallet) return;
+            try {
+              await navigator.clipboard.writeText(wallet);
+              btnCopy.textContent = tr("btn_copied", "Copied");
+              setTimeout(() => { btnCopy.textContent = tr("btn_copy_wallet", "Copy Wallet"); }, 1200);
+            } catch (_) {
+              const ta = document.createElement("textarea");
+              ta.value = wallet;
+              ta.style.position = "fixed";
+              ta.style.left = "-9999px";
+              document.body.appendChild(ta);
+              ta.select();
+              try { document.execCommand("copy"); } catch (_) {}
+              ta.remove();
+            }
+          });
+        }
+        document.addEventListener("click", (ev) => {
+          if (!panel || panel.classList.contains("hidden")) return;
+          const t = ev && ev.target;
+          if (t === btnSupport || (btnSupport && btnSupport.contains(t))) return;
+          if (panel.contains(t)) return;
+          setOpen(false);
+        });
+      }
       sel.value = initial;
       initWaveClothBackground();
       initNames(i18n[initial] || i18n.en);
@@ -6212,6 +6286,7 @@
       initApplyDiag();
       initFirmwarePartitionMap();
       initPresenceDemo();
+      initFooterSupport();
       initPremiumRanges(document);
       bindMomentaryPressed(document.getElementById("githubLink"), 220);
       sel.addEventListener("change", () => applyLang(normalizeLang(sel.value)));

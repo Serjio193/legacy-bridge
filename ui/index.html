@@ -549,9 +549,29 @@
     </div>
 
     <div class="footerNote">
+      <button class="footerLink footerSupportBtn" id="btnSupportProject" type="button" data-i18n="footer_support" data-i18n-title="tooltip_support" title="If this project helps you, you can support it" aria-label="Support project">
+        <span class="supportIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3l2.5 5.1L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5.9-5.6L4 9l5.5-.9L12 3z" />
+          </svg>
+        </span>
+        <span data-i18n="footer_support">Support Project</span>
+      </button>
       <a class="footerLink" id="githubLink" href="https://github.com/Serjio193/legacy-bridge/" target="_blank" rel="noopener noreferrer">
         <span data-i18n="footer_github">Visit GitHub</span>
       </a>
+      <div id="supportQuickPanel" class="supportQuickPanel hidden">
+        <div class="supportQuickRow">
+          <a id="supportPaypalLink" class="supportBadge supportBadgePaypal" href="https://paypal.me/SerhiiTarnopovych" target="_blank" rel="noopener noreferrer">PayPal</a>
+          <button id="supportUsdtBtn" type="button" class="supportBadge supportBadgeUsdt">USDT TRC20</button>
+        </div>
+        <div id="supportUsdtBox" class="supportUsdtBox hidden">
+          <div class="supportUsdtLine"><span data-i18n="label_wallet">Wallet</span>: <code id="supportUsdtWallet">TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL</code></div>
+          <div class="supportQuickRow">
+            <button id="supportUsdtCopy" type="button" class="supportMiniBtn" data-i18n="btn_copy_wallet">Copy Wallet</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div id="apSwitchNotice" class="apSwitchNotice hidden" role="status" aria-live="assertive">
