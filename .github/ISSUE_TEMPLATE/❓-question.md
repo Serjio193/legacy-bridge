@@ -1,9 +1,9 @@
 ---
 name: "❓ Question"
-about: Describe this issue template's purpose here.
+about: Ask a question about setup, wiring, or behavior of Legacy Bridge
 title: ''
 labels: ''
-assignees: ''
+assignees: Serjio193
 
 ---
 
