@@ -2,7 +2,12 @@
 
 ## Legacy Bridge Overview (RU / EN / UA)
 
-### RU
+**Choose language:** [Русский](#lang-ru) | [English](#lang-en) | [Українська](#lang-ua)
+
+<details open>
+<summary><b>Русский</b></summary>
+
+<a id="lang-ru"></a>
 
 🔥 **Legacy Bridge (LB)**
 
@@ -108,7 +113,12 @@ Embedded developer
 
 Создать простой, надёжный и практичный инструмент, который объединяет оборудование и автоматизирует рабочий процесс.
 
-### EN
+</details>
+
+<details>
+<summary><b>English</b></summary>
+
+<a id="lang-en"></a>
 
 🔥 **Legacy Bridge (LB)**
 
@@ -182,7 +192,12 @@ Serjio193
 
 Build a simple, reliable, and practical tool that unifies hardware and automates the workflow.
 
-### UA
+</details>
+
+<details>
+<summary><b>Українська</b></summary>
+
+<a id="lang-ua"></a>
 
 🔥 **Legacy Bridge (LB)**
 
@@ -255,6 +270,8 @@ Serjio193
 **Мета**
 
 Зробити простий, надійний і практичний інструмент для об’єднання обладнання та автоматизації робочого процесу.
+
+</details>
 
 ## First start (new/blank ESP32-C3)
 
