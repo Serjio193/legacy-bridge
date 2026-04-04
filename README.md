@@ -2,6 +2,8 @@
 
 ## 🌐 Language / Язык / Мова
 
+Открой нужный язык в блоках ниже.
+
 <details open>
 <summary><b>Русский</b></summary>
 
@@ -195,7 +197,7 @@ Embedded developer
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="#usdt-trc20">
+<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
@@ -326,7 +328,7 @@ Create a simple and reliable tool that automates workflow without replacing exis
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="#usdt-trc20">
+<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
@@ -457,18 +459,9 @@ Serjio193, embedded developer.
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="#usdt-trc20">
+<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
-
-</details>
-
-<details id="usdt-trc20">
-<summary><b>USDT TRC20</b></summary>
-
-Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
-
-![USDT TRC20 QR](assets/support/usdt-trc20-qr.jpg)
 
 </details>
 
