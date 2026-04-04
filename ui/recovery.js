@@ -272,28 +272,18 @@
   }
   function buildMainBootTargets(status, bootRsp) {
     const out = [];
-    const proto = String(location.protocol || "http:");
-    const host = String(location.hostname || "").trim();
-    const ipFromStatus = String(status && status.ip ? status.ip : "").trim();
     const ipFromBootRsp = String(bootRsp && bootRsp.next_url ? bootRsp.next_url : "").trim();
-
-    if (ipFromStatus && hostLooksIpv4(ipFromStatus) && ipFromStatus !== "192.168.4.1") {
-      pushUnique(out, `${proto}//${ipFromStatus}/`);
-    }
-    if (hostLooksIpv4(host) && host !== "192.168.4.1") {
-      pushUnique(out, `${proto}//${host}/`);
-    }
     if (ipFromBootRsp) pushUnique(out, ipFromBootRsp);
 
     const mdns = mdnsFromApHint(status && status.main_ap_ssid_hint);
     if (mdns) pushUnique(out, mdns);
 
-    pushUnique(out, "http://192.168.4.1/");
+    pushUnique(out, "http://lb-bridge.local/");
     return out;
   }
   function redirectToMainWithFallback(bootRsp, initialDelayMs) {
     const targets = buildMainBootTargets(lastStatus, bootRsp);
-    const nextUrl = targets[0] || "http://192.168.4.1/";
+    const nextUrl = targets[0] || "http://lb-bridge.local/";
     const mdns = targets.find((u) => u.indexOf(".local/") > 0) || "";
     const apHint = String((lastStatus && lastStatus.main_ap_ssid_hint) ? lastStatus.main_ap_ssid_hint : "LB-SETUP-xxxxx");
     if (mdns) append(`boot main: reconnect to ${apHint}, open ${nextUrl} (mDNS fallback: ${mdns})`);
@@ -304,7 +294,7 @@
     if (targets.length > 1) {
       setTimeout(() => { try { window.location.href = targets[1]; } catch (_) {} }, delay0 + 6000);
     }
-    setTimeout(() => { try { window.location.href = "http://192.168.4.1/"; } catch (_) {} }, delay0 + 12000);
+    setTimeout(() => { try { window.location.href = "http://lb-bridge.local/"; } catch (_) {} }, delay0 + 12000);
   }
   function closeFwMenu() {
     if (fwMenuModal) fwMenuModal.classList.add("hidden");

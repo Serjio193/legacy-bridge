@@ -1899,60 +1899,31 @@
         });
       }
       function scheduleRecoveryAutoOpen(primaryUrl, fallbackUrl) {
-        const primary = String(primaryUrl || `${location.protocol}//${location.host}/recovery.html`);
-        const fallback = String(fallbackUrl || "http://192.168.4.1/recovery.html");
-        const startedAt = Date.now();
-        const maxWaitMs = 45000;
-        const probeGapMs = 1200;
-        let done = false;
-        let seenOffline = false;
+        const primaryDefault = String(primaryUrl || `${location.protocol}//${location.host}/recovery.html`);
+        const fallback = String(fallbackUrl || "http://lb-bridge.local/recovery.html");
+        let primaryResolved = primaryDefault;
         function nav(url) {
           try { window.location.assign(url); } catch (_) {
             try { window.location.href = url; } catch (_) {}
           }
         }
-        async function probeOnce() {
-          let ctrl = null;
-          let timer = 0;
+        async function resolvePrimaryMdns() {
           try {
-            if (typeof AbortController !== "undefined") {
-              ctrl = new AbortController();
-              timer = setTimeout(() => {
-                try { ctrl.abort(); } catch (_) {}
-              }, 1100);
-            }
-            const r = await fetch("/api/status", {
-              method: "GET",
-              credentials: "same-origin",
-              cache: "no-store",
-              signal: ctrl ? ctrl.signal : undefined
-            });
-            if (!r) return false;
-            const elapsed = Date.now() - startedAt;
-            return !!(seenOffline || elapsed > 10000 || (r.status >= 200 && r.status < 500));
-          } catch (_) {
-            seenOffline = true;
-            return false;
-          } finally {
-            if (timer) clearTimeout(timer);
-          }
+            const r = await fetch("/api/status", { method: "GET", credentials: "same-origin", cache: "no-store" });
+            if (!r || !r.ok) return;
+            const j = await r.json();
+            const mdnsHost = String((j && j.mdns_host) ? j.mdns_host : "").trim();
+            if (!mdnsHost) return;
+            const mdnsUrl = `http://${mdnsHost}/recovery.html`;
+            primaryResolved = mdnsUrl;
+          } catch (_) {}
         }
-        async function tick() {
-          if (done) return;
-          if ((Date.now() - startedAt) >= maxWaitMs) {
-            done = true;
-            nav(fallback);
-            return;
-          }
-          const ready = await probeOnce();
-          if (ready) {
-            done = true;
-            nav(primary);
-            return;
-          }
-          setTimeout(() => { tick().catch(() => {}); }, probeGapMs);
-        }
-        setTimeout(() => { tick().catch(() => {}); }, 1400);
+        resolvePrimaryMdns().finally(() => {
+          // Device reboots to recovery; avoid opening too early.
+          setTimeout(() => { nav(primaryResolved); }, 8000);
+          setTimeout(() => { nav(primaryResolved); }, 14000);
+          setTimeout(() => { nav(fallback); }, 22000);
+        });
       }
       function extractFwVersion(raw) {
         const s = String(raw || "").trim();
@@ -2304,13 +2275,13 @@
           if (!pass) return false;
           const recoveryUrl = `${location.protocol}//${location.host}/recovery.html`;
           append(tr("msg_fw_manual_need_recovery", "single-slot OTA layout: switching to Recovery mode for flashing"));
-          append(`${tr("msg_fw_recovery_hint", "after reboot open")}: ${recoveryUrl} (fallback: http://192.168.4.1/recovery.html)`);
+          append(`${tr("msg_fw_recovery_hint", "after reboot open")}: ${recoveryUrl} (fallback: http://lb-bridge.local/recovery.html)`);
           setFwStatus(tr("msg_fw_manual_need_recovery", "single-slot OTA layout: switching to Recovery mode for flashing"), null, true);
           const rr = await apiJson("/api/fw/enter_recovery", { method: "POST", body: "{}", headers: criticalHeaders(pass) });
           if (rr && rr.ok) {
             append(tr("msg_fw_recovery_switch_ok", "recovery mode requested, rebooting"));
             setFwStatus(tr("msg_fw_recovery_switch_ok", "recovery mode requested, rebooting"), 100, false);
-            scheduleRecoveryAutoOpen(recoveryUrl, "http://192.168.4.1/recovery.html");
+            scheduleRecoveryAutoOpen(recoveryUrl, "http://lb-bridge.local/recovery.html");
             hideFwStatusLater(12000);
             return true;
           }
@@ -2336,164 +2307,30 @@
         function closeFwMenu() {
           if (fwMenuModal) fwMenuModal.classList.add("hidden");
         }
-        async function startAutoGithubUpdate(metaIn) {
-          const meta = metaIn || fwReleaseMeta || {};
-          const packUrl = String(meta.packUrl || "").trim();
-          if (!packUrl) {
-            append("auto update unavailable: package url missing");
-            openFwMenu();
-            return;
-          }
-          setFwStatus("Firmware update: preparing...", 5, false);
+        async function requestEnterRecoveryFromMain() {
+          if (fwUpdateBusy) return;
           const pass = await askCriticalPassword();
           if (!pass) return;
+          const recoveryUrl = `${location.protocol}//${location.host}/recovery.html`;
           setFwUpdateBusy(true);
-          setFwStatus("Firmware update step 1/2: switching device to Recovery mode...", 25, false);
-          append(`auto update: latest=${meta.version || "?"}`);
-          append("auto update: switch to recovery");
+          setFwStatus("Firmware update: switching to Recovery mode...", 30, false);
+          append("firmware update: switch to recovery requested");
           const rr = await apiJson("/api/fw/enter_recovery", { method: "POST", body: "{}", headers: criticalHeaders(pass) });
           if (rr && rr.ok) {
-            const primary = `${location.protocol}//${location.host}/recovery.html?autopack=${encodeURIComponent(packUrl)}&v=${encodeURIComponent(meta.version || "")}`;
-            const fallback = `http://192.168.4.1/recovery.html?autopack=${encodeURIComponent(packUrl)}&v=${encodeURIComponent(meta.version || "")}`;
-            append("auto update: recovery requested, waiting reboot");
-            append(`auto update: opening recovery page ${primary}`);
-            append(`auto update: fallback ${fallback}`);
-            setFwStatus("Firmware update step 2/2: recovery flasher will open. Actual flashing is done on Recovery page.", 55, false);
-            scheduleRecoveryAutoOpen(primary, fallback);
-            hideFwStatusLater(20000);
-          } else {
-            append(`auto update failed: ${(rr && rr.error) ? rr.error : "unknown"}`);
-            setFwStatus(tr("msg_fw_recovery_switch_fail", "failed to switch to recovery mode"), 0, false);
-            hideFwStatusLater(9000);
-            setFwUpdateBusy(false);
-          }
-        }
-        function openFwMenu() {
-          if (!fwMenuModal) {
-            append("firmware update requested");
+            append("firmware update: recovery requested, rebooting");
+            setFwStatus("Firmware update: opening Recovery page...", 65, false);
+            scheduleRecoveryAutoOpen(recoveryUrl, "http://lb-bridge.local/recovery.html");
+            hideFwStatusLater(15000);
             return;
           }
-          fwMenuModal.classList.remove("hidden");
-          if (btnFwCancel) setTimeout(() => { try { btnFwCancel.focus(); } catch (_) {} }, 0);
+          append(`firmware update failed: ${(rr && rr.error) ? rr.error : "unknown"}`);
+          setFwStatus(tr("msg_fw_recovery_switch_fail", "failed to switch to recovery mode"), 0, false);
+          hideFwStatusLater(9000);
+          setFwUpdateBusy(false);
         }
         if (btnFw) btnFw.addEventListener("click", async () => {
-          if (fwUpdateBusy) return;
           await checkGithubFirmwareUpdate(false);
-          openFwMenu();
-        });
-        if (btnFwCancel) btnFwCancel.addEventListener("click", closeFwMenu);
-        if (fwMenuModal) {
-          fwMenuModal.addEventListener("click", (ev) => {
-            if (ev.target === fwMenuModal) closeFwMenu();
-          });
-          document.addEventListener("keydown", (ev) => {
-            if (!fwMenuModal.classList.contains("hidden") && (ev.key === "Escape" || ev.key === "Esc")) closeFwMenu();
-          });
-        }
-        if (btnFwLatest) btnFwLatest.addEventListener("click", async () => {
-          if (fwUpdateBusy) return;
-          closeFwMenu();
-          try {
-            const meta = await checkGithubFirmwareUpdate(true);
-            if (!meta || !meta.packUrl) {
-              append("latest update unavailable: no release package found");
-              openFwMenu();
-              return;
-            }
-            await startAutoGithubUpdate(meta);
-          } catch (e) {
-            append(`latest update failed: ${String((e && e.message) ? e.message : e)}`);
-          }
-        });
-        if (btnFwChoose) btnFwChoose.addEventListener("click", async () => {
-          if (fwUpdateBusy) return;
-          closeFwMenu();
-          try {
-            const list = await fetchGithubReleasesList();
-            if (!Array.isArray(list) || !list.length) {
-              append("version list unavailable: no releases with update.lbpack");
-              openFwMenu();
-              return;
-            }
-            const lines = list.map((x, i) => {
-              const mark = x.prerelease ? " [pre]" : "";
-              return `${i + 1}) ${x.version}${mark}`;
-            });
-            const msg = `Select firmware version:\n${lines.join("\n")}\n\nEnter number:`;
-            const raw = String(window.prompt(msg, "1") || "").trim();
-            if (!raw) return;
-            const idx = (Number.parseInt(raw, 10) || 0) - 1;
-            if (idx < 0 || idx >= list.length) {
-              append(`version select canceled: bad index "${raw}"`);
-              return;
-            }
-            const chosen = list[idx];
-            append(`selected version: ${chosen.version}`);
-            await startAutoGithubUpdate(chosen);
-          } catch (e) {
-            append(`choose version failed: ${String((e && e.message) ? e.message : e)}`);
-          }
-        });
-        if (btnFwManual) btnFwManual.addEventListener("click", () => {
-          if (fwUpdateBusy) return;
-          closeFwMenu();
-          if (!fwManualPicker) {
-            append("manual update unavailable: file picker missing");
-            return;
-          }
-          append(tr("msg_fw_manual_pick", "manual update: choose firmware file"));
-          fwManualPicker.value = "";
-          try { fwManualPicker.click(); } catch (_) {}
-        });
-        if (btnFwGithub) btnFwGithub.addEventListener("click", () => {
-          if (fwUpdateBusy) return;
-          const linkEl = document.getElementById("githubLink");
-          const href = String((fwReleaseMeta && fwReleaseMeta.pageUrl) || (linkEl && linkEl.getAttribute("href")) || "https://github.com/").trim();
-          if (!href) return;
-          try {
-            window.open(href, "_blank", "noopener,noreferrer");
-            append(`${tr("footer_github", "Visit GitHub")}: ${href}`);
-          } catch (_) {
-            append(`open github failed: ${href}`);
-          }
-        });
-        if (fwManualPicker) fwManualPicker.addEventListener("change", () => {
-          const f = fwManualPicker.files && fwManualPicker.files[0] ? fwManualPicker.files[0] : null;
-          if (!f) return;
-          (async () => {
-            const pass = await askCriticalPassword();
-            if (!pass) return;
-            append(`${tr("msg_fw_manual_selected", "manual firmware selected")}: ${f.name} (${Math.round((f.size || 0) / 1024)} KiB)`);
-            setFwUpdateBusy(true);
-            setFwStatus(tr("msg_fw_manual_upload_start", "Starting manual firmware upload..."), 0, false);
-            return uploadManualFirmware(f, pass).then((r) => {
-            if (r && r.ok) {
-              append(`${tr("msg_fw_online_ok", "online update done, rebooting")}: slot=${r.slot || "?"} bytes=${r.bytes || 0}`);
-              setFwStatus(tr("msg_fw_manual_ok", "manual update done, rebooting"), 100, false);
-              hideFwStatusLater(12000);
-              return;
-            }
-            const maybeReboot = !!r && (r.error === "network error" || r.error === "timeout") && Number(r.progress || 0) >= 95;
-            if (maybeReboot) {
-              append("manual update: link dropped after upload, device may be rebooting");
-              setFwStatus(tr("msg_fw_manual_ok", "manual update done, rebooting"), 100, false);
-              hideFwStatusLater(12000);
-              return;
-            }
-            if (r && isOtaPartitionConflict(r.error)) {
-              return enterRecoveryForUpdate();
-            }
-            append(`${tr("msg_fw_manual_fail", "manual update failed")}: ${(r && r.error) ? r.error : "unknown"}`);
-            setFwStatus(tr("msg_fw_manual_fail", "manual update failed"), 0, false);
-            hideFwStatusLater(9000);
-          }).catch((e) => {
-            append(`${tr("msg_fw_manual_fail", "manual update failed")}: ${String((e && e.message) ? e.message : e)}`);
-            setFwStatus(tr("msg_fw_manual_fail", "manual update failed"), 0, false);
-            hideFwStatusLater(9000);
-          }).finally(() => {
-            setFwUpdateBusy(false);
-          });
-          })().catch(() => {});
+          await requestEnterRecoveryFromMain();
         });
         function formatFwCurrentLabel(st) {
           const fw = String((st && st.fw) ? st.fw : "").trim();
@@ -5938,14 +5775,14 @@
             return;
           }
           append("enter recovery requested");
-          append(`${tr("msg_fw_recovery_hint", "after reboot open")}: ${recoveryUrl} (fallback: http://192.168.4.1/recovery.html)`);
+          append(`${tr("msg_fw_recovery_hint", "after reboot open")}: ${recoveryUrl} (fallback: http://lb-bridge.local/recovery.html)`);
           const r = await apiJson("/api/fw/enter_recovery", {
             method: "POST",
             body: "{}",
             headers: { "X-LB-Confirm-Pass-Enc": criticalHeaderValue(pass) }
           });
           if (!r || !r.ok) append(`recovery failed: ${(r && r.error) ? r.error : "unknown"}`);
-          else scheduleRecoveryAutoOpen(recoveryUrl, "http://192.168.4.1/recovery.html");
+          else scheduleRecoveryAutoOpen(recoveryUrl, "http://lb-bridge.local/recovery.html");
         });
         refresh();
         setInterval(refresh, 5000);

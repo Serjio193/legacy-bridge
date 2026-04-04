@@ -4267,7 +4267,6 @@ static bool tryServeFile(String path) {
 
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   if (servePath.endsWith(".gz")) {
-    server.sendHeader("Content-Encoding", "gzip");
     server.sendHeader("Vary", "Accept-Encoding");
   }
   server.streamFile(f, contentTypeFor(servePath));
@@ -4464,7 +4463,13 @@ static void handleApiStatus() {
   else body += "off";
   body += F("\",\"ip\":\"");
   body += jsonEscape(ip);
-  body += F("\",\"ap_ssid\":\"");
+  body += F("\",\"mdns_host\":\"");
+  body += jsonEscape(gStaHostname + ".local");
+  body += F("\",\"mdns_url\":\"http://");
+  body += jsonEscape(gStaHostname + ".local");
+  body += F("/\",\"mdns_ready\":");
+  body += (gMdnsStarted ? "true" : "false");
+  body += F(",\"ap_ssid\":\"");
   body += jsonEscape(gApSsid);
   body += F("\",\"sta_ssid\":\"");
   body += jsonEscape(wifiSsid);

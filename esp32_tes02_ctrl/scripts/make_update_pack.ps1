@@ -43,7 +43,7 @@ try {
   powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "sign_current_build.ps1") -Env $Env | Out-Host
   if ($LASTEXITCODE -ne 0) { throw "sign_current_build failed" }
 
-  python $packTool `
+  py -3 $packTool `
     --firmware $fwBin `
     --firmware-sig $fwSig `
     --littlefs $fsBin `

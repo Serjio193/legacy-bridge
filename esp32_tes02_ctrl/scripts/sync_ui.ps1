@@ -1,7 +1,7 @@
 param(
   [string]$Src = "..\\ui",
   [string]$Dst = "data",
-  [string[]]$ImmutableGzipFiles = @("three.min.js", "app.js", "styles.css", "index.html"),
+  [string[]]$ImmutableGzipFiles = @("three.min.js", "app.js", "styles.css", "index.html", "manifest.webmanifest", "sw.js"),
   [string[]]$ExcludeFromLittleFS = @("recovery.html", "recovery.js", "recovery")
 )
 

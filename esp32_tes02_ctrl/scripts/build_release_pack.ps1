@@ -1,5 +1,6 @@
 param(
-  [switch]$Clean
+  [switch]$Clean,
+  [int]$KeepBundles = 3
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,6 +42,18 @@ try {
   $safeRec = ($recVer -replace '[^a-zA-Z0-9._-]', '_')
   $outDir = Join-Path $proj ("release\bundle-{0}-fw-{1}-rec-{2}" -f $stamp, $safeFw, $safeRec)
   New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+  # Keep release folder tidy: remove old bundle-* directories, keep only latest N.
+  if ($KeepBundles -ge 0) {
+    $relRoot = Join-Path $proj "release"
+    $bundles = Get-ChildItem -Path $relRoot -Directory -Filter "bundle-*" | Sort-Object LastWriteTime -Descending
+    if ($bundles.Count -gt $KeepBundles) {
+      $toDelete = $bundles | Select-Object -Skip $KeepBundles
+      foreach ($d in $toDelete) {
+        Remove-Item -LiteralPath $d.FullName -Recurse -Force
+      }
+    }
+  }
 
   $sysBuild = Join-Path $proj ".pio\build\esp32c3"
   $recBuild = Join-Path $proj ".pio\build\esp32c3_recovery"
