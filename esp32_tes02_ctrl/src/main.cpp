@@ -4212,23 +4212,13 @@ static void h312Loop() {
 
 static void bleBootPulse() {
   if (!kBleBootPulseEnabled || gSafeMode) return;
-  bool overrideBound = false;
-  if (!bleBound) {
-    // Boot pulse is used as a startup health indicator, so allow one-shot probe even if binding flag is off.
-    bleBound = true;
-    bleApplyDriverConfig();
-    overrideBound = true;
-  }
+  if (!bleBound) return;
   LB_SERIAL_PRINTLN("[ble] boot pulse: start");
   extractorCmdLogPushf("[boot-pulse] start speed=%u scan_ms=%lu", (unsigned int)kBleBootPulseSpeed,
                        (unsigned long)kBleBootPulseScanMs);
   if (!bleEnsureConnected(kBleBootPulseScanMs)) {
     LB_SERIAL_PRINTLN("[ble] boot pulse: extractor not found");
     extractorCmdLogPushf("[boot-pulse] extractor not found");
-    if (overrideBound) {
-      bleBound = false;
-      bleApplyDriverConfig();
-    }
     return;
   }
 
@@ -4243,10 +4233,6 @@ static void bleBootPulse() {
 
   bleResetHandles();
   bleSetConnectSource("boot_pulse_release");
-  if (overrideBound) {
-    bleBound = false;
-    bleApplyDriverConfig();
-  }
 }
 
 static String contentTypeFor(const String &path) {
