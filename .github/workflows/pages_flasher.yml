@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "flasher/**"
+      - "ui/**"
+      - "README.md"
       - ".github/workflows/pages_flasher.yml"
   release:
     types: [published]
@@ -29,7 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build static flasher site with mirrored release assets
+      - name: Build flasher + demo site with mirrored release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -44,6 +46,7 @@ jobs:
           API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
           REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin", "update.lbpack"]
           SITE = "_site"
+          DEMO_DIR = os.path.join(SITE, "demo")
 
           if os.path.isdir(SITE):
               shutil.rmtree(SITE)
@@ -57,6 +60,53 @@ jobs:
                   shutil.copytree(src, dst)
               else:
                   shutil.copy2(src, dst)
+
+          # Copy main UI as web demo to /demo
+          os.makedirs(DEMO_DIR, exist_ok=True)
+          for name in os.listdir("ui"):
+              src = os.path.join("ui", name)
+              dst = os.path.join(DEMO_DIR, name)
+              if os.path.isdir(src):
+                  shutil.copytree(src, dst)
+              else:
+                  shutil.copy2(src, dst)
+
+          # Inject big DEMO overlay into /demo/index.html
+          idx = os.path.join(DEMO_DIR, "index.html")
+          if os.path.isfile(idx):
+              with open(idx, "r", encoding="utf-8") as f:
+                  html = f.read()
+              overlay_css = """
+<style>
+  #lbDemoOverlay{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-weight: 900;
+    font-size: clamp(72px, 18vw, 320px);
+    letter-spacing: .12em;
+    color: rgba(255, 0, 0, .18);
+    text-shadow:
+      0 0 2px rgba(255,0,0,.42),
+      0 0 18px rgba(255,0,0,.34),
+      0 0 42px rgba(255,0,0,.22);
+    mix-blend-mode: lighten;
+    user-select: none;
+  }
+</style>
+"""
+              overlay_html = '<div id="lbDemoOverlay" aria-hidden="true">DEMO</div>'
+              if "</head>" in html:
+                  html = html.replace("</head>", overlay_css + "\n</head>", 1)
+              if "</body>" in html:
+                  html = html.replace("</body>", overlay_html + "\n</body>", 1)
+              with open(idx, "w", encoding="utf-8") as f:
+                  f.write(html)
 
           headers = {
               "Accept": "application/vnd.github+json",

@@ -312,6 +312,7 @@
           label_wallet: "Wallet",
           btn_copy_wallet: "Copy Wallet",
           btn_copied: "Copied",
+          btn_close: "Close",
           section_fw_map: "Firmware Partition Map",
           pill_service: "Service",
           hint_fw_map: "Shows bootloader, OTA slots, NVS and recovery readiness.",
@@ -631,6 +632,7 @@
           label_wallet: "Кошелек",
           btn_copy_wallet: "Скопировать кошелек",
           btn_copied: "Скопировано",
+          btn_close: "Закрыть",
           section_fw_map: "Карта разделов прошивки",
           pill_service: "Сервис",
           hint_fw_map: "Показывает bootloader, OTA слоты, NVS и готовность Recovery.",
@@ -950,6 +952,7 @@
           label_wallet: "Гаманець",
           btn_copy_wallet: "Скопіювати гаманець",
           btn_copied: "Скопійовано",
+          btn_close: "Закрити",
           section_fw_map: "Карта розділів прошивки",
           pill_service: "Сервіс",
           hint_fw_map: "Показує bootloader, OTA слоти, NVS та готовність Recovery.",
@@ -6216,24 +6219,40 @@
         const btnSupport = document.getElementById("btnSupportProject");
         const panel = document.getElementById("supportQuickPanel");
         const btnUsdt = document.getElementById("supportUsdtBtn");
-        const boxUsdt = document.getElementById("supportUsdtBox");
+        const usdtModal = document.getElementById("supportUsdtModal");
+        const usdtClose = document.getElementById("supportUsdtClose");
         const btnCopy = document.getElementById("supportUsdtCopy");
         const walletEl = document.getElementById("supportUsdtWallet");
         if (!btnSupport || !panel) return;
         function setOpen(on) {
           panel.classList.toggle("hidden", !on);
-          if (!on && boxUsdt) boxUsdt.classList.add("hidden");
+        }
+        function setUsdtOpen(on) {
+          if (!usdtModal) return;
+          usdtModal.classList.toggle("hidden", !on);
         }
         btnSupport.addEventListener("click", (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
           setOpen(panel.classList.contains("hidden"));
         });
-        if (btnUsdt && boxUsdt) {
+        if (btnUsdt) {
           btnUsdt.addEventListener("click", (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
-            boxUsdt.classList.toggle("hidden");
+            setUsdtOpen(true);
+          });
+        }
+        if (usdtClose) {
+          usdtClose.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            setUsdtOpen(false);
+          });
+        }
+        if (usdtModal) {
+          usdtModal.addEventListener("click", (ev) => {
+            if (ev.target === usdtModal) setUsdtOpen(false);
           });
         }
         if (btnCopy && walletEl) {
@@ -6264,6 +6283,9 @@
           if (t === btnSupport || (btnSupport && btnSupport.contains(t))) return;
           if (panel.contains(t)) return;
           setOpen(false);
+        });
+        document.addEventListener("keydown", (ev) => {
+          if (ev && ev.key === "Escape") setUsdtOpen(false);
         });
       }
       sel.value = initial;

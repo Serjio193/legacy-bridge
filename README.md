@@ -1,204 +1,165 @@
 # Legacy Bridge Workspace
 
+## 🌐 Language / Язык / Мова
+
+<details open>
+<summary><b>Русский</b></summary>
+
 ## 🔥 Legacy Bridge (LB)
 
 Интеллектуальный мост между паяльной станцией и дымоуловителем.  
 Автоматизация без замены оборудования.
 
-## 🚀 Что это такое
+### 🚀 Что это
 
-Дымоуловитель не включается автоматически?  
-Паяльник и фен не связаны между собой?
+Legacy Bridge - внешний модуль на ESP32, который автоматически управляет вытяжкой по состоянию паяльника (SENSE) и фена (Wi-Fi/BLE).
 
-Legacy Bridge решает эту проблему без замены оборудования.
+### ⚙️ Функции
 
-Это внешний модуль на базе ESP32, который автоматически управляет вытяжкой в зависимости от состояния паяльной станции и фена.
+- Автовключение и автоотключение дымоуловителя
+- Логика по ручкам T420D + температурный триггер по фену H312
+- Управление мощностью вытяжки и подсветкой
+- Задержки старта/остановки, автозавершение по времени
+- Web UI + Recovery + OTA
 
-## 📖 История создания
+### 📡 Первый запуск
 
-Я использую оборудование Aixun в работе.
+Онлайн USB flasher: https://serjio193.github.io/legacy-bridge/  
+Demo UI: https://serjio193.github.io/legacy-bridge/demo/  
+Требуется Chromium браузер (Chrome/Edge, WebSerial).
 
-После покупки дымоуловителя Aixun ES02 выяснилось, что он не работает с паяльной станцией T420D, так как в ней отсутствует Wi-Fi модуль. Также не было нормальной интеграции с феном H312.
-
-Фактически: оборудование есть, но взаимодействия между устройствами нет.
-
-Было принято решение реализовать внешний модуль, который объединяет устройства и добавляет автоматизацию без замены техники.
-
-Так появился Legacy Bridge.
-
-## ⚙️ Функциональность
-
-- Автоматическое управление дымоуловителем
-- Реакция на состояние паяльника (SENSE)
-- Реакция на работу фена (Wi-Fi / BLE)
-- Регулировка мощности вытяжки
-- Регулировка подсветки
-- Автоматическое выключение по времени
-- Веб-интерфейс управления
-
-## 🧠 Принцип работы
-
-- Состояние паяльника определяется по линии SENSE
-- Состояние фена — по температуре
-- Логика выполняется на ESP32
-- Управление вытяжкой происходит автоматически
-
-## 🧩 Аппаратная часть
-
-- ESP32-C3 Pro Mini
-- R1, R2 — 100 кОм
-- C1, C2 — 100 нФ
-
-<a href="assets/photos/system-overview.jpg" target="_blank"><img src="assets/photos/system-overview.jpg" alt="Общий вид системы: паяльная станция, вытяжка и подключённый ESP32" width="220"></a>
-<a href="assets/photos/esp32-closeup.jpg" target="_blank"><img src="assets/photos/esp32-closeup.jpg" alt="Крупный план ESP32-C3 (модуль)" width="180"></a>
-
-## 🔌 Схема подключения
-
-```text
-Signal 1 -> R1 100k -> GPIO1
-GPIO1    -> C1 100nF -> GND
-
-Signal 2 -> R2 100k -> GPIO3
-GPIO3    -> C2 100nF -> GND
-
-5V  -> ESP32 5V
-GND -> ESP32 GND
-```
-
-<a href="assets/photos/t420d-sense-point-1.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-1.jpg" alt="Подключение SENSE к плате T420D (точка 1)" width="180"></a>
-<a href="assets/photos/t420d-sense-point-2.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-2.jpg" alt="Подключение SENSE к плате T420D (точка 2)" width="180"></a>
-<a href="assets/photos/t420d-5v-point.jpg" target="_blank"><img src="assets/photos/t420d-5v-point.jpg" alt="Точка подключения питания 5V на плате T420D" width="180"></a>
-
-## 🔌 USB подключение
-
-ESP32 подключается по USB только для первичной прошивки.
-
-Дальнейшая работа:
-
-- обновление по Wi-Fi (OTA)
-- автономная работа без USB
-
-## 🌐 Веб-интерфейс
-
-Интерфейс сделан так, чтобы к нему не приходилось постоянно возвращаться.
-
-### Что это даёт в работе
-
-- Меньше шума на рабочем месте
-- Вытяжка работает только тогда, когда это действительно нужно
-- Меньше потери электроэнергии
-- Нет постоянной работы “на всякий случай”
-- Автоматизация без контроля
-- Не нужно помнить включить или выключить вытяжку
-
-### Что можно контролировать
-
-`🎛 Управление`
-
-- мощность дымоуловителя
-- яркость подсветки
-
-`🧠 Логика`
-
-- задержка включения
-- задержка выключения
-- реакция на паяльник и фен
-- температурные условия
-
-`📡 Подключение`
-
-- Wi-Fi сеть
-- поиск и подключение устройств
-
-`🛠 Система`
-
-- логи
-- reboot
-- recovery
-- reset
-
-## 🚀 Live Demo
-
-📌 Демо работает в браузере и показывает интерфейс в режиме эмуляции.
-
-## 📡 Первый запуск
-
-👉 https://serjio193.github.io/legacy-bridge/
-
-Требуется Chromium-браузер (Chrome / Edge).
-
-### Данные по умолчанию
-
+Данные по умолчанию:
 - SSID: `LB-SETUP-XXXXX`
 - Пароль: `lbxxxxx!2026`
 - Логин: `admin`
-- Recovery: `LB_RECOVERY`
+- Recovery AP: `LB_RECOVERY`
 
-### Генерация пароля
+Где `XXXXX` - последние 5 символов MAC (HEX uppercase), `xxxxx` - те же символы lowercase.
 
-- `XXXXX` — последние 5 символов MAC (HEX, uppercase)
-- `xxxxx` — те же символы в lowercase
+### 🔐 Безопасность
 
-## 📡 Сеть
+- Пакеты подписаны приватным ключом
+- Устройство ставит только валидно подписанные обновления
+- Bootloader и Recovery не перезаписываются по Wi-Fi
 
-После настройки:
+### ❤️ Поддержка
 
-- точка доступа отключается
-- устройство работает в основной сети
+<a href="https://paypal.me/SerhiiTarnopovych" target="_blank">
+  <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
+</a>
+&nbsp;&nbsp;
+<a href="#usdt-trc20">
+  <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
+</a>
 
-## 🌡 Интеграция фена
+</details>
 
-Подключение:
+<details>
+<summary><b>English</b></summary>
 
-- Wi-Fi
-- Bluetooth (BLE)
+## 🔥 Legacy Bridge (LB)
 
-Вытяжка включается по температуре.
+An intelligent bridge between a soldering station and a fume extractor.  
+Automation without replacing your hardware.
 
-## 🔐 Безопасность
+### 🚀 What it is
 
-- Прошивка подписана приватным ключом
-- Устройство принимает только подписанные обновления
-- Boot и Recovery защищены от записи по Wi-Fi
+Legacy Bridge is an external ESP32 module that controls the extractor automatically using soldering iron dock state (SENSE) and hot-air activity (Wi-Fi/BLE).
 
-## 📦 Обновления
+### ⚙️ Features
 
-- OTA через Wi-Fi
-- Пакет: `update.lbpack`
-- Источник: GitHub Releases
+- Automatic extractor start/stop
+- Logic from T420D handles + H312 temperature trigger
+- Extractor speed and light control
+- Start/stop delays, timed auto-stop
+- Web UI + Recovery + OTA
 
-## 🧪 Поддерживаемое оборудование
+### 📡 First start
 
-- Aixun T420D
-- Aixun H312
-- Aixun ES02
-- JBC-совместимые станции (частично)
+Online USB flasher: https://serjio193.github.io/legacy-bridge/  
+Demo UI: https://serjio193.github.io/legacy-bridge/demo/  
+Use a Chromium browser (Chrome/Edge, WebSerial support).
 
-## 🚧 План развития
+Default access:
+- SSID: `LB-SETUP-XXXXX`
+- Password: `lbxxxxx!2026`
+- Web login: `admin`
+- Recovery AP: `LB_RECOVERY`
 
-Планируется:
+`XXXXX` is the last 5 MAC symbols (HEX uppercase), `xxxxx` is lowercase.
 
-- Поддержка slave-устройств на ESP32
-- Интеграция дополнительного оборудования (Aixun, JCID и др.)
+### 🔐 Security
 
-## 👨‍🔧 Автор
+- Firmware packages are signed with a private key
+- Device accepts only valid signed updates
+- Bootloader and Recovery are protected from Wi-Fi rewriting
 
-Serjio193  
-Embedded developer
+### ❤️ Support
 
-Проект основан на практическом опыте ремонта.
+<a href="https://paypal.me/SerhiiTarnopovych" target="_blank">
+  <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
+</a>
+&nbsp;&nbsp;
+<a href="#usdt-trc20">
+  <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
+</a>
 
-## 🎯 Цель проекта
+</details>
 
-Создать простой и надёжный инструмент, автоматизирующий рабочий процесс.
+<details>
+<summary><b>Українська</b></summary>
 
-## ❤️ Поддержка
+## 🔥 Legacy Bridge (LB)
 
-[![PayPal Donate](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](#usdt-trc20)
+Інтелектуальний міст між паяльною станцією та димовловлювачем.  
+Автоматизація без заміни обладнання.
+
+### 🚀 Що це
+
+Legacy Bridge - зовнішній модуль на ESP32, який автоматично керує витяжкою за станом паяльника (SENSE) і фена (Wi-Fi/BLE).
+
+### ⚙️ Можливості
+
+- Автоматичне вмикання/вимикання димовловлювача
+- Логіка по ручках T420D + температурний тригер фена H312
+- Керування потужністю витяжки та підсвіткою
+- Затримки старту/зупинки, автостоп за часом
+- Web UI + Recovery + OTA
+
+### 📡 Перший запуск
+
+Онлайн USB flasher: https://serjio193.github.io/legacy-bridge/  
+Demo UI: https://serjio193.github.io/legacy-bridge/demo/  
+Потрібен Chromium браузер (Chrome/Edge, WebSerial).
+
+Дані за замовчуванням:
+- SSID: `LB-SETUP-XXXXX`
+- Пароль: `lbxxxxx!2026`
+- Логін: `admin`
+- Recovery AP: `LB_RECOVERY`
+
+`XXXXX` - останні 5 символів MAC (HEX uppercase), `xxxxx` - ті самі символи lowercase.
+
+### 🔐 Безпека
+
+- Пакети прошивки підписані приватним ключем
+- Пристрій приймає лише валідно підписані оновлення
+- Bootloader та Recovery захищені від перезапису по Wi-Fi
+
+### ❤️ Підтримка
+
+<a href="https://paypal.me/SerhiiTarnopovych" target="_blank">
+  <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
+</a>
+&nbsp;&nbsp;
+<a href="#usdt-trc20">
+  <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
+</a>
+
+</details>
 
 <details id="usdt-trc20">
-<summary>USDT TRC20</summary>
+<summary><b>USDT TRC20</b></summary>
 
 Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
@@ -208,23 +169,66 @@ Wallet: `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
 
 ## 🧷 Пример установки в T420D
 
-<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="240"></a>
+<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="420"></a>
 
-## 🧨 Итог
+## 🧱 Technical Docs / Техдок / Техдок
 
-Legacy Bridge — это инструмент, который:
+<details open>
+<summary><b>Русский</b></summary>
 
-- убирает ручное управление вытяжкой
-- объединяет оборудование
-- делает рабочее место предсказуемым и удобным
+### Structure
 
-## Structure
+- `esp32_tes02_ctrl/` - проект прошивки PlatformIO (ESP32-C3)
+- `ui/` - исходники frontend, синхронизируются в LittleFS прошивки
+- `security_private.pem` / `security_public.pem` - ключи подписи (локально, приватный ключ не публиковать)
+
+### Firmware release pipeline
+
+- Workflow GitHub Actions: `.github/workflows/release_firmware.yml`
+- Сборка подписанного `update.lbpack` и публикация в GitHub Releases
+- Артефакты релиза подписываются приватным ключом, подпись проверяется на устройстве перед установкой
+- Версия основной прошивки числовая: `v1 ... v99999`
+- UI автообновления читает GitHub Releases и ставит `update.lbpack`
+
+### Online USB flasher page (bare ESP32-C3)
+
+- Исходник: `flasher/index.html`
+- Workflow деплоя: `.github/workflows/pages_flasher.yml`
+- Ожидаемый URL после деплоя Pages: `https://serjio193.github.io/legacy-bridge/`
+- Страница читает версии из GitHub Releases и прошивает полный набор:
+  - `bootloader.bin` (`0x0`)
+  - `partitions.bin` (`0x8000`)
+  - `firmware.bin` (`0x10000`)
+  - `littlefs.bin` (`0x238000`)
+  - `recovery.bin` (`0x300000`)
+- Требования к браузеру:
+  - Chromium (Chrome/Edge)
+  - HTTPS-контекст (GitHub Pages)
+
+### Local canonical packaging command
+
+```powershell
+powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
+```
+
+Команда синхронизирует `ui -> esp32_tes02_ctrl/data`, пересобирает firmware + LittleFS, подписывает бинарники и создает пакет.
+
+### Detailed docs
+
+- `esp32_tes02_ctrl/README.md`
+
+</details>
+
+<details>
+<summary><b>English</b></summary>
+
+### Structure
 
 - `esp32_tes02_ctrl/` - PlatformIO firmware project (ESP32-C3)
 - `ui/` - frontend source mirror used for sync into firmware LittleFS
 - `security_private.pem` / `security_public.pem` - signing keys (local only, do not publish private key)
 
-## Firmware release pipeline
+### Firmware release pipeline
 
 - GitHub Actions workflow: `.github/workflows/release_firmware.yml`
 - Builds signed `update.lbpack` and uploads it to GitHub Releases
@@ -232,12 +236,11 @@ Legacy Bridge — это инструмент, который:
 - Main firmware version is numeric: `v1 ... v99999`
 - Device auto-update UI reads GitHub Releases and installs `update.lbpack`
 
-## Online USB flasher page (bare ESP32-C3)
+### Online USB flasher page (bare ESP32-C3)
 
 - Source: `flasher/index.html`
 - Deploy workflow: `.github/workflows/pages_flasher.yml`
-- Expected URL after Pages deploy:
-  - `https://serjio193.github.io/legacy-bridge/`
+- Expected URL after Pages deploy: `https://serjio193.github.io/legacy-bridge/`
 - The page pulls versions from GitHub Releases and flashes full image set:
   - `bootloader.bin` (`0x0`)
   - `partitions.bin` (`0x8000`)
@@ -248,7 +251,7 @@ Legacy Bridge — это инструмент, который:
   - Chromium browser (Chrome/Edge)
   - HTTPS context (GitHub Pages)
 
-## Local canonical packaging command
+### Local canonical packaging command
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
@@ -256,8 +259,54 @@ powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pa
 
 This command syncs `ui -> esp32_tes02_ctrl/data`, rebuilds firmware + LittleFS, signs binaries, and creates package.
 
-## Detailed docs
-
-See full technical guide:
+### Detailed docs
 
 - `esp32_tes02_ctrl/README.md`
+
+</details>
+
+<details>
+<summary><b>Українська</b></summary>
+
+### Structure
+
+- `esp32_tes02_ctrl/` - проєкт прошивки PlatformIO (ESP32-C3)
+- `ui/` - вихідний frontend, що синхронізується в LittleFS прошивки
+- `security_private.pem` / `security_public.pem` - ключі підпису (локально, приватний ключ не публікувати)
+
+### Firmware release pipeline
+
+- Workflow GitHub Actions: `.github/workflows/release_firmware.yml`
+- Збірка підписаного `update.lbpack` і публікація в GitHub Releases
+- Артефакти релізу підписуються приватним ключем, підпис перевіряється на пристрої перед встановленням
+- Версія основної прошивки числова: `v1 ... v99999`
+- UI автооновлення читає GitHub Releases і встановлює `update.lbpack`
+
+### Online USB flasher page (bare ESP32-C3)
+
+- Джерело: `flasher/index.html`
+- Workflow деплою: `.github/workflows/pages_flasher.yml`
+- Очікуваний URL після деплою Pages: `https://serjio193.github.io/legacy-bridge/`
+- Сторінка отримує версії з GitHub Releases та прошиває повний набір:
+  - `bootloader.bin` (`0x0`)
+  - `partitions.bin` (`0x8000`)
+  - `firmware.bin` (`0x10000`)
+  - `littlefs.bin` (`0x238000`)
+  - `recovery.bin` (`0x300000`)
+- Вимоги до браузера:
+  - Chromium (Chrome/Edge)
+  - HTTPS-контекст (GitHub Pages)
+
+### Local canonical packaging command
+
+```powershell
+powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
+```
+
+Команда синхронізує `ui -> esp32_tes02_ctrl/data`, перебудовує firmware + LittleFS, підписує бінарники та створює пакет.
+
+### Detailed docs
+
+- `esp32_tes02_ctrl/README.md`
+
+</details>
