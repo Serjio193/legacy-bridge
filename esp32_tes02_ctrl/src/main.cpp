@@ -156,6 +156,8 @@ static uint32_t autoStopLastYmd = 0;
 
 static bool gSafeMode = false;
 static String gSafeCause;
+static bool gBootForceRecoveryRequested = false;
+static String gBootForceRecoveryReason;
 static String gStaHostname = "lb-bridge-00000";
 static String gApSsid = "LB-SETUP-00000";
 static String gApPass = "lb00000!2026";
@@ -303,6 +305,8 @@ static const uint32_t kFailsafeServiceStallUs = 5000000;
 static const uint16_t kRecoveryHandleSampleMs = 450;
 static const uint16_t kRecoveryHandleSampleStepMs = 15;
 static const uint32_t kRecoveryUnlockWindowMs = 10UL * 60UL * 1000UL;
+static const uint8_t kBootFailToRecoveryThreshold = 2;
+static const uint8_t kCrashFailToRecoveryThreshold = 2;
 static const bool kHandleGpioActiveHigh = true; // trigger when signal appears on input
 static const int8_t kT420dHandle1GpioFixed = 1;
 static const int8_t kT420dHandle2GpioFixed = 3;
@@ -351,6 +355,7 @@ static uint32_t gFailsafeApPinUntilMs = 0;
 static uint32_t gStaLostSinceMs = 0;
 static bool gRecoveryUnlockByHandles = false;
 static uint32_t gRecoveryUnlockUntilMs = 0;
+static bool verifyAppPartitionHeader(const esp_partition_t *p, String *outErr);
 static uint32_t gHandleDiagLastMs = 0;
 static int gHandleDiagPrevH1 = -2;
 static int gHandleDiagPrevH2 = -2;
@@ -2969,21 +2974,41 @@ static void bootHealthCheckInit() {
   bool prevOk = prefs.getBool("boot_ok", true);
   uint32_t bootCnt = prefs.getULong("boot_cnt", 0);
   uint8_t bootFail = (uint8_t)prefs.getUChar("boot_fail", 0);
+  uint8_t crashFail = (uint8_t)prefs.getUChar("crash_fail", 0);
   bool forceRecovery = prefs.getBool("force_recovery", false);
+  esp_reset_reason_t rr = esp_reset_reason();
+  bool crashReset = (rr == ESP_RST_PANIC || rr == ESP_RST_TASK_WDT || rr == ESP_RST_INT_WDT || rr == ESP_RST_WDT);
 
   bootCnt++;
   if (!prevOk && bootFail < 250) bootFail++;
+  if (crashReset) {
+    if (crashFail < 250) crashFail++;
+  } else if (rr == ESP_RST_POWERON || rr == ESP_RST_SW || rr == ESP_RST_EXT) {
+    crashFail = 0;
+  }
 
   prefs.putULong("boot_cnt", bootCnt);
   prefs.putUChar("boot_fail", bootFail);
+  prefs.putUChar("crash_fail", crashFail);
   prefs.putBool("boot_ok", false);
 
+  gBootForceRecoveryRequested = false;
+  gBootForceRecoveryReason = "";
   if (forceRecovery) {
+    gBootForceRecoveryRequested = true;
+    gBootForceRecoveryReason = "Recovery requested";
+  } else if (bootFail >= kBootFailToRecoveryThreshold) {
+    gBootForceRecoveryRequested = true;
+    gBootForceRecoveryReason = "Boot loop detected";
+  } else if (crashFail >= kCrashFailToRecoveryThreshold) {
+    gBootForceRecoveryRequested = true;
+    gBootForceRecoveryReason = "Crash loop detected";
+  }
+
+  if (gBootForceRecoveryRequested) {
+    // Fallback to safe mode only if switching to recovery partition is not possible.
     gSafeMode = true;
-    gSafeCause = "Recovery requested";
-  } else if (bootFail >= 3) {
-    gSafeMode = true;
-    gSafeCause = "Boot loop detected";
+    gSafeCause = gBootForceRecoveryReason;
   }
 
   prefs.end();
@@ -2993,6 +3018,7 @@ static void bootHealthMarkOk() {
   prefs.begin(kPrefsNs, false);
   prefs.putBool("boot_ok", true);
   prefs.putUChar("boot_fail", 0);
+  prefs.putUChar("crash_fail", 0);
   prefs.end();
 }
 
@@ -3347,6 +3373,45 @@ static bool bootRecoveryByDualHandleGpio() {
     extractorCmdLogPushf("[recovery] dual-handle trigger h1=gpio%d h2=gpio%d", (int)t420dH1Gpio, (int)t420dH2Gpio);
   }
   return raised;
+}
+
+static bool switchBootToRecoveryPartition(String *outErr = nullptr) {
+  const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+  if (!factory) {
+    if (outErr) *outErr = "recovery slot not found";
+    return false;
+  }
+  String err;
+  if (!verifyAppPartitionHeader(factory, &err)) {
+    if (outErr) *outErr = String("recovery image invalid: ") + err;
+    return false;
+  }
+  esp_err_t e = esp_ota_set_boot_partition(factory);
+  if (e != ESP_OK) {
+    if (outErr) *outErr = String("esp_ota_set_boot_partition failed: ") + String((int)e);
+    return false;
+  }
+  return true;
+}
+
+static bool requestRecoveryBootNow(const char *reason) {
+  const char *why = (reason && reason[0]) ? reason : "unknown";
+  prefs.begin(kPrefsNs, false);
+  prefs.putBool("force_recovery", true);
+  prefs.end();
+
+  String err;
+  if (!switchBootToRecoveryPartition(&err)) {
+    gSafeMode = true;
+    gSafeCause = String("Recovery fallback: ") + why;
+    extractorCmdLogPushf("[recovery] %s -> SAFE MODE (%s)", why, err.c_str());
+    return false;
+  }
+
+  extractorCmdLogPushf("[recovery] %s -> reboot to Recovery", why);
+  delay(150);
+  ESP.restart();
+  return true;
 }
 
 static bool isRecoveryUnlockUri(const String &uri) {
@@ -6886,16 +6951,9 @@ void setup() {
   bootHealthCheckInit();
   loadConfig();
   if (bootRecoveryByDualHandleGpio()) {
-    // Dual-handle trigger should unlock recovery access window without forcing safe mode.
-    // Forcing gSafeMode here blocks BLE scanner/H312 runtime in normal firmware.
-    gRecoveryUnlockByHandles = true;
-    gRecoveryUnlockUntilMs = (uint32_t)millis() + kRecoveryUnlockWindowMs;
-    gWebAuthFailIp = IPAddress(0, 0, 0, 0);
-    gWebAuthFailCount = 0;
-    gWebAuthBlockUntilMs = 0;
-    // Physical dual-handle unlock opens AP for recovery-only endpoints.
-    gApPass = "";
-    extractorCmdLogPushf("[recovery] unlock window %lus over AP", (unsigned long)(kRecoveryUnlockWindowMs / 1000UL));
+    if (requestRecoveryBootNow("dual_handle_boot")) return;
+  } else if (gBootForceRecoveryRequested) {
+    if (requestRecoveryBootNow(gBootForceRecoveryReason.c_str())) return;
   }
   gH312Driver.begin();
   gH312Driver.setLogger(h312DriverLogCb, nullptr);
