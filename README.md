@@ -533,43 +533,6 @@ Serjio193, embedded developer.
 
 </details>
 
-## 🧱 Technical Docs
+## 🧱 Technical Documentation
 
-- `esp32_tes02_ctrl/` - PlatformIO firmware project (ESP32-C3)
-- `ui/` - frontend source mirror synced into firmware LittleFS
-- `security_private.pem` / `security_public.pem` - signing keys (local only, never publish private key)
-
-### Firmware release pipeline
-
-- Workflow: `.github/workflows/release_firmware.yml`
-- Builds signed `update.lbpack` and uploads it to GitHub Releases
-- Release artifacts are signed with private key, signature is verified on-device before install
-- Main firmware version is numeric: `v1 ... v99999`
-- Device auto-update UI reads GitHub Releases and installs `update.lbpack`
-
-### Online USB flasher page (bare ESP32-C3)
-
-- Source: `flasher/index.html`
-- Deploy workflow: `.github/workflows/pages_flasher.yml`
-- URL: `https://serjio193.github.io/legacy-bridge/`
-- Full image set:
-  - `bootloader.bin` (`0x0`)
-  - `partitions.bin` (`0x8000`)
-  - `firmware.bin` (`0x10000`)
-  - `littlefs.bin` (`0x238000`)
-  - `recovery.bin` (`0x300000`)
-- Browser requirements:
-  - Chromium browser (Chrome/Edge)
-  - HTTPS context (GitHub Pages)
-
-### Local canonical packaging command
-
-```powershell
-powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
-```
-
-This command syncs `ui -> esp32_tes02_ctrl/data`, rebuilds firmware + LittleFS, signs binaries, and creates package.
-
-### Detailed docs
-
-- `esp32_tes02_ctrl/README.md`
+- See [TECHNICAL.md](TECHNICAL.md)
