@@ -9,47 +9,79 @@
 
 ## 🔥 Legacy Bridge (LB)
 
-An intelligent bridge between a soldering station and a fume extractor.  
-Automation without replacing your hardware.
+Intelligent bridge between a soldering station and a fume extractor.  
+Automation without replacing equipment.
+
+---
 
 ### 🚀 What it is
 
-If your extractor does not start automatically and your tools work as isolated devices, Legacy Bridge connects them into a single automation system.
+Extractor not turning on automatically?
 
-Legacy Bridge is an external ESP32 module that controls the fume extractor using soldering iron dock state (SENSE) and hot-air activity.
+Legacy Bridge solves this problem without replacing equipment.
+
+It is an embedded ESP32-based modification for soldering stations (T420D and similar) that adds automatic extractor control based on soldering iron and hot air states.
+
+---
 
 ### 📖 Project story
 
-The project was created from real Aixun workflow issues: ES02 had no practical integration with T420D (without Wi-Fi module) and H312.  
-Legacy Bridge was built to add compatibility and automation without replacing the station.
+I use Aixun equipment in daily work.
+
+After buying the Aixun ES02 fume extractor, I found that it did not work with my T420D soldering station because the station had no Wi-Fi module. At that time, I did not know that Wi-Fi versions of this station existed. Like many users, I thought T420D came in only one variant.
+
+It also turned out that the extractor did not work with the H312 hot air unit.
+
+📌 Result: the hardware exists, but there is no proper integration between devices.
+
+First, ES02 Bluetooth control was researched. After command analysis, it became clear that the extractor can be controlled directly.
+
+Then the station USB interface was researched. It was assumed USB could provide runtime status, but in practice USB is used only for flashing and does not provide working state telemetry.
+
+H312 was also researched via all available interfaces: USB, Wi-Fi, and Bluetooth. Connection worked via all of them, but this project uses wireless integration only as the most practical approach.
+
+Replacing equipment was not the right answer. The problem was not hardware quality, but missing integration logic.
+
+As a result, the most reliable solution was to modify the station itself and add the missing logic.
+
+It is also worth noting that Aixun offers a separate device, BS08 AI Voice Center Control, for voice-based equipment control.
+
+Despite the declared device unification, this remains manual control in practice: the user still has to issue commands (by voice or via UI).
+
+📌 BS08 does not track the actual station working state and cannot automatically react to the real workflow.
+
+So the automation problem remains unresolved; only the control method changes.
+
+This is how Legacy Bridge was created.
 
 ### ⚙️ Features
 
-- Automatic extractor start/stop
-- SENSE-based iron state logic
-- Hot-air trigger by temperature (Wi-Fi / BLE)
-- Extractor speed control
-- White/green light behavior control
-- Start/stop delays
-- Web UI + Recovery + OTA
+- Automatic fume extractor control
+- Reaction to soldering iron state (SENSE)
+- Configurable hot air reaction (temperature-based)
+- Flexible extractor power control algorithm
+- Last set speed memory
+- Backlight brightness control
+- Flexible backlight behavior based on sensor states
+- Automatic time-based stop
+- Web interface for setup and control
 
 ### 🧠 How it works
 
-- ESP32 reads handle and hot-air state
-- Logic decides when extractor must run
-- Commands are sent to ES02 automatically
+- SENSE signal is used to detect iron holder state
+- Inputs are processed through RC filters (100k + 100nF)
+- ESP32 analyzes input states and external data
+- Hot air temperature is used as an additional extractor start condition
+- Temperature threshold is configured via web interface
+- Extractor control is performed via BLE commands
 
 ### 🧩 Hardware
-
-- ESP32-C3 Pro Mini
-- R1, R2 - 100 kOhm
-- C1, C2 - 100 nF
 
 <a href="assets/photos/system-overview.jpg" target="_blank"><img src="assets/photos/system-overview.jpg" alt="System overview" width="300"></a>
 <a href="assets/photos/esp32-closeup.jpg" target="_blank"><img src="assets/photos/esp32-closeup.jpg" alt="ESP32-C3 module" width="300"></a>
 <a href="assets/photos/esp32-wires-capacitors.jpg" target="_blank"><img src="assets/photos/esp32-wires-capacitors.jpg" alt="Wires and capacitors on ESP32" width="300"></a>
   
-*ESP32 wiring (GPIO1, GPIO3, power)*
+*ESP32 connection (GPIO1, GPIO3, power)*
 
 ### 🔌 Wiring
 
@@ -67,43 +99,109 @@ GND -> ESP32 GND
 <a href="assets/photos/t420d-sense-point-1.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-1.jpg" alt="SENSE point 1" width="75"></a>
 <a href="assets/photos/t420d-sense-point-2.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-2.jpg" alt="SENSE point 2" width="75"></a>
 <a href="assets/photos/t420d-5v-point.jpg" target="_blank"><img src="assets/photos/t420d-5v-point.jpg" alt="5V point" width="75"></a>
+<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Example module placement inside T420D case" width="300"></a>
   
-*SENSE connection point on station board*  
-*5V power source point*
+*Photo 1: Signal 1 connection*  
+*Photo 2: Signal 2 and GND connection*  
+*Photo 3: 5V power source point*  
+*Photo 4: example module placement inside T420D*
+
+### 🔌 USB connection
+
+ESP32 is connected via USB only for first-time flashing.
+
+Then the system runs as:
+
+- Wi-Fi OTA updates
+- autonomous operation without USB
 
 ### 🌐 Web interface
 
-The UI is designed for setup-first workflow: configure once, then run daily without manual control.
+The interface is used for logic setup and system monitoring.
 
-Practical effect:
-- Less unnecessary noise
-- Extractor works only when needed
-- Lower power waste
-- No manual on/off routine
+---
+
+### Main capabilities
+
+#### 🎛 Control
+- extractor power setup  
+- backlight brightness setup  
+
+#### 🧠 Logic
+- start/stop delays  
+- activation conditions (iron / hot air)  
+- temperature threshold setup  
+
+#### 📡 Connectivity
+- Wi-Fi setup  
+- device scan and binding  
+
+#### 🛠 System
+- logs  
+- reboot  
+- recovery  
+- reset settings  
+
+### 🚀 Live Demo
+
+Demo runs in browser and shows UI in emulation mode:
+
+👉 https://serjio193.github.io/legacy-bridge/demo/
+
+---
 
 ### 📡 First start
 
-Online USB flasher: https://serjio193.github.io/legacy-bridge/  
-Demo UI: https://serjio193.github.io/legacy-bridge/demo/  
-Use a Chromium browser (Chrome/Edge, WebSerial support).
+Online USB flasher:  
+👉 https://serjio193.github.io/legacy-bridge/
 
-Default access:
+Requires Chromium browser (Chrome / Edge, WebSerial).
+
+### Default credentials
+
 - SSID: `LB-SETUP-XXXXX`
 - Password: `lbxxxxx!2026`
-- Web login: `admin`
+- Login: `admin`
 - Recovery AP: `LB_RECOVERY`
 
-`XXXXX` is the last 5 MAC symbols (HEX uppercase), `xxxxx` is lowercase.
+### Password generation
+
+- `XXXXX` — last 5 MAC symbols (HEX, uppercase)  
+- `xxxxx` — same symbols in lowercase  
+
+---
+
+### 📡 Network
+
+After setup:
+
+- Access Point is disabled  
+- device works in main network  
+
+---
+
+### 🌡 Hot air integration
+
+Connection:
+
+- Wi-Fi  
+- Bluetooth (BLE)  
+
+Extractor behavior depends on configured temperature threshold.
+
+---
 
 ### 🔐 Security
 
-- Firmware packages are signed with a private key
-- Device installs only valid signed updates
-- Bootloader and Recovery are protected from Wi-Fi rewriting
+- Firmware is signed with a private key  
+- Device accepts signed updates only  
+- Boot and Recovery are protected from Wi-Fi writes  
+
+---
 
 ### 📦 Updates
 
-- OTA over Wi-Fi
+- OTA via Wi-Fi
 - Package: `update.lbpack`
 - Source: GitHub Releases
 
@@ -116,17 +214,19 @@ Default access:
 
 ### 🚧 Roadmap
 
-- Additional ESP32 slave devices
-- Integration with more equipment (Aixun/JCID/etc.)
+- support for ESP32 slave devices  
+- integration of additional equipment (Aixun, JCID, etc.)  
 
 ### 👨‍🔧 Author
 
-Serjio193, embedded developer.  
-Built from real repair bench and daily usage requirements.
+**Serjio193**  
+Embedded developer  
+
+The project is based on practical repair workflow and daily equipment use.
 
 ### 🎯 Goal
 
-Create a simple and reliable tool that automates workflow without replacing existing hardware.
+Create a simple and reliable tool that automates workflow and removes unnecessary manual actions.
 
 ### ❤️ Support
 
@@ -138,6 +238,13 @@ Create a simple and reliable tool that automates workflow without replacing exis
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
+<details>
+<summary>💰 Show USDT (TRC20) address</summary>
+
+`TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+</details>
+
 </details>
 
 <details>
@@ -148,38 +255,70 @@ Create a simple and reliable tool that automates workflow without replacing exis
 Інтелектуальний міст між паяльною станцією та димовловлювачем.  
 Автоматизація без заміни обладнання.
 
+---
+
 ### 🚀 Що це таке
 
-Якщо витяжка не вмикається автоматично, а інструменти працюють окремо, Legacy Bridge об'єднує їх в одну систему автоматизації.
+Димовловлювач не вмикається автоматично?
 
-Це зовнішній модуль на ESP32, що керує димовловлювачем за станом паяльника (SENSE) і фена.
+Legacy Bridge вирішує цю проблему без заміни обладнання.
 
-### 📖 Історія проєкту
+Це вбудована модифікація на базі ESP32 для паяльних станцій (T420D та аналогічних), яка додає автоматичне керування витяжкою на основі стану паяльника та фена.
 
-Проєкт виник з реальних задач під час роботи з обладнанням Aixun: ES02 не мав зручної інтеграції з T420D (без Wi-Fi модуля) та H312.  
-Legacy Bridge створений, щоб додати сумісність і автоматизацію без заміни станції.
+---
 
-### ⚙️ Можливості
+### 📖 Історія створення
 
-- Автоматичне вмикання/вимикання димовловлювача
-- Логіка по SENSE для ручок
-- Тригер фена по температурі (Wi-Fi / BLE)
-- Керування потужністю витяжки
-- Керування білою/зеленою підсвіткою
-- Затримки старту/зупинки
-- Web UI + Recovery + OTA
+Я використовую обладнання Aixun у роботі.
+
+Після покупки димовловлювача Aixun ES02 з'ясувалося, що він не працює з моєю паяльною станцією T420D, оскільки в ній відсутній Wi-Fi модуль. На той момент я не знав, що існують версії цієї станції з Wi-Fi — як і багато хто, я був упевнений, що T420D буває лише в одному варіанті.
+
+Також виявилося, що витяжка не працює і з феном H312.
+
+📌 У підсумку: обладнання є, але нормальної інтеграції між пристроями немає.
+
+Спочатку було досліджено керування димовловлювачем ES02 через Bluetooth. Після аналізу команд стало зрозуміло, що пристроєм можна керувати напряму.
+
+Далі було досліджено USB-інтерфейс паяльної станції. Передбачалося, що через нього можна отримувати інформацію про стан роботи, однак на практиці USB використовується лише для прошивки і не передає робочі статуси.
+
+Також було досліджено фен (H312) через усі доступні інтерфейси: USB, Wi-Fi та Bluetooth. Підключення вдалося встановити через кожен з них, однак у проєкті використовується лише бездротова інтеграція як найбільш практична.
+
+Міняти техніку не було сенсу — проблема була не в залізі, а у відсутності зв'язки між пристроями.
+
+У результаті стало очевидно, що найнадійнішим рішенням буде доопрацювати саму станцію та додати відсутню логіку.
+
+Також варто зазначити, що Aixun пропонує окремий пристрій — BS08 AI Voice Center Control, призначений для керування обладнанням через голосові команди.
+
+Попри заявлену можливість об'єднання пристроїв, це рішення фактично залишається ручним керуванням — користувач, як і раніше, має віддавати команди (голосом або через інтерфейс).
+
+📌 BS08 не відстежує фактичний стан паяльної станції та не здатний автоматично реагувати на процес роботи.
+
+Таким чином, проблема автоматизації залишається невирішеною — змінюється лише спосіб керування.
+
+Так з'явився Legacy Bridge.
+
+### ⚙️ Функціональність
+
+- Автоматичне керування димовловлювачем
+- Реакція на стан паяльника (SENSE)
+- Налаштовувана реакція на роботу фена (за температурою)
+- Гнучке налаштування алгоритму керування потужністю димовловлювача
+- Запам'ятовування останньої встановленої швидкості
+- Регулювання підсвітки
+- Гнучке налаштування поведінки підсвітки залежно від стану датчиків
+- Автоматичне вимкнення за часом
+- Налаштування і контроль через веб-інтерфейс
 
 ### 🧠 Принцип роботи
 
-- ESP32 читає стан ручок і фена
-- Логіка визначає, коли запускати витяжку
-- Команди автоматично надсилаються на ES02
+- Сигнал SENSE використовується для визначення положення паяльника
+- Входи обробляються через RC-ланцюги (100k + 100nF)
+- ESP32 аналізує стани входів і зовнішні дані
+- Температура фена використовується як додаткова умова вмикання витяжки
+- Поріг температури задається через веб-інтерфейс
+- Керування димовловлювачем виконується через BLE-команди
 
 ### 🧩 Апаратна частина
-
-- ESP32-C3 Pro Mini
-- R1, R2 - 100 кОм
-- C1, C2 - 100 нФ
 
 <a href="assets/photos/system-overview.jpg" target="_blank"><img src="assets/photos/system-overview.jpg" alt="Загальний вигляд системи" width="300"></a>
 <a href="assets/photos/esp32-closeup.jpg" target="_blank"><img src="assets/photos/esp32-closeup.jpg" alt="Модуль ESP32-C3" width="300"></a>
@@ -203,39 +342,104 @@ GND -> ESP32 GND
 <a href="assets/photos/t420d-sense-point-1.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-1.jpg" alt="SENSE точка 1" width="75"></a>
 <a href="assets/photos/t420d-sense-point-2.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-2.jpg" alt="SENSE точка 2" width="75"></a>
 <a href="assets/photos/t420d-5v-point.jpg" target="_blank"><img src="assets/photos/t420d-5v-point.jpg" alt="Точка 5V" width="75"></a>
+<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Приклад розміщення модуля в корпусі T420D" width="300"></a>
   
-*Точка підключення SENSE на платі станції*  
-*Джерело живлення 5V*
+*Фото 1: підключення Signal 1*  
+*Фото 2: підключення Signal 2 і GND*  
+*Фото 3: джерело живлення 5V*  
+*Фото 4: приклад встановлення модуля всередині T420D*
+
+### 🔌 USB підключення
+
+ESP32 підключається по USB лише для первинної прошивки.
+
+Подальша робота:
+
+- оновлення через Wi-Fi (OTA)
+- автономна робота без USB
 
 ### 🌐 Веб-інтерфейс
 
-UI орієнтований на сценарій "налаштував і працює": один раз виставив логіку, далі система працює автономно.
+Інтерфейс використовується для налаштування логіки роботи системи та контролю стану.
 
-Що це дає:
-- Менше зайвого шуму
-- Витяжка працює лише за потреби
-- Менше витрат електроенергії
-- Не потрібно вручну вмикати/вимикати
+---
+
+### Основні можливості
+
+#### 🎛 Керування
+- налаштування потужності димовловлювача  
+- регулювання яскравості підсвітки  
+
+#### 🧠 Логіка
+- затримка вмикання та вимикання  
+- умови активації (паяльник / фен)  
+- налаштування температурних порогів  
+
+#### 📡 Підключення
+- налаштування Wi-Fi  
+- пошук і підключення пристроїв  
+
+#### 🛠 Система
+- перегляд логів  
+- reboot  
+- recovery  
+- скидання налаштувань  
+
+### 🚀 Live Demo
+
+Демо працює в браузері та показує інтерфейс у режимі емуляції:
+
+👉 https://serjio193.github.io/legacy-bridge/demo/
+
+---
 
 ### 📡 Перший запуск
 
 Онлайн USB flasher: https://serjio193.github.io/legacy-bridge/  
 Demo UI: https://serjio193.github.io/legacy-bridge/demo/  
-Потрібен Chromium браузер (Chrome/Edge, WebSerial).
+Потрібен Chromium-браузер (Chrome / Edge, WebSerial).
 
-Дані за замовчуванням:
+### Дані за замовчуванням
+
 - SSID: `LB-SETUP-XXXXX`
 - Пароль: `lbxxxxx!2026`
 - Логін: `admin`
 - Recovery AP: `LB_RECOVERY`
 
-`XXXXX` - останні 5 символів MAC (HEX uppercase), `xxxxx` - ті самі символи lowercase.
+### Генерація пароля
+
+- `XXXXX` — останні 5 символів MAC (HEX, uppercase)  
+- `xxxxx` — ті самі символи у lowercase  
+
+---
+
+### 📡 Мережа
+
+Після налаштування:
+
+- точка доступу вимикається  
+- пристрій працює в основній мережі  
+
+---
+
+### 🌡 Інтеграція фена
+
+Підключення:
+
+- Wi-Fi  
+- Bluetooth (BLE)  
+
+Робота витяжки залежить від заданого температурного порога.
+
+---
 
 ### 🔐 Безпека
 
 - Пакети прошивки підписані приватним ключем
-- Пристрій встановлює лише валідно підписані оновлення
-- Bootloader та Recovery захищені від перезапису по Wi-Fi
+- Пристрій приймає лише підписані оновлення
+- Boot і Recovery захищені від запису по Wi-Fi
+
+---
 
 ### 📦 Оновлення
 
@@ -252,17 +456,21 @@ Demo UI: https://serjio193.github.io/legacy-bridge/demo/
 
 ### 🚧 План розвитку
 
-- Підтримка додаткових ESP32 slave-пристроїв
-- Інтеграція з додатковим обладнанням (Aixun/JCID тощо)
+Планується:
+
+- підтримка slave-пристроїв на ESP32  
+- інтеграція додаткового обладнання (Aixun, JCID та ін.)  
 
 ### 👨‍🔧 Автор
 
-Serjio193, embedded developer.  
-Проєкт заснований на реальних задачах ремонту та щоденної роботи.
+**Serjio193**  
+Embedded developer  
+
+Проєкт заснований на практичному досвіді ремонту та щоденній роботі з обладнанням.
 
 ### 🎯 Мета проєкту
 
-Створити простий і надійний інструмент для автоматизації робочого процесу без заміни існуючого обладнання.
+Створити простий і надійний інструмент, який автоматизує робочий процес і прибирає зайві дії в роботі.
 
 ### ❤️ Підтримка
 
@@ -273,6 +481,13 @@ Serjio193, embedded developer.
 <a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
+
+<details>
+<summary>💰 Показати адресу USDT (TRC20)</summary>
+
+`TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+</details>
 
 </details>
 
