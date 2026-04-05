@@ -51,6 +51,9 @@ static bool gRequested = false;
 static bool gAutoExitAttempted = false;
 static String gAutoExitErr;
 static String gAutoExitTarget;
+static uint32_t gAutoExitTryCount = 0;
+static uint32_t gAutoExitNextTryMs = 0;
+static const uint32_t kAutoExitRetryMs = 8000;
 static bool gRebootScheduled = false;
 static uint32_t gRebootAtMs = 0;
 static String gRebootReason;
@@ -332,6 +335,7 @@ static void scheduleReboot(const char *reason, uint32_t delayMs = 450) {
 static bool isSystemWritableAppSlot(const esp_partition_t *p);
 static const esp_partition_t *littlefsPartition();
 static const esp_partition_t *otaPartitionA();
+static const esp_partition_t *pickBootableMainSlot(String *outWhich = nullptr);
 
 static uint16_t readLe16(const uint8_t *p) {
   return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
@@ -661,7 +665,47 @@ static void clearMainSettings() {
   prefs.end();
 }
 
-static const esp_partition_t *pickBootableMainSlot(String *outWhich = nullptr) {
+static bool tryAutoExitRecovery(const char *source, bool allowWhenRequested = false) {
+  const esp_partition_t *running = esp_ota_get_running_partition();
+  if (!running || running->type != ESP_PARTITION_TYPE_APP ||
+      running->subtype != ESP_PARTITION_SUBTYPE_APP_FACTORY) {
+    return false;
+  }
+  if (gRequested && !allowWhenRequested) {
+    gAutoExitErr = "requested recovery mode";
+    gAutoExitTarget = "";
+    return false;
+  }
+
+  gAutoExitAttempted = true;
+  gAutoExitTryCount++;
+
+  String which;
+  const esp_partition_t *t = pickBootableMainSlot(&which);
+  if (!t) {
+    gAutoExitErr = "no valid SYSTEM slot found";
+    gAutoExitTarget = "";
+    Serial.printf("Auto-exit (%s) skipped: no valid SYSTEM slot\n", source ? source : "?");
+    return false;
+  }
+
+  gAutoExitTarget = which;
+  esp_err_t e = esp_ota_set_boot_partition(t);
+  if (e != ESP_OK) {
+    gAutoExitErr = String("esp_ota_set_boot_partition=") + String((int)e);
+    Serial.printf("Auto-exit (%s) failed: %s\n", source ? source : "?", gAutoExitErr.c_str());
+    return false;
+  }
+
+  gAutoExitErr = "";
+  setForceRecovery(false);
+  if (source && strcmp(source, "boot") == 0) scheduleReboot("auto_exit_boot", 450);
+  else scheduleReboot("auto_exit_retry", 450);
+  Serial.printf("Auto-exit (%s): boot -> %s\n", source ? source : "?", which.c_str());
+  return true;
+}
+
+static const esp_partition_t *pickBootableMainSlot(String *outWhich) {
   const esp_partition_t *a = otaPartitionA();
   const esp_partition_t *b = otaPartitionB();
   String err;
@@ -733,6 +777,10 @@ static void handleStatus() {
   body += F("\",\"auto_exit_err\":\"");
   body += jsonEscape(gAutoExitErr);
   body += F("\"");
+  body += F(",\"auto_exit_tries\":");
+  body += String((unsigned long)gAutoExitTryCount);
+  body += F(",\"auto_exit_next_try_ms\":");
+  body += String((unsigned long)((gAutoExitNextTryMs > millis()) ? (gAutoExitNextTryMs - millis()) : 0));
 
   body += F(",\"running_slot\":\"");
   body += slotName(running);
@@ -1644,7 +1692,7 @@ static void handleRoot() {
             "function ts(){const d=new Date();const p=(n)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}"
             "function log(s){el.log.textContent+=`\\n[ui] ${ts()} ${s}`;el.log.scrollTop=el.log.scrollHeight;}"
             "function setPhase(name,pct,detail){el.phase.textContent=name||'';el.bar.style.width=`${Math.max(0,Math.min(100,Number(pct||0))).toFixed(1)}%`;el.detail.textContent=detail||`${Math.round(Number(pct||0))}%`;}"
-            "function setParts(s){if(!el.parts)return;const on=(v)=>!!v;const item=(n,ok)=>`<span class='pill ${ok?'ok':'bad'}'>${n}: ${ok?'OK':'FAIL'}</span>`;const html=[item('OTA_A',on(s.ota_a_present)&&on(s.ota_a_valid)),item('OTA_B',on(s.ota_b_present)&&on(s.ota_b_valid)),item('RECOVERY',on(s.recovery_present)&&on(s.recovery_valid)),item('LITTLEFS',on(s.littlefs_present)&&on(s.littlefs_mounted))].join('');el.parts.innerHTML=html;}"
+            "function setParts(s){if(!el.parts)return;const on=(v)=>!!v;const item=(n,state)=>`<span class='pill ${state==='ok'?'ok':(state==='na'?'':'bad')}'>${n}: ${state==='ok'?'OK':(state==='na'?'N/A':'FAIL')}</span>`;const state=(present,valid)=>!on(present)?'na':(on(valid)?'ok':'bad');const systemState=state(s.ota_a_present,s.ota_a_valid);const html=[item('SYSTEM',systemState),item('RECOVERY',state(s.recovery_present,s.recovery_valid)),item('LITTLEFS',state(s.littlefs_present,s.littlefs_mounted))].join('');el.parts.innerHTML=html;}"
             "function setBusy(v){busy=!!v;[el.btnFw,el.btnLatest,el.btnChoose,el.btnCancel,el.btnBoot,el.btnGit,el.btnReset,el.btnPack].forEach(b=>{if(b)b.disabled=busy;});}"
             "async function j(url,opts){const o=Object.assign({},opts||{});o.headers=Object.assign({'Content-Type':'application/json'},o.headers||{});try{const r=await fetch(url,o);const t=await r.text();try{return JSON.parse(t||'{}')}catch(_){return {ok:false,error:t||'bad json'}}}catch(e){return {ok:false,error:String(e&&e.message?e.message:e)}}}"
             "function parseAuto(){try{const u=new URL(location.href);const p=String(u.searchParams.get('autopack')||'').trim();u.searchParams.delete('autopack');u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||''));return p;}catch(_){return '';}}"
@@ -1657,7 +1705,7 @@ static void handleRoot() {
             "function nextMainUrl(r){return String((r&&r.next_url)||'http://lb-bridge.local/');}"
             "async function flashUrl(url,label){const raw=String(url||'').trim();if(!raw){log(`${label}: empty url`);return;}const u=toMirrorUrl(raw);setBusy(true);setPhase('Загрузка',4,'инициализация');if(u!==raw)log(`${label}: using mirror ${u}`);else log(`${label}: ${u}`);const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log(`${label}: ok, rebooting`);log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>{setBusy(false);},20000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'unknown'));log(`${label} FAIL: ${(r&&r.error)||'unknown'}`);}"
             "async function refresh(){const s=await j('/api/status',{method:'GET'});if(!s||!s.ok)return;el.ip.textContent=String(s.ip||'-');setParts(s);const st=String(s.pack_stage||'');const pa=!!s.pack_active;const rec=Number(s.pack_received||0),tot=Number(s.pack_total||0),fwW=Number(s.pack_fw_written||0),fwT=Number(s.pack_fw_total||0),fsW=Number(s.pack_fs_written||0),fsT=Number(s.pack_fs_total||0);"
-            "if(pa){if(st==='hdr'||st==='fw_sig'||st==='fs_sig'){const p=tot>0?(3+(rec/tot)*42):8;setPhase('Загрузка',Math.max(3,Math.min(45,p)),tot>0?`${Math.round((rec/tot)*100)}%`:`${rec} bytes`);}else if(st==='fw_data'||st==='fs_data'){const allT=Math.max(1,fwT+fsT);const p=45+((fwW+fsW)/allT)*50;setPhase('Обновление',Math.max(45,Math.min(95,p)),`fw ${fwW}/${fwT} | fs ${fsW}/${fsT}`);}else if(st==='done'){setPhase('Перезагрузка',98,'подготовка');}}"
+            "if(pa){if(st==='hdr'||st==='fw_sig'||st==='fs_sig'){const p=tot>0?(3+(rec/tot)*42):8;setPhase('Загрузка',Math.max(3,Math.min(45,p)),tot>0?`${Math.round((rec/tot)*100)}%`:`${rec} bytes`);}else if(st==='fw_data'||st==='fs_data'){const allT=Math.max(1,fwT+fsT);const p=45+((fwW+fsW)/allT)*50;setPhase('Обновление',Math.max(45,Math.min(95,p)),`fw ${fwW}/${fwT} | fs ${fsW}/${fsT}`);}else if(st==='done'){setPhase('Перезагрузка',98,'подготовка');}}else if(!busy){const tgt=String(s.auto_exit_target||'').trim();const err=String(s.auto_exit_err||'').trim();const tr=Number(s.auto_exit_tries||0);const left=Number(s.auto_exit_next_try_ms||0);if(tgt){setPhase('Автовыход',12,`target ${tgt} | tries ${tr}`);}else if(err){setPhase('Ожидание',0,`${err}${left>0?` | retry ${Math.ceil(left/1000)}s`:''}`);}else{setPhase('Ожидание',0,'0%');}}"
             "}"
             "async function flashFile(){const f=el.file&&el.file.files&&el.file.files[0]?el.file.files[0]:null;if(!f){log('manual FAIL: choose update.lbpack');return;}setBusy(true);setPhase('Загрузка',2,'отправка файла');const x=new XMLHttpRequest();const fd=new FormData();fd.append('pack',f,f.name||'update.lbpack');x.upload.onprogress=(e)=>{if(e.lengthComputable){const p=Math.max(2,Math.min(40,(e.loaded/e.total)*40));setPhase('Загрузка',p,`${Math.round((e.loaded/e.total)*100)}%`);}};x.onload=()=>{let r={ok:false,error:'bad json'};try{r=JSON.parse(x.responseText||'{}')}catch(_){} if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log('manual OK: rebooting');log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>setBusy(false),20000);}else{setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'upload failed'));log(`manual FAIL: ${(r&&r.error)||'unknown'}`);}};x.onerror=()=>{setBusy(false);setPhase('Ошибка',0,'network error');log('manual FAIL: network error');};x.open('POST','/api/recovery/flash/allpack',true);x.send(fd);}"
             "el.btnFw.onclick=()=>openMenu(); el.btnCancel.onclick=()=>closeMenu(); el.menu.onclick=(e)=>{if(e.target===el.menu)closeMenu();};"
@@ -1694,28 +1742,9 @@ void setup() {
   if (running && running->type == ESP_PARTITION_TYPE_APP &&
       running->subtype == ESP_PARTITION_SUBTYPE_APP_FACTORY &&
       !requested) {
-    String which;
-    const esp_partition_t *t = pickBootableMainSlot(&which);
-    if (t) {
-      gAutoExitAttempted = true;
-      gAutoExitTarget = which;
-      esp_err_t e = esp_ota_set_boot_partition(t);
-      if (e == ESP_OK) {
-        setForceRecovery(false);
-        Serial.print("Auto-exit recovery: boot -> ");
-        Serial.println(which);
-        delay(150);
-        ESP.restart();
-      } else {
-        gAutoExitErr = String("esp_ota_set_boot_partition=") + String((int)e);
-        Serial.printf("Auto-exit recovery failed: esp_ota_set_boot_partition=%d\n", (int)e);
-      }
-    } else {
-      gAutoExitAttempted = true;
-      gAutoExitErr = "no valid OTA slot found";
-      Serial.println("Auto-exit recovery skipped: no valid OTA slot found");
-    }
+    tryAutoExitRecovery("boot");
   }
+  gAutoExitNextTryMs = millis() + kAutoExitRetryMs;
 
   startRecoveryNetwork();
 
@@ -1766,6 +1795,15 @@ void setup() {
 
 void loop() {
   server.handleClient();
+  if (!gRebootScheduled && !gPackFlash.active) {
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    if (running && running->type == ESP_PARTITION_TYPE_APP &&
+        running->subtype == ESP_PARTITION_SUBTYPE_APP_FACTORY &&
+        (int32_t)(millis() - gAutoExitNextTryMs) >= 0) {
+      tryAutoExitRecovery("retry");
+      gAutoExitNextTryMs = millis() + kAutoExitRetryMs;
+    }
+  }
   if (gRebootScheduled && (int32_t)(millis() - gRebootAtMs) >= 0) {
     Serial.printf("Recovery scheduled reboot: %s\n", gRebootReason.c_str());
     delay(30);

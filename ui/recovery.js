@@ -413,8 +413,7 @@
     pillSet(bootPill, "BOOT", "cyan");
 
     const aValid = !!r.ota_a_valid;
-    const bValid = !!r.ota_b_valid;
-    const systemValid = aValid || bValid;
+    const systemValid = aValid;
     pillSet(otaAPill, systemValid ? "VALID" : "EMPTY", systemValid ? "good" : "warn");
     if (otaAInfo) otaAInfo.textContent = systemValid ? "contains valid image" : "no valid image header";
 
