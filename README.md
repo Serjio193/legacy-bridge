@@ -244,12 +244,12 @@ Embedded developer
 
 ### ❤️ Поддержка
 
-<a href="https://paypal.me/SerhiiTarnopovych">
-  <img src="https://cdn.simpleicons.org/paypal/00457C" width="32" />
+<a href="https://paypal.me/SerhiiTarnopovych" target="_blank">
+  <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="#">
-  <img src="https://cdn.simpleicons.org/tether/26A17B" width="32" />
+<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
+  <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
 <details>
