@@ -76,6 +76,7 @@ GND -> ESP32 GND
 <a href="assets/photos/t420d-sense-point-1.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-1.jpg" alt="Подключение SENSE к плате T420D (точка 1)" width="180"></a>
 <a href="assets/photos/t420d-sense-point-2.jpg" target="_blank"><img src="assets/photos/t420d-sense-point-2.jpg" alt="Подключение SENSE к плате T420D (точка 2)" width="180"></a>
 <a href="assets/photos/t420d-5v-point.jpg" target="_blank"><img src="assets/photos/t420d-5v-point.jpg" alt="Точка подключения 5V на плате T420D" width="180"></a>
+<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="420"></a>
 
 ### 🔌 USB подключение
 
@@ -464,10 +465,6 @@ Serjio193, embedded developer.
 </a>
 
 </details>
-
-## 🧷 Пример установки в T420D
-
-<a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="420"></a>
 
 ## 🧱 Technical Docs
 
