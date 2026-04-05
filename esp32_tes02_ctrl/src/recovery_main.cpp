@@ -652,6 +652,12 @@ static void setForceRecovery(bool on) {
   prefs.end();
 }
 
+static void setSkipDualRecoveryOnce(bool on) {
+  prefs.begin(kPrefsNs, false);
+  prefs.putBool("skip_dual_rec_once", on);
+  prefs.end();
+}
+
 static bool getForceRecovery() {
   prefs.begin(kPrefsNs, true);
   bool v = prefs.getBool("force_recovery", false);
@@ -698,6 +704,7 @@ static bool tryAutoExitRecovery(const char *source, bool allowWhenRequested = fa
   }
 
   gAutoExitErr = "";
+  setSkipDualRecoveryOnce(true);
   setForceRecovery(false);
   if (source && strcmp(source, "boot") == 0) scheduleReboot("auto_exit_boot", 450);
   else scheduleReboot("auto_exit_retry", 450);
@@ -864,6 +871,7 @@ static void handleBootMain() {
     return;
   }
 
+  setSkipDualRecoveryOnce(true);
   setForceRecovery(false);
   String body;
   body.reserve(220);
@@ -1093,6 +1101,7 @@ static void handleFlashSystemPost() {
     sendJsonError(500, String("esp_ota_set_boot_partition failed: ") + String((int)e));
     return;
   }
+  setSkipDualRecoveryOnce(true);
   setForceRecovery(false);
   String body;
   body.reserve(220);
@@ -1327,6 +1336,7 @@ static void handleFlashAllPackPost() {
     return;
   }
 
+  setSkipDualRecoveryOnce(true);
   setForceRecovery(false);
   String body;
   body.reserve(260);
@@ -1380,6 +1390,7 @@ static bool packFinalizeAndStageBoot(String *outErr, String *outBody) {
     return false;
   }
 
+  setSkipDualRecoveryOnce(true);
   setForceRecovery(false);
   outBody->reserve(300);
   *outBody += F("{\"ok\":true,\"rebooting\":true,\"mode\":\"pack\",\"system_bytes\":");

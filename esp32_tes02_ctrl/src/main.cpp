@@ -3375,6 +3375,17 @@ static bool bootRecoveryByDualHandleGpio() {
   return raised;
 }
 
+static bool consumeSkipDualHandleRecoveryOnce() {
+  bool skip = false;
+  prefs.begin(kPrefsNs, false);
+  skip = prefs.getBool("skip_dual_rec_once", false);
+  if (skip) {
+    prefs.putBool("skip_dual_rec_once", false);
+  }
+  prefs.end();
+  return skip;
+}
+
 static bool switchBootToRecoveryPartition(String *outErr = nullptr) {
   const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
   if (!factory) {
@@ -6839,7 +6850,11 @@ void setup() {
 
   bootHealthCheckInit();
   loadConfig();
-  if (bootRecoveryByDualHandleGpio()) {
+  bool skipDualHandleRecovery = consumeSkipDualHandleRecoveryOnce();
+  if (skipDualHandleRecovery) {
+    extractorCmdLogPush("[recovery] skip dual-handle trigger once");
+  }
+  if (!skipDualHandleRecovery && bootRecoveryByDualHandleGpio()) {
     if (requestRecoveryBootNow("dual_handle_boot")) return;
   } else if (gBootForceRecoveryRequested) {
     if (requestRecoveryBootNow(gBootForceRecoveryReason.c_str())) return;
