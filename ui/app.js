@@ -309,6 +309,8 @@
           footer_github: "Visit GitHub",
           footer_support: "Support Project",
           tooltip_support: "If this project helps you, you can support it",
+          support_choose_title: "Support Project",
+          support_choose_subtitle: "Choose support method",
           label_wallet: "Wallet",
           btn_copy_wallet: "Copy Wallet",
           btn_copied: "Copied",
@@ -629,6 +631,8 @@
           footer_github: "Посетить GitHub",
           footer_support: "Поддержать проект",
           tooltip_support: "Если проект оказался полезным — можно поддержать",
+          support_choose_title: "Поддержать проект",
+          support_choose_subtitle: "Выберите способ поддержки",
           label_wallet: "Кошелек",
           btn_copy_wallet: "Скопировать кошелек",
           btn_copied: "Скопировано",
@@ -949,6 +953,8 @@
           footer_github: "Відвідати GitHub",
           footer_support: "Підтримати проєкт",
           tooltip_support: "Якщо проєкт був корисним — його можна підтримати",
+          support_choose_title: "Підтримати проєкт",
+          support_choose_subtitle: "Оберіть спосіб підтримки",
           label_wallet: "Гаманець",
           btn_copy_wallet: "Скопіювати гаманець",
           btn_copied: "Скопійовано",
@@ -6217,15 +6223,17 @@
       }
       function initFooterSupport() {
         const btnSupport = document.getElementById("btnSupportProject");
-        const panel = document.getElementById("supportQuickPanel");
-        const btnUsdt = document.getElementById("supportUsdtBtn");
+        const choiceModal = document.getElementById("supportChoiceModal");
+        const choiceClose = document.getElementById("supportChoiceClose");
+        const btnPaypal = document.getElementById("supportModalPaypal");
+        const btnUsdt = document.getElementById("supportModalUsdt");
         const usdtModal = document.getElementById("supportUsdtModal");
         const usdtClose = document.getElementById("supportUsdtClose");
         const btnCopy = document.getElementById("supportUsdtCopy");
         const walletEl = document.getElementById("supportUsdtWallet");
-        if (!btnSupport || !panel) return;
-        function setOpen(on) {
-          panel.classList.toggle("hidden", !on);
+        if (!btnSupport || !choiceModal) return;
+        function setChoiceOpen(on) {
+          choiceModal.classList.toggle("hidden", !on);
         }
         function setUsdtOpen(on) {
           if (!usdtModal) return;
@@ -6234,12 +6242,28 @@
         btnSupport.addEventListener("click", (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
-          setOpen(panel.classList.contains("hidden"));
+          setChoiceOpen(true);
+        });
+        if (choiceClose) {
+          choiceClose.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            setChoiceOpen(false);
+          });
+        }
+        if (btnPaypal) {
+          btnPaypal.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            window.open("https://paypal.me/SerhiiTarnopovych", "_blank", "noopener,noreferrer");
+            setChoiceOpen(false);
+          });
         });
         if (btnUsdt) {
           btnUsdt.addEventListener("click", (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
+            setChoiceOpen(false);
             setUsdtOpen(true);
           });
         }
@@ -6277,15 +6301,13 @@
             }
           });
         }
-        document.addEventListener("click", (ev) => {
-          if (!panel || panel.classList.contains("hidden")) return;
-          const t = ev && ev.target;
-          if (t === btnSupport || (btnSupport && btnSupport.contains(t))) return;
-          if (panel.contains(t)) return;
-          setOpen(false);
+        choiceModal.addEventListener("click", (ev) => {
+          if (ev.target === choiceModal) setChoiceOpen(false);
         });
         document.addEventListener("keydown", (ev) => {
-          if (ev && ev.key === "Escape") setUsdtOpen(false);
+          if (!ev || ev.key !== "Escape") return;
+          setUsdtOpen(false);
+          setChoiceOpen(false);
         });
       }
       sel.value = initial;

@@ -562,24 +562,32 @@
       <a class="footerLink" id="githubLink" href="https://github.com/Serjio193/legacy-bridge/" target="_blank" rel="noopener noreferrer">
         <span data-i18n="footer_github">Visit GitHub</span>
       </a>
-      <div id="supportQuickPanel" class="supportQuickPanel hidden">
-        <div class="supportQuickRow">
-          <a id="supportPaypalLink" class="supportBadge supportBadgePaypal" href="https://paypal.me/SerhiiTarnopovych" target="_blank" rel="noopener noreferrer">
-            <img class="supportBadgeLogo supportBadgeLogoPaypal" src="paypal-logo.png" alt="PayPal">
-            <span>PayPal</span>
-          </a>
-          <button id="supportUsdtBtn" type="button" class="supportBadge supportBadgeUsdt">
-            <img class="supportBadgeLogo supportBadgeLogoUsdt" src="usdt-trc20-logo.png" alt="USDT TRC20">
-            <span>USDT TRC20</span>
-          </button>
-        </div>
+    </div>
+  </div>
+  <div id="supportChoiceModal" class="supportChoiceModal hidden" role="dialog" aria-modal="true" aria-labelledby="supportChoiceTitle">
+    <div class="supportChoiceBox">
+      <div id="supportChoiceTitle" class="supportChoiceTitle" data-i18n="support_choose_title">Support Project</div>
+      <div class="supportChoiceText" data-i18n="support_choose_subtitle">Choose support method</div>
+      <div class="supportQuickRow">
+        <button id="supportModalPaypal" type="button" class="supportBadge supportBadgePaypal supportBigBtn">
+          <img class="supportBadgeLogo supportBadgeLogoPaypal" src="paypal-logo.png" alt="PayPal">
+          <span>PayPal</span>
+        </button>
+        <button id="supportModalUsdt" type="button" class="supportBadge supportBadgeUsdt supportBigBtn">
+          <img class="supportBadgeLogo supportBadgeLogoUsdt" src="usdt-trc20-logo.png" alt="USDT TRC20">
+          <span>USDT TRC20</span>
+        </button>
+      </div>
+      <div class="supportQuickRow">
+        <button id="supportChoiceClose" type="button" class="supportMiniBtn" data-i18n="btn_close">Close</button>
       </div>
     </div>
   </div>
   <div id="supportUsdtModal" class="supportUsdtModal hidden" role="dialog" aria-modal="true" aria-labelledby="supportUsdtTitle">
     <div class="supportUsdtModalBox">
       <div id="supportUsdtTitle" class="supportUsdtTitle">USDT TRC20</div>
-      <div class="supportUsdtLine"><span data-i18n="label_wallet">Wallet</span>: <code id="supportUsdtWallet">TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL</code></div>
+      <div class="supportUsdtLine"><span data-i18n="label_wallet">Wallet</span>:</div>
+      <div class="supportWalletBox"><code id="supportUsdtWallet">TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL</code></div>
       <img class="supportUsdtQr" src="usdt-trc20-qr.jpg" alt="USDT TRC20 QR">
       <div class="supportQuickRow">
         <button id="supportUsdtCopy" type="button" class="supportMiniBtn" data-i18n="btn_copy_wallet">Copy Wallet</button>
