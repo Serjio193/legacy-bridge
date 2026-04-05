@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 Push-Location (Split-Path -Parent $MyInvocation.MyCommand.Path)
 try {
   $projRoot = Resolve-Path (Join-Path $PWD "..")
+  Set-Location $projRoot
   $buildDir = Join-Path $projRoot (".pio\build\{0}" -f $Env)
   $recoveryBuildDir = Join-Path $projRoot ".pio\build\esp32c3_recovery"
   
@@ -28,6 +29,12 @@ try {
   Read-Host
 
   Write-Host ""
+  Write-Host "Building main firmware ($Env)..."
+  pio run -e $Env | Out-Host
+  Write-Host ""
+  Write-Host "Building LittleFS image ($Env)..."
+  pio run -e $Env -t buildfs | Out-Host
+  Write-Host ""
   Write-Host "Building recovery firmware (esp32c3_recovery)..."
   pio run -e esp32c3_recovery | Out-Host
   Write-Host ""
@@ -39,11 +46,6 @@ try {
   if (!(Test-Path $firmware)) { throw "Missing: $firmware" }
   if (!(Test-Path $littlefs)) { throw "Missing: $littlefs" }
   if (!(Test-Path $recovery)) { throw "Missing: $recovery" }
-
-  $espTool = & python -c "import esptool; print(esptool.__file__)" 2>$null | Split-Path -Parent
-  if (!$espTool) {
-    $espTool = & python -m esptool.esptool 2>&1 | head -1
-  }
 
   $cmd = @(
     "python", "-m", "esptool",
