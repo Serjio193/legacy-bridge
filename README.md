@@ -244,14 +244,20 @@ Embedded developer
 
 ### ❤️ Поддержка
 
-Если проект оказался полезен, вы можете поддержать его развитие:
+<a href="https://paypal.me/SerhiiTarnopovych">
+  <img src="https://cdn.simpleicons.org/paypal/00457C" width="32" />
+</a>
+&nbsp;&nbsp;
+<a href="#">
+  <img src="https://cdn.simpleicons.org/tether/26A17B" width="32" />
+</a>
 
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/SerhiiTarnopovych)
+<details>
+<summary>💰 Показать адрес USDT (TRC20)</summary>
 
-[![USDT TRC20](https://img.shields.io/badge/USDT-TRC20-26A17B?style=for-the-badge&logo=tether&logoColor=white)](https://serjio193.github.io/legacy-bridge/support.html)
-
-**USDT (TRC20):**  
 `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+</details>
 
 </details>
 
