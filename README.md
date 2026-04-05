@@ -469,68 +469,17 @@ Serjio193, embedded developer.
 
 <a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="420"></a>
 
-## 🧱 Technical Docs / Техдок / Техдок
-
-<details open>
-<summary><b>Русский</b></summary>
-
-### Structure
-
-- `esp32_tes02_ctrl/` - проект прошивки PlatformIO (ESP32-C3)
-- `ui/` - исходники frontend, синхронизируются в LittleFS прошивки
-- `security_private.pem` / `security_public.pem` - ключи подписи (локально, приватный ключ не публиковать)
-
-### Firmware release pipeline
-
-- Workflow GitHub Actions: `.github/workflows/release_firmware.yml`
-- Сборка подписанного `update.lbpack` и публикация в GitHub Releases
-- Артефакты релиза подписываются приватным ключом, подпись проверяется на устройстве перед установкой
-- Версия основной прошивки числовая: `v1 ... v99999`
-- UI автообновления читает GitHub Releases и ставит `update.lbpack`
-
-### Online USB flasher page (bare ESP32-C3)
-
-- Исходник: `flasher/index.html`
-- Workflow деплоя: `.github/workflows/pages_flasher.yml`
-- Ожидаемый URL после деплоя Pages: `https://serjio193.github.io/legacy-bridge/`
-- Страница читает версии из GitHub Releases и прошивает полный набор:
-  - `bootloader.bin` (`0x0`)
-  - `partitions.bin` (`0x8000`)
-  - `firmware.bin` (`0x10000`)
-  - `littlefs.bin` (`0x238000`)
-  - `recovery.bin` (`0x300000`)
-- Требования к браузеру:
-  - Chromium (Chrome/Edge)
-  - HTTPS-контекст (GitHub Pages)
-
-### Local canonical packaging command
-
-```powershell
-powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
-```
-
-Команда синхронизирует `ui -> esp32_tes02_ctrl/data`, пересобирает firmware + LittleFS, подписывает бинарники и создает пакет.
-
-### Detailed docs
-
-- `esp32_tes02_ctrl/README.md`
-
-</details>
-
-<details>
-<summary><b>English</b></summary>
-
-### Structure
+## 🧱 Technical Docs
 
 - `esp32_tes02_ctrl/` - PlatformIO firmware project (ESP32-C3)
-- `ui/` - frontend source mirror used for sync into firmware LittleFS
-- `security_private.pem` / `security_public.pem` - signing keys (local only, do not publish private key)
+- `ui/` - frontend source mirror synced into firmware LittleFS
+- `security_private.pem` / `security_public.pem` - signing keys (local only, never publish private key)
 
 ### Firmware release pipeline
 
-- GitHub Actions workflow: `.github/workflows/release_firmware.yml`
+- Workflow: `.github/workflows/release_firmware.yml`
 - Builds signed `update.lbpack` and uploads it to GitHub Releases
-- Release artifacts are signed with a private key, and signature is verified on-device before install
+- Release artifacts are signed with private key, signature is verified on-device before install
 - Main firmware version is numeric: `v1 ... v99999`
 - Device auto-update UI reads GitHub Releases and installs `update.lbpack`
 
@@ -538,8 +487,8 @@ powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pa
 
 - Source: `flasher/index.html`
 - Deploy workflow: `.github/workflows/pages_flasher.yml`
-- Expected URL after Pages deploy: `https://serjio193.github.io/legacy-bridge/`
-- The page pulls versions from GitHub Releases and flashes full image set:
+- URL: `https://serjio193.github.io/legacy-bridge/`
+- Full image set:
   - `bootloader.bin` (`0x0`)
   - `partitions.bin` (`0x8000`)
   - `firmware.bin` (`0x10000`)
@@ -560,51 +509,3 @@ This command syncs `ui -> esp32_tes02_ctrl/data`, rebuilds firmware + LittleFS, 
 ### Detailed docs
 
 - `esp32_tes02_ctrl/README.md`
-
-</details>
-
-<details>
-<summary><b>Українська</b></summary>
-
-### Structure
-
-- `esp32_tes02_ctrl/` - проєкт прошивки PlatformIO (ESP32-C3)
-- `ui/` - вихідний frontend, що синхронізується в LittleFS прошивки
-- `security_private.pem` / `security_public.pem` - ключі підпису (локально, приватний ключ не публікувати)
-
-### Firmware release pipeline
-
-- Workflow GitHub Actions: `.github/workflows/release_firmware.yml`
-- Збірка підписаного `update.lbpack` і публікація в GitHub Releases
-- Артефакти релізу підписуються приватним ключем, підпис перевіряється на пристрої перед встановленням
-- Версія основної прошивки числова: `v1 ... v99999`
-- UI автооновлення читає GitHub Releases і встановлює `update.lbpack`
-
-### Online USB flasher page (bare ESP32-C3)
-
-- Джерело: `flasher/index.html`
-- Workflow деплою: `.github/workflows/pages_flasher.yml`
-- Очікуваний URL після деплою Pages: `https://serjio193.github.io/legacy-bridge/`
-- Сторінка отримує версії з GitHub Releases та прошиває повний набір:
-  - `bootloader.bin` (`0x0`)
-  - `partitions.bin` (`0x8000`)
-  - `firmware.bin` (`0x10000`)
-  - `littlefs.bin` (`0x238000`)
-  - `recovery.bin` (`0x300000`)
-- Вимоги до браузера:
-  - Chromium (Chrome/Edge)
-  - HTTPS-контекст (GitHub Pages)
-
-### Local canonical packaging command
-
-```powershell
-powershell -ExecutionPolicy Bypass -File esp32_tes02_ctrl\scripts\make_update_pack.ps1 -Env esp32c3
-```
-
-Команда синхронізує `ui -> esp32_tes02_ctrl/data`, перебудовує firmware + LittleFS, підписує бінарники та створює пакет.
-
-### Detailed docs
-
-- `esp32_tes02_ctrl/README.md`
-
-</details>
