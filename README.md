@@ -234,14 +234,17 @@ Create a simple and reliable tool that automates workflow and removes unnecessar
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
+<a href="#usdt-trc20-en">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
-<details>
+<details id="usdt-trc20-en">
 <summary>💰 Show USDT (TRC20) wallet</summary>
 
 `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+<br>
+<img src="assets/support/usdt-trc20-qr.jpg" alt="USDT TRC20 QR" width="280">
 
 </details>
 
@@ -478,14 +481,17 @@ Embedded developer
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
+<a href="#usdt-trc20-ua">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
-<details>
+<details id="usdt-trc20-ua">
 <summary>💰 Показати адресу USDT (TRC20)</summary>
 
 `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+<br>
+<img src="assets/support/usdt-trc20-qr.jpg" alt="USDT TRC20 QR" width="280">
 
 </details>
 
@@ -735,14 +741,17 @@ Embedded developer
   <img src="assets/support/paypal-logo.png" alt="PayPal" height="34">
 </a>
 &nbsp;&nbsp;
-<a href="https://serjio193.github.io/legacy-bridge/support.html" target="_blank">
+<a href="#usdt-trc20-ru">
   <img src="assets/support/usdt-trc20-logo.png" alt="USDT TRC20" height="34">
 </a>
 
-<details>
+<details id="usdt-trc20-ru">
 <summary>💰 Показать адрес USDT (TRC20)</summary>
 
 `TB4kzsHL3emLtdvDroNE9dEpMhUW6r3bTL`
+
+<br>
+<img src="assets/support/usdt-trc20-qr.jpg" alt="USDT TRC20 QR" width="280">
 
 </details>
 
