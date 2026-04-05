@@ -134,6 +134,60 @@ jobs:
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin.sha256.txt" "$out/littlefs.bin.sha256.txt" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin" "$out/recovery.bin" -Force
 
+      - name: Prune old firmware releases (keep 4 before publish)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            function parseVer(s) {
+              const m = String(s || "").trim().match(/^v(\d{1,5})$/i);
+              if (!m) return null;
+              const n = Number(m[1]);
+              if (!Number.isInteger(n) || n < 1 || n > 99999) return null;
+              return n;
+            }
+
+            const releases = await github.paginate(
+              github.rest.repos.listReleases,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              }
+            );
+
+            const fwReleases = releases
+              .filter(r => !r.draft)
+              .map(r => ({ r, n: parseVer(r.tag_name) }))
+              .filter(x => x.n !== null)
+              .sort((a, b) => b.n - a.n);
+
+            const keep = 4;
+            const toDelete = fwReleases.slice(keep);
+            core.info(`Firmware releases found: ${fwReleases.length}. Keep=${keep}, delete=${toDelete.length}`);
+
+            for (const x of toDelete) {
+              const rel = x.r;
+              const tag = String(rel.tag_name || "");
+              core.info(`Deleting old firmware release ${tag} (id=${rel.id})`);
+
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: rel.id
+              });
+
+              try {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `tags/${tag}`
+                });
+                core.info(`Deleted tag ${tag}`);
+              } catch (e) {
+                core.warning(`Failed to delete tag ${tag}: ${e.message}`);
+              }
+            }
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
