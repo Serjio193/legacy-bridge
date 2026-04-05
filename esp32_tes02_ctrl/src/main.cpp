@@ -2744,6 +2744,30 @@ static String percentDecodeLoose(const String &in) {
   return out;
 }
 
+static bool isUnreservedUrlChar(char c) {
+  if (c >= 'A' && c <= 'Z') return true;
+  if (c >= 'a' && c <= 'z') return true;
+  if (c >= '0' && c <= '9') return true;
+  return c == '-' || c == '_' || c == '.' || c == '~';
+}
+
+static String urlEncodeQueryValue(const String &in) {
+  static const char *hex = "0123456789ABCDEF";
+  String out;
+  out.reserve(in.length() * 3);
+  for (size_t i = 0; i < in.length(); i++) {
+    unsigned char c = (unsigned char)in.charAt(i);
+    if (isUnreservedUrlChar((char)c)) {
+      out += (char)c;
+      continue;
+    }
+    out += '%';
+    out += hex[(c >> 4) & 0x0F];
+    out += hex[c & 0x0F];
+  }
+  return out;
+}
+
 static bool requireCriticalPassword(const JsonDocument *doc = nullptr, const char *action = "critical") {
   String pass = server.header(kCriticalPassHeader);
   if (pass.isEmpty()) {
@@ -4449,14 +4473,16 @@ static bool webAuthGuard() {
 
 static void sendRecoveryMinPage(const char *hint = nullptr) {
   String html;
-  html.reserve(1800);
+  html.reserve(5200);
   html += F(
       "<!doctype html><html><head><meta charset='utf-8'>"
       "<meta name='viewport' content='width=device-width,initial-scale=1'>"
       "<title>LB Recovery</title>"
       "<style>body{font-family:Arial,sans-serif;background:#111827;color:#e5e7eb;padding:16px}"
       ".c{max-width:680px;margin:0 auto;background:#1f2937;padding:16px;border-radius:10px}"
+      ".row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}"
       "button{padding:10px 14px;border:0;border-radius:8px;background:#0ea5e9;color:#001;font-weight:700;cursor:pointer}"
+      ".muted{background:#1d4ed8;color:#fff}"
       "input{margin:8px 0 12px 0}pre{background:#0b1220;padding:10px;border-radius:8px;white-space:pre-wrap}</style>"
       "</head><body><div class='c'><h2>LB Fail-safe Recovery</h2>"
       "<p>AP active. Upload <code>firmware.bin</code> to recover the device.</p>");
@@ -4466,12 +4492,37 @@ static void sendRecoveryMinPage(const char *hint = nullptr) {
     html += F("</p>");
   }
   html += F(
+      "<div class='row'>"
+      "<button id='btnLatest' type='button'>Online Latest</button>"
+      "<button id='btnChoose' type='button' class='muted'>Choose Version</button>"
+      "</div>"
       "<form id='f'><input id='bin' type='file' accept='.bin,application/octet-stream' required><br>"
       "<button type='submit'>Flash Firmware</button></form>"
       "<p><a href='/recovery' style='color:#67e8f9'>Open full recovery page</a></p>"
       "<pre id='log'>ready</pre>"
       "<script>"
       "const log=document.getElementById('log');"
+      "async function enterRecoveryWithPack(pack){"
+      "const pass=prompt('Confirm admin password to enter Recovery:');"
+      "if(pass===null){log.textContent='cancelled';return;}"
+      "const headers={'Content-Type':'application/json','X-LB-Confirm-Pass-Enc':encodeURIComponent(pass)};"
+      "const body=JSON.stringify(pack?{pack_url:pack}:{pack:'latest'});"
+      "log.textContent='switching to recovery...';"
+      "try{const r=await fetch('/api/fw/enter_recovery',{method:'POST',headers,body});"
+      "const t=await r.text();"
+      "if(!r.ok){log.textContent='enter recovery failed: '+t;return;}"
+      "log.textContent='ok: rebooting to recovery...';"
+      "setTimeout(()=>location.reload(),9000);"
+      "}catch(err){log.textContent='error: '+err;}}"
+      "document.getElementById('btnLatest').onclick=()=>enterRecoveryWithPack('');"
+      "document.getElementById('btnChoose').onclick=()=>{"
+      "const v=prompt('Enter release tag (example: v72) or full update.lbpack URL:');"
+      "if(!v)return;"
+      "const s=String(v).trim();"
+      "let u=s;"
+      "if(!/^https?:\\/\\//i.test(s)){u='https://serjio193.github.io/legacy-bridge/releases/'+s+'/update.lbpack';}"
+      "enterRecoveryWithPack(u);"
+      "};"
       "document.getElementById('f').onsubmit=async(e)=>{e.preventDefault();"
       "const fi=document.getElementById('bin').files[0]; if(!fi){log.textContent='file required';return;}"
       "const fd=new FormData(); fd.append('file',fi);"
@@ -6658,7 +6709,26 @@ static void handleApiFwSwitchSlot() {
 static void handleApiFwEnterRecovery() {
   const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
   const String mdnsHost = gStaHostname + ".local";
-  const String recSuffix = "/recovery.html?autopack=latest";
+  String autoPack = "latest";
+  if (server.hasArg("plain")) {
+    JsonDocument doc;
+    if (!parseJsonBody(doc)) {
+      sendJsonError(400, "bad json");
+      return;
+    }
+    String pack = doc["pack"] | "";
+    String packUrl = doc["pack_url"] | "";
+    pack.trim();
+    packUrl.trim();
+    if (packUrl.length() > 0) autoPack = packUrl;
+    else if (pack.length() > 0) autoPack = pack;
+  }
+  if (autoPack.length() == 0) autoPack = "latest";
+  if (autoPack.length() > 1000) {
+    sendJsonError(400, "autopack too long");
+    return;
+  }
+  const String recSuffix = String("/recovery.html?autopack=") + urlEncodeQueryValue(autoPack);
   const String recMdns = String("http://") + mdnsHost + recSuffix;
   const String recLb = String("http://lb-bridge.local") + recSuffix;
   String recIp = "";
