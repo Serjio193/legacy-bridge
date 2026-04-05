@@ -105,9 +105,10 @@ GND -> ESP32 GND
 <a href="assets/photos/t420d-5v-point.jpg" target="_blank"><img src="assets/photos/t420d-5v-point.jpg" alt="Точка подключения 5V на плате T420D" width="300"></a>
 <a href="assets/photos/t420d-case-placement.jpg" target="_blank"><img src="assets/photos/t420d-case-placement.jpg" alt="Пример размещения модуля в корпусе T420D" width="300"></a>
   
-*Точка подключения SENSE на плате станции*  
-*Источник питания 5V*  
-*Пример установки модуля внутри T420D*
+*Фото 1: подключение Signal 1*  
+*Фото 2: подключение Signal 2 и GND*  
+*Фото 3: источник питания 5V*  
+*Фото 4: пример установки модуля внутри T420D*
 
 ### 🔌 USB подключение
 
