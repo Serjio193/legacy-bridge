@@ -658,6 +658,15 @@ static void setSkipDualRecoveryOnce(bool on) {
   prefs.end();
 }
 
+static void resetMainBootHealthFlags() {
+  prefs.begin(kPrefsNs, false);
+  prefs.putBool("boot_ok", true);
+  prefs.putUChar("boot_fail", 0);
+  prefs.putUChar("crash_fail", 0);
+  prefs.putBool("force_recovery", false);
+  prefs.end();
+}
+
 static bool getForceRecovery() {
   prefs.begin(kPrefsNs, true);
   bool v = prefs.getBool("force_recovery", false);
@@ -705,6 +714,7 @@ static bool tryAutoExitRecovery(const char *source, bool allowWhenRequested = fa
 
   gAutoExitErr = "";
   setSkipDualRecoveryOnce(true);
+  resetMainBootHealthFlags();
   setForceRecovery(false);
   if (source && strcmp(source, "boot") == 0) scheduleReboot("auto_exit_boot", 450);
   else scheduleReboot("auto_exit_retry", 450);
@@ -872,6 +882,7 @@ static void handleBootMain() {
   }
 
   setSkipDualRecoveryOnce(true);
+  resetMainBootHealthFlags();
   setForceRecovery(false);
   String body;
   body.reserve(220);
@@ -1102,6 +1113,7 @@ static void handleFlashSystemPost() {
     return;
   }
   setSkipDualRecoveryOnce(true);
+  resetMainBootHealthFlags();
   setForceRecovery(false);
   String body;
   body.reserve(220);
@@ -1337,6 +1349,7 @@ static void handleFlashAllPackPost() {
   }
 
   setSkipDualRecoveryOnce(true);
+  resetMainBootHealthFlags();
   setForceRecovery(false);
   String body;
   body.reserve(260);
@@ -1391,6 +1404,7 @@ static bool packFinalizeAndStageBoot(String *outErr, String *outBody) {
   }
 
   setSkipDualRecoveryOnce(true);
+  resetMainBootHealthFlags();
   setForceRecovery(false);
   outBody->reserve(300);
   *outBody += F("{\"ok\":true,\"rebooting\":true,\"mode\":\"pack\",\"system_bytes\":");
