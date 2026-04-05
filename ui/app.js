@@ -6258,7 +6258,7 @@
             window.open("https://paypal.me/SerhiiTarnopovych", "_blank", "noopener,noreferrer");
             setChoiceOpen(false);
           });
-        });
+        }
         if (btnUsdt) {
           btnUsdt.addEventListener("click", (ev) => {
             ev.preventDefault();
