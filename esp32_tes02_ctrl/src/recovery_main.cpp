@@ -54,6 +54,7 @@ static String gAutoExitTarget;
 static bool gRebootScheduled = false;
 static uint32_t gRebootAtMs = 0;
 static String gRebootReason;
+static bool gLittlefsMounted = false;
 
 struct OtaCtx {
   bool active = false;
@@ -688,8 +689,12 @@ static void handleStatus() {
   const esp_partition_t *boot = esp_ota_get_boot_partition();
   const esp_partition_t *otaA = otaPartitionA();
   const esp_partition_t *otaB = otaPartitionB();
+  const esp_partition_t *factory =
+      esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+  const esp_partition_t *lfs = littlefsPartition();
   bool otaAValid = verifyAppPartitionHeader(otaA);
   bool otaBValid = verifyAppPartitionHeader(otaB);
+  bool recoveryValid = verifyAppPartitionHeader(factory);
   String bootableWhich;
   (void)pickBootableMainSlot(&bootableWhich);
   String ip = currentRecoveryIp();
@@ -749,6 +754,16 @@ static void handleStatus() {
   body += (otaA ? "true" : "false");
   body += F(",\"ota_b_present\":");
   body += (otaB ? "true" : "false");
+  body += F(",\"recovery_present\":");
+  body += (factory ? "true" : "false");
+  body += F(",\"recovery_valid\":");
+  body += (recoveryValid ? "true" : "false");
+  body += F(",\"littlefs_present\":");
+  body += (lfs ? "true" : "false");
+  body += F(",\"littlefs_mounted\":");
+  body += (gLittlefsMounted ? "true" : "false");
+  body += F(",\"littlefs_size\":");
+  body += String((unsigned long)(lfs ? lfs->size : 0));
 
   body += F(",\"bootable_main\":\"");
   body += jsonEscape(bootableWhich);
@@ -1594,6 +1609,10 @@ static void handleRoot() {
             ".menu.show{display:flex}"
             ".box{width:min(520px,100%);background:linear-gradient(180deg,#1a2233,#121b2a);border:1px solid #35507b;border-radius:14px;padding:14px}"
             ".s{font-size:12px;color:#a7bad5}"
+            ".parts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}"
+            ".pill{padding:4px 8px;border-radius:999px;border:1px solid #35507b;background:#0c1320;font-size:12px;color:#cfe3ff}"
+            ".pill.ok{border-color:#2ca66a;color:#9bf8c3}"
+            ".pill.bad{border-color:#b8506b;color:#ffb6c6}"
             "</style></head><body>");
   page += F("<div class='w'><section class='c'>");
   page += F("<div class='h'><div><div class='t'>RECOVERY MODE</div><div class='m'>");
@@ -1606,6 +1625,7 @@ static void handleRoot() {
   page += F(" | IP: <span id='ip'>-</span></div></div>");
   page += F("<div class='r'><button id='btnFw' class='primary'>Firmware Update</button><button id='btnBoot'>Boot Main Firmware</button><button id='btnGit'>Visit GitHub</button><button id='btnReset' class='danger'>Reset Main Settings</button></div>");
   page += F("<div class='k'><b>Status:</b> <span id='phase'>Ожидание</span><div class='prog' style='margin-top:8px'><i id='bar'></i></div><div id='detail' class='s' style='margin-top:7px'>0%</div></div>");
+  page += F("<div class='k'><b>Разделы:</b><div id='parts' class='parts'></div></div>");
   page += F("<div class='k'><b>Flash package вручную</b><div class='s'>Файл <code>update.lbpack</code> (System + LittleFS + signatures)</div>");
   page += F("<input id='file' class='in' type='file' accept='.lbpack,application/octet-stream' style='margin-top:8px'/>");
   page += F("<div class='r'><button id='btnPack' class='primary'>Flash Package</button></div></div>");
@@ -1616,7 +1636,7 @@ static void handleRoot() {
 
   page += F("<script>"
             "const q=(id)=>document.getElementById(id);"
-            "const el={ip:q('ip'),phase:q('phase'),detail:q('detail'),bar:q('bar'),log:q('log'),menu:q('menu'),btnFw:q('btnFw'),btnLatest:q('btnLatest'),btnChoose:q('btnChoose'),btnCancel:q('btnCancel'),btnBoot:q('btnBoot'),btnGit:q('btnGit'),btnReset:q('btnReset'),btnPack:q('btnPack'),file:q('file')};"
+            "const el={ip:q('ip'),phase:q('phase'),detail:q('detail'),bar:q('bar'),parts:q('parts'),log:q('log'),menu:q('menu'),btnFw:q('btnFw'),btnLatest:q('btnLatest'),btnChoose:q('btnChoose'),btnCancel:q('btnCancel'),btnBoot:q('btnBoot'),btnGit:q('btnGit'),btnReset:q('btnReset'),btnPack:q('btnPack'),file:q('file')};"
             "let busy=false;"
             "let autoPack='';"
             "const repo='Serjio193/legacy-bridge';"
@@ -1624,6 +1644,7 @@ static void handleRoot() {
             "function ts(){const d=new Date();const p=(n)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}"
             "function log(s){el.log.textContent+=`\\n[ui] ${ts()} ${s}`;el.log.scrollTop=el.log.scrollHeight;}"
             "function setPhase(name,pct,detail){el.phase.textContent=name||'';el.bar.style.width=`${Math.max(0,Math.min(100,Number(pct||0))).toFixed(1)}%`;el.detail.textContent=detail||`${Math.round(Number(pct||0))}%`;}"
+            "function setParts(s){if(!el.parts)return;const on=(v)=>!!v;const item=(n,ok)=>`<span class='pill ${ok?'ok':'bad'}'>${n}: ${ok?'OK':'FAIL'}</span>`;const html=[item('OTA_A',on(s.ota_a_present)&&on(s.ota_a_valid)),item('OTA_B',on(s.ota_b_present)&&on(s.ota_b_valid)),item('RECOVERY',on(s.recovery_present)&&on(s.recovery_valid)),item('LITTLEFS',on(s.littlefs_present)&&on(s.littlefs_mounted))].join('');el.parts.innerHTML=html;}"
             "function setBusy(v){busy=!!v;[el.btnFw,el.btnLatest,el.btnChoose,el.btnCancel,el.btnBoot,el.btnGit,el.btnReset,el.btnPack].forEach(b=>{if(b)b.disabled=busy;});}"
             "async function j(url,opts){const o=Object.assign({},opts||{});o.headers=Object.assign({'Content-Type':'application/json'},o.headers||{});try{const r=await fetch(url,o);const t=await r.text();try{return JSON.parse(t||'{}')}catch(_){return {ok:false,error:t||'bad json'}}}catch(e){return {ok:false,error:String(e&&e.message?e.message:e)}}}"
             "function parseAuto(){try{const u=new URL(location.href);const p=String(u.searchParams.get('autopack')||'').trim();u.searchParams.delete('autopack');u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||''));return p;}catch(_){return '';}}"
@@ -1635,7 +1656,7 @@ static void handleRoot() {
             "function closeMenu(){if(el.menu)el.menu.classList.remove('show');}"
             "function nextMainUrl(r){return String((r&&r.next_url)||'http://lb-bridge.local/');}"
             "async function flashUrl(url,label){const raw=String(url||'').trim();if(!raw){log(`${label}: empty url`);return;}const u=toMirrorUrl(raw);setBusy(true);setPhase('Загрузка',4,'инициализация');if(u!==raw)log(`${label}: using mirror ${u}`);else log(`${label}: ${u}`);const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log(`${label}: ok, rebooting`);log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>{setBusy(false);},20000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'unknown'));log(`${label} FAIL: ${(r&&r.error)||'unknown'}`);}"
-            "async function refresh(){const s=await j('/api/status',{method:'GET'});if(!s||!s.ok)return;el.ip.textContent=String(s.ip||'-');const st=String(s.pack_stage||'');const pa=!!s.pack_active;const rec=Number(s.pack_received||0),tot=Number(s.pack_total||0),fwW=Number(s.pack_fw_written||0),fwT=Number(s.pack_fw_total||0),fsW=Number(s.pack_fs_written||0),fsT=Number(s.pack_fs_total||0);"
+            "async function refresh(){const s=await j('/api/status',{method:'GET'});if(!s||!s.ok)return;el.ip.textContent=String(s.ip||'-');setParts(s);const st=String(s.pack_stage||'');const pa=!!s.pack_active;const rec=Number(s.pack_received||0),tot=Number(s.pack_total||0),fwW=Number(s.pack_fw_written||0),fwT=Number(s.pack_fw_total||0),fsW=Number(s.pack_fs_written||0),fsT=Number(s.pack_fs_total||0);"
             "if(pa){if(st==='hdr'||st==='fw_sig'||st==='fs_sig'){const p=tot>0?(3+(rec/tot)*42):8;setPhase('Загрузка',Math.max(3,Math.min(45,p)),tot>0?`${Math.round((rec/tot)*100)}%`:`${rec} bytes`);}else if(st==='fw_data'||st==='fs_data'){const allT=Math.max(1,fwT+fsT);const p=45+((fwW+fsW)/allT)*50;setPhase('Обновление',Math.max(45,Math.min(95,p)),`fw ${fwW}/${fwT} | fs ${fsW}/${fsT}`);}else if(st==='done'){setPhase('Перезагрузка',98,'подготовка');}}"
             "}"
             "async function flashFile(){const f=el.file&&el.file.files&&el.file.files[0]?el.file.files[0]:null;if(!f){log('manual FAIL: choose update.lbpack');return;}setBusy(true);setPhase('Загрузка',2,'отправка файла');const x=new XMLHttpRequest();const fd=new FormData();fd.append('pack',f,f.name||'update.lbpack');x.upload.onprogress=(e)=>{if(e.lengthComputable){const p=Math.max(2,Math.min(40,(e.loaded/e.total)*40));setPhase('Загрузка',p,`${Math.round((e.loaded/e.total)*100)}%`);}};x.onload=()=>{let r={ok:false,error:'bad json'};try{r=JSON.parse(x.responseText||'{}')}catch(_){} if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log('manual OK: rebooting');log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>setBusy(false),20000);}else{setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'upload failed'));log(`manual FAIL: ${(r&&r.error)||'unknown'}`);}};x.onerror=()=>{setBusy(false);setPhase('Ошибка',0,'network error');log('manual FAIL: network error');};x.open('POST','/api/recovery/flash/allpack',true);x.send(fd);}"
@@ -1698,7 +1719,8 @@ void setup() {
 
   startRecoveryNetwork();
 
-  if (!LittleFS.begin(true)) {
+  gLittlefsMounted = LittleFS.begin(true);
+  if (!gLittlefsMounted) {
     Serial.println("LittleFS: mount failed (recovery)");
   }
 
