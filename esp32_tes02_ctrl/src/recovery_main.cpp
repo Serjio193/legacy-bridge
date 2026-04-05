@@ -1333,6 +1333,17 @@ static bool packFinalizeAndStageBoot(String *outErr, String *outBody) {
   return true;
 }
 
+static void uploadHandlerDiscardRawFlash() {
+  HTTPUpload &up = server.upload();
+  if (up.status == UPLOAD_FILE_START) {
+    Serial.printf("Raw recovery flash blocked: %s (%u bytes)\n", up.filename.c_str(), (unsigned)up.totalSize);
+  }
+}
+
+static void handleRawFlashDisabled() {
+  sendJsonError(403, "raw recovery flash disabled; use signed update.lbpack only");
+}
+
 static String mirrorPackToGithubFallback(const String &url) {
   const String pfx = "https://serjio193.github.io/legacy-bridge/releases/";
   const String sfx = "/update.lbpack";
@@ -1344,6 +1355,74 @@ static String mirrorPackToGithubFallback(const String &url) {
   tag.trim();
   if (tag.isEmpty() || tag.indexOf('/') >= 0) return String();
   return String("https://github.com/Serjio193/legacy-bridge/releases/download/") + tag + "/update.lbpack";
+}
+
+static String extractHostFromHttpsUrl(const String &url) {
+  if (!url.startsWith("https://")) return String();
+  const int start = 8;  // len("https://")
+  int slash = url.indexOf('/', start);
+  int qmark = url.indexOf('?', start);
+  int hash = url.indexOf('#', start);
+  int end = (int)url.length();
+  if (slash >= 0 && slash < end) end = slash;
+  if (qmark >= 0 && qmark < end) end = qmark;
+  if (hash >= 0 && hash < end) end = hash;
+  if (end <= start) return String();
+  return url.substring(start, end);
+}
+
+static String extractPathFromUrl(const String &url) {
+  int scheme = url.indexOf("://");
+  if (scheme < 0) return String("/");
+  int start = scheme + 3;
+  int slash = url.indexOf('/', start);
+  if (slash < 0) return String("/");
+  int qmark = url.indexOf('?', slash);
+  int hash = url.indexOf('#', slash);
+  int end = (int)url.length();
+  if (qmark >= 0 && qmark < end) end = qmark;
+  if (hash >= 0 && hash < end) end = hash;
+  if (end <= slash) return String("/");
+  return url.substring(slash, end);
+}
+
+static bool isTrustedPackUrl(const String &url, String *outErr = nullptr) {
+  if (!url.startsWith("https://")) {
+    if (outErr) *outErr = "only https:// is allowed";
+    return false;
+  }
+
+  String host = extractHostFromHttpsUrl(url);
+  host.toLowerCase();
+  if (host.isEmpty()) {
+    if (outErr) *outErr = "invalid url host";
+    return false;
+  }
+
+  String path = extractPathFromUrl(url);
+  if (!path.endsWith("/update.lbpack")) {
+    if (outErr) *outErr = "url must end with /update.lbpack";
+    return false;
+  }
+
+  if (host == "serjio193.github.io") {
+    if (!path.startsWith("/legacy-bridge/releases/")) {
+      if (outErr) *outErr = "mirror path not allowed";
+      return false;
+    }
+    return true;
+  }
+
+  if (host == "github.com") {
+    if (!path.startsWith("/Serjio193/legacy-bridge/releases/download/")) {
+      if (outErr) *outErr = "github path not allowed";
+      return false;
+    }
+    return true;
+  }
+
+  if (outErr) *outErr = String("host not allowed: ") + host;
+  return false;
 }
 
 static void handleFlashPackByUrl() {
@@ -1364,8 +1443,9 @@ static void handleFlashPackByUrl() {
   String url = "";
   if (!doc["url"].isNull()) url = String((const char *)doc["url"]);
   url.trim();
-  if (!(url.startsWith("http://") || url.startsWith("https://"))) {
-    sendJsonError(400, "url must start with http:// or https://");
+  String urlErr;
+  if (!isTrustedPackUrl(url, &urlErr)) {
+    sendJsonError(400, urlErr);
     return;
   }
 
@@ -1381,17 +1461,11 @@ static void handleFlashPackByUrl() {
   http.setConnectTimeout(12000);
   http.setTimeout(20000);
 
-  std::unique_ptr<WiFiClient> plain;
   std::unique_ptr<WiFiClientSecure> tls;
   bool beginOk = false;
-  if (url.startsWith("https://")) {
-    tls.reset(new WiFiClientSecure());
-    tls->setInsecure();  // package signature is verified by recovery key
-    beginOk = http.begin(*tls, url);
-  } else {
-    plain.reset(new WiFiClient());
-    beginOk = http.begin(*plain, url);
-  }
+  tls.reset(new WiFiClientSecure());
+  tls->setInsecure();  // package signature is verified by recovery key
+  beginOk = http.begin(*tls, url);
   if (!beginOk) {
     sendJsonError(500, "http begin failed");
     packCleanup(true);
@@ -1402,17 +1476,19 @@ static void handleFlashPackByUrl() {
   if (code == HTTP_CODE_NOT_FOUND) {
     String fallbackUrl = mirrorPackToGithubFallback(url);
     if (!fallbackUrl.isEmpty() && fallbackUrl != url) {
+      String fallbackErr;
+      if (!isTrustedPackUrl(fallbackUrl, &fallbackErr)) {
+        sendJsonError(500, String("fallback blocked: ") + fallbackErr);
+        http.end();
+        packCleanup(true);
+        return;
+      }
       http.end();
       url = fallbackUrl;
       beginOk = false;
-      if (url.startsWith("https://")) {
-        tls.reset(new WiFiClientSecure());
-        tls->setInsecure();
-        beginOk = http.begin(*tls, url);
-      } else {
-        plain.reset(new WiFiClient());
-        beginOk = http.begin(*plain, url);
-      }
+      tls.reset(new WiFiClientSecure());
+      tls->setInsecure();
+      beginOk = http.begin(*tls, url);
       if (!beginOk) {
         sendJsonError(500, "http begin failed (fallback)");
         packCleanup(true);
@@ -1637,11 +1713,11 @@ void setup() {
   server.on("/api/recovery/boot_main", HTTP_POST, handleBootMain);
 
   server.on(
-      "/api/recovery/flash/a", HTTP_POST, handleFlashSystemPost,
-      []() { uploadHandlerTo(otaPartitionA()); });
+      "/api/recovery/flash/a", HTTP_POST, handleRawFlashDisabled,
+      []() { uploadHandlerDiscardRawFlash(); });
   server.on(
-      "/api/recovery/flash/fs", HTTP_POST, handleFlashLittlefsPost,
-      []() { uploadHandlerLittlefs(); });
+      "/api/recovery/flash/fs", HTTP_POST, handleRawFlashDisabled,
+      []() { uploadHandlerDiscardRawFlash(); });
   server.on(
       "/api/recovery/flash/allpack", HTTP_POST, handleFlashAllPackPost,
       []() { uploadHandlerPack(); });

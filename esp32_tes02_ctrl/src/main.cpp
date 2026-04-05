@@ -6372,134 +6372,23 @@ static void resetManualFwUploadState() {
 }
 
 static void handleApiFwUpdateManualUpload() {
+  // Raw OTA upload from main firmware is intentionally disabled.
+  // Signed package update must go through Recovery only.
   HTTPUpload &up = server.upload();
-
   if (up.status == UPLOAD_FILE_START) {
-    extractorCmdLogPushf("[security] ota manual start ip=%s file=%s",
+    extractorCmdLogPushf("[security] ota manual upload blocked ip=%s file=%s",
                          server.client().remoteIP().toString().c_str(),
                          up.filename.c_str());
     resetManualFwUploadState();
-    gManualFwUpload.active = true;
-    gManualFwUpload.done = false;
-    gManualFwUpload.ok = false;
-    gManualFwUpload.err = "";
-
-    String slotName;
-    const esp_partition_t *target = pickOnlineTargetSlot(&slotName);
-    gManualFwUpload.target = target;
-    gManualFwUpload.targetSlot = slotName;
-    if (!target) {
-      gManualFwUpload.err = "no target system slot";
-      extractorCmdLogPushf("[security] ota manual rejected: no target system slot");
-      return;
-    }
-    if (!isSystemWritableAppSlot(target)) {
-      gManualFwUpload.err = "target is not system slot";
-      extractorCmdLogPushf("[security] ota manual rejected: target not system slot");
-      return;
-    }
-
-    esp_err_t e = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &gManualFwUpload.handle);
-    if (e != ESP_OK) {
-      if (e == ESP_ERR_OTA_PARTITION_CONFLICT) {
-        gManualFwUpload.err = "ota partition conflict (single-slot layout active)";
-      } else {
-        gManualFwUpload.err = String("esp_ota_begin failed: ") + String((int)e);
-      }
-      extractorCmdLogPushf("[security] ota manual begin fail: %s", gManualFwUpload.err.c_str());
-      return;
-    }
-    gManualFwUpload.ok = true;
-    return;
-  }
-
-  if (up.status == UPLOAD_FILE_WRITE) {
-    if (!gManualFwUpload.active || !gManualFwUpload.ok || !gManualFwUpload.handle) return;
-    if (up.currentSize == 0) return;
-    esp_err_t e = esp_ota_write(gManualFwUpload.handle, up.buf, up.currentSize);
-    if (e != ESP_OK) {
-      gManualFwUpload.ok = false;
-      gManualFwUpload.err = String("esp_ota_write failed: ") + String((int)e);
-      return;
-    }
-    gManualFwUpload.written += up.currentSize;
-    return;
-  }
-
-  if (up.status == UPLOAD_FILE_END) {
-    if (!gManualFwUpload.active) return;
-    if (!gManualFwUpload.ok) {
-      gManualFwUpload.done = true;
-      return;
-    }
-    if (!gManualFwUpload.handle) {
-      gManualFwUpload.ok = false;
-      gManualFwUpload.err = "no ota handle";
-      gManualFwUpload.done = true;
-      return;
-    }
-    esp_err_t e = esp_ota_end(gManualFwUpload.handle);
-    if (e != ESP_OK) {
-      gManualFwUpload.ok = false;
-      gManualFwUpload.err = String("esp_ota_end failed: ") + String((int)e);
-      extractorCmdLogPushf("[security] ota manual end fail: %s", gManualFwUpload.err.c_str());
-      gManualFwUpload.done = true;
-      return;
-    }
-    gManualFwUpload.handle = 0;
-    e = esp_ota_set_boot_partition(gManualFwUpload.target);
-    if (e != ESP_OK) {
-      gManualFwUpload.ok = false;
-      gManualFwUpload.err = String("esp_ota_set_boot_partition failed: ") + String((int)e);
-      extractorCmdLogPushf("[security] ota manual boot-set fail: %s", gManualFwUpload.err.c_str());
-      gManualFwUpload.done = true;
-      return;
-    }
-    gManualFwUpload.ok = true;
-    gManualFwUpload.done = true;
-    extractorCmdLogPushf("[security] ota manual staged slot=%s bytes=%lu",
-                         gManualFwUpload.targetSlot.c_str(),
-                         (unsigned long)gManualFwUpload.written);
-    return;
-  }
-
-  if (up.status == UPLOAD_FILE_ABORTED) {
-    if (gManualFwUpload.handle) esp_ota_abort(gManualFwUpload.handle);
-    gManualFwUpload.handle = 0;
-    gManualFwUpload.ok = false;
-    gManualFwUpload.err = "upload aborted";
-    gManualFwUpload.done = true;
-    extractorCmdLogPushf("[security] ota manual aborted");
-    return;
+  } else if (up.status == UPLOAD_FILE_ABORTED) {
+    resetManualFwUploadState();
   }
 }
 
 static void handleApiFwUpdateManual() {
-  if (!gManualFwUpload.done) {
-    sendJsonError(400, "no upload");
-    return;
-  }
-  if (!gManualFwUpload.ok) {
-    String err = gManualFwUpload.err.isEmpty() ? "manual update failed" : gManualFwUpload.err;
-    extractorCmdLogPushf("[security] ota manual failed: %s", err.c_str());
-    resetManualFwUploadState();
-    sendJsonError(500, err);
-    return;
-  }
-
-  String body;
-  body.reserve(180);
-  body += F("{\"ok\":true,\"slot\":\"");
-  body += jsonEscape(gManualFwUpload.targetSlot);
-  body += F("\",\"bytes\":");
-  body += String((unsigned long)gManualFwUpload.written);
-  body += F("}");
-  extractorCmdLogPushf("[security] ota manual commit slot=%s bytes=%lu reboot=1",
-                       gManualFwUpload.targetSlot.c_str(),
-                       (unsigned long)gManualFwUpload.written);
-  sendJson(200, body);
-  delay(250);
-  ESP.restart();
+  resetManualFwUploadState();
+  extractorCmdLogPushf("[security] ota manual endpoint blocked ip=%s", server.client().remoteIP().toString().c_str());
+  sendJsonError(403, "raw OTA disabled; use Recovery signed package update");
 }
 
 static void handleApiFwUpdateOnline() {
