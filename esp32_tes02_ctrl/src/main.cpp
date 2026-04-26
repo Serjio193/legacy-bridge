@@ -258,6 +258,7 @@ static const uint32_t kH312PollHotMs = 2000;                          // fixed: 
 static const uint32_t kH312BlePollMs = 7000;
 static const uint32_t kH312BleScanMs = 900;
 static const uint32_t kH312BleRetryFailMs = 15000;
+static const uint32_t kH312BleRetryFailMaxMs = 120000;
 static const uint32_t kH312BleReconnectAttemptMinMs = 8000;
 static const uint32_t kH312BleReconnectLogMinMs = 30000;
 static const uint32_t kH312BleYieldAfterTes02Ms = 1800;
@@ -270,6 +271,8 @@ static const uint16_t kH312BleTcpReadMs = 4200;
 static const uint16_t kH312BleTcpStartupDelayMs = 40;
 static const uint16_t kH312BleTcpKeepaliveAfterMs = 900;
 static const uint32_t kH312BleTcpFailBackoffMs = 6000;
+static const uint8_t kH312BleHardDropFailStreak = 12;
+static const uint32_t kH312BleHardDropMinGapMs = 120000;
 static const bool kH312BleRuntimeClientEnabled = true;
 static const bool kH312BleDiagLogs = false;
 static const uint32_t kH312BleDiagSampleMs = 10000;
@@ -327,6 +330,7 @@ static uint32_t gH312BleLastReconnectLogMs = 0;
 static uint32_t gH312BleLastConnectAttemptMs = 0;
 static uint32_t gH312BleLastReconnectAttemptUiLogMs = 0;
 static uint32_t gH312BleLastReconnectLinkUiLogMs = 0;
+static uint32_t gH312BleLastHardDropMs = 0;
 static uint32_t gWifiTxStepWindowStartMs = 0;
 static int8_t gWifiTxLastQdbm = -1;
 static uint8_t gWifiTxStepWindowCount = 0;
@@ -653,6 +657,20 @@ static void h312BleLogEvent(const char *eventName, uint8_t slot, int tempC = -10
   else extractorCmdLogPushf("[h312] %s slot=%u", eventName, (unsigned int)s);
 }
 
+static uint32_t h312BleRetryBackoffMs(uint32_t floorMs = 0) {
+  uint32_t backoff = kH312BleRetryFailMs;
+  if (gH312BleFailStreak >= 20) backoff = kH312BleRetryFailMaxMs;
+  else if (gH312BleFailStreak >= 10) backoff = 60000;
+  else if (gH312BleFailStreak >= 4) backoff = 30000;
+  if (backoff < floorMs) backoff = floorMs;
+  if (backoff > kH312BleRetryFailMaxMs) backoff = kH312BleRetryFailMaxMs;
+  return backoff;
+}
+
+static void h312BleScheduleRetry(uint32_t nowMs, uint32_t floorMs = 0) {
+  gH312BleNextPollMs = nowMs + h312BleRetryBackoffMs(floorMs);
+}
+
 static void h312BleBb02NotifyCb(NimBLERemoteCharacteristic *chr, uint8_t *data, size_t len, bool isNotify) {
   (void)chr;
   (void)isNotify;
@@ -692,6 +710,21 @@ static void h312BleDropClientHard() {
   gH312BleNotifySubscribed = false;
   gH312BleLinkWasUp = false;
   gH312BleConnectPending = false;
+}
+
+static void h312BleHardDropIfNeeded(uint32_t nowMs, const char *reason) {
+  if (gH312BleFailStreak < (int8_t)kH312BleHardDropFailStreak) return;
+  if (gH312BleLastHardDropMs != 0 && nowMs >= gH312BleLastHardDropMs &&
+      (nowMs - gH312BleLastHardDropMs) < kH312BleHardDropMinGapMs) {
+    return;
+  }
+  gH312BleLastHardDropMs = nowMs;
+  h312BleDropClientHard();
+  gH312BleRuntimeAddr = "";
+  gH312BleRuntimeAddrType = -1;
+  gH312BleRuntimeIp = "";
+  gH312BleLastIpReadMs = 0;
+  extractorCmdLogPushf("[h312] ble hard reset reason=%s streak=%d", reason ? reason : "fail", (int)gH312BleFailStreak);
 }
 
 static void h312BleReleaseClient() {
@@ -1464,7 +1497,7 @@ static void h312BleTick(uint32_t nowMs) {
         gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
         h312BleMarkError(h312Slot, "timeout");
         gH312BleConnectPending = false;
-        gH312BleNextPollMs = nowMs + kH312BleRetryFailMs;
+        h312BleScheduleRetry(nowMs);
         return;
       }
     }
@@ -1483,7 +1516,8 @@ static void h312BleTick(uint32_t nowMs) {
       }
       h312BleMarkError(h312Slot, "timeout");
       gH312BleConnectPending = false;
-      gH312BleNextPollMs = nowMs + kH312BleRetryFailMs;
+      h312BleHardDropIfNeeded(nowMs, "client_alloc");
+      h312BleScheduleRetry(nowMs);
       return;
     }
     if (client->isConnected()) client->disconnect();
@@ -1496,16 +1530,14 @@ static void h312BleTick(uint32_t nowMs) {
       gH312BleLastFailedMs = nowMs;
       gH312BleRuntimeAddr = "";
       gH312BleRuntimeAddrType = -1;
-      if (gH312BleFailStreak >= 20) {
-        h312BleDropClientHard();
-      }
+      h312BleHardDropIfNeeded(nowMs, "connect");
       if (kH312BleDiagLogs) {
         extractorCmdLogPushf("[h312] ble connect failed slot=%u addr=%s atype=%s", (unsigned int)h312NormSlot(h312Slot),
                              targetAddr.c_str(), h312BleAddrTypeText((int)targetAddrType));
       }
       h312BleMarkError(h312Slot, "timeout");
       gH312BleConnectPending = false;
-      gH312BleNextPollMs = nowMs + kH312BleRetryFailMs;
+      h312BleScheduleRetry(nowMs);
       return;
     }
 
@@ -1548,7 +1580,8 @@ static void h312BleTick(uint32_t nowMs) {
       gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
       h312BleMarkError(h312Slot, "bad_response");
       gH312BleConnectPending = false;
-      gH312BleNextPollMs = nowMs + kH312BleRetryFailMs;
+      h312BleHardDropIfNeeded(nowMs, "ff01_missing");
+      h312BleScheduleRetry(nowMs);
       return;
     }
 
@@ -1591,8 +1624,9 @@ static void h312BleTick(uint32_t nowMs) {
     gH312LastError = "h312 ble ff01 ip missing";
     gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
     if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "timeout");
+    h312BleHardDropIfNeeded(nowMs, "ip_missing");
     if (gH312BleFailStreak >= 24) h312BleReleaseClient();
-    gH312BleNextPollMs = nowMs + kH312BleTcpFailBackoffMs;
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
     return;
   }
 
@@ -1601,8 +1635,9 @@ static void h312BleTick(uint32_t nowMs) {
     gH312LastError = "h312 ble ff01 ip invalid";
     gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
     if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "bad_response");
+    h312BleHardDropIfNeeded(nowMs, "ip_invalid");
     if (gH312BleFailStreak >= 24) h312BleReleaseClient();
-    gH312BleNextPollMs = nowMs + kH312BleTcpFailBackoffMs;
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
     return;
   }
 
@@ -1619,8 +1654,9 @@ static void h312BleTick(uint32_t nowMs) {
     gH312LastError = String("h312 ble tcp no temp: ") + (reason.length() ? reason : "timeout");
     gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
     if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "timeout");
+    h312BleHardDropIfNeeded(nowMs, "tcp_no_temp");
     if (gH312BleFailStreak >= 30) h312BleReleaseClient();
-    gH312BleNextPollMs = nowMs + kH312BleTcpFailBackoffMs;
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
     return;
   }
 
@@ -3218,8 +3254,11 @@ static void saveH312Config(bool enabled, H312TransportMode mode, const String &i
   h312Slot = (slot < 1 || slot > 3) ? 1 : slot;
   gH312BleRuntimeAddr = "";
   gH312BleRuntimeAddrType = -1;
+  gH312BleRuntimeIp = "";
+  gH312BleLastIpReadMs = 0;
   gH312BleNextPollMs = 0;
   gH312BleFailStreak = 0;
+  gH312BleLastHardDropMs = 0;
   h312ApplyDriverConfig();
 }
 
@@ -4713,6 +4752,11 @@ static void handleApiStatus() {
   else body += F("null");
   body += F(",\"h312_last_json_ms\":");
   body += String((uint32_t)gH312LastJsonMs);
+  body += F(",\"h312_ble_fail_streak\":");
+  body += String((int)gH312BleFailStreak);
+  body += F(",\"h312_ble_runtime_ip\":\"");
+  body += jsonEscape(gH312BleRuntimeIp);
+  body += F("\"");
   appendJsonH312StaticConfigFields(body);
   body += F(",\"h312_pending\":");
   body += (gH312PendingValid ? "true" : "false");
@@ -6182,8 +6226,11 @@ static void handleApiFactoryReset() {
   h312BleName = "";
   gH312BleRuntimeAddr = "";
   gH312BleRuntimeAddrType = -1;
+  gH312BleRuntimeIp = "";
+  gH312BleLastIpReadMs = 0;
   gH312BleNextPollMs = 0;
   gH312BleFailStreak = 0;
+  gH312BleLastHardDropMs = 0;
   h312Slot = 1;
   h312ApplyDriverConfig();
   gH312RealTimeTemp = -1000;
