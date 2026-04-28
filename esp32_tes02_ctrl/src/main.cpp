@@ -1433,7 +1433,7 @@ static void h312BleTick(uint32_t nowMs) {
   int realFan = -1;
   int setFan = -1;
 
-  const bool h312Connected = (gH312BleClient && gH312BleClient->isConnected() && gH312BleCharBb02);
+  const bool h312Connected = (gH312BleClient && gH312BleClient->isConnected() && (gH312BleCharBb02 || gH312BleCharFf01));
   if (gH312BleLinkWasUp && !h312Connected) {
     if (gH312BleLastReconnectLogMs == 0 || (nowMs - gH312BleLastReconnectLogMs) >= kH312BleReconnectLogMinMs) {
       h312BleLogEvent("H312_BLE_RECONNECT", h312Slot, -1000, "link_lost");
@@ -1465,7 +1465,13 @@ static void h312BleTick(uint32_t nowMs) {
     return;
   }
 
-  if (!gH312BleClient || !gH312BleClient->isConnected() || !gH312BleCharBb02) {
+  const bool needBleSeed = gH312BleRuntimeIp.isEmpty();
+  if (!needBleSeed && gH312BleClient && gH312BleClient->isConnected()) {
+    // Mirror python seed flow: BLE is used to discover ff01 IP, then released.
+    h312BleDisconnectKeepSeed();
+  }
+
+  if (needBleSeed && (!gH312BleClient || !gH312BleClient->isConnected() || (!gH312BleCharBb02 && !gH312BleCharFf01))) {
     if (gH312SeenTelemetry || gH312LastJsonMs > 0) {
       if (gH312BleLastReconnectLogMs == 0 || (nowMs - gH312BleLastReconnectLogMs) >= kH312BleReconnectLogMinMs) {
         h312BleLogEvent("H312_BLE_RECONNECT", h312Slot, -1000, "attempt");
@@ -1561,24 +1567,20 @@ static void h312BleTick(uint32_t nowMs) {
       rxChar = h312BleFindCharacteristicAnywhere(client, "BB02", &foundSvc, &foundChr, true);
       rxKind = rxChar ? 2 : rxKind;
     }
-    if (!rxChar) {
-      rxChar = h312BleFindCharacteristicAnywhere(client, "BB01", &foundSvc, &foundChr, true);
-      rxKind = rxChar ? 1 : rxKind;
-    }
     if (!ff01Char) {
       ff01Char = h312BleFindCharacteristicAnywhere(client, "FF01", &ff01Svc, &ff01Chr, true);
     }
-    if (!rxChar) {
+    if (!ff01Char) {
       if (kH312BleDiagLogs) {
-        extractorCmdLogPushf("[h312] ble telemetry char missing slot=%u addr=%s", (unsigned int)h312NormSlot(h312Slot), targetAddr.c_str());
+        extractorCmdLogPushf("[h312] ble ff01 missing slot=%u addr=%s", (unsigned int)h312NormSlot(h312Slot), targetAddr.c_str());
         h312BleLogGattMap(client, h312NormSlot(h312Slot));
       }
       client->disconnect();
-      gH312LastError = "h312 ble telemetry char missing";
+      gH312LastError = "h312 ble ff01 missing";
       gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
       h312BleMarkError(h312Slot, "bad_response");
       gH312BleConnectPending = false;
-      h312BleHardDropIfNeeded(nowMs, "telemetry_char_missing");
+      h312BleHardDropIfNeeded(nowMs, "ff01_missing");
       h312BleScheduleRetry(nowMs);
       return;
     }
@@ -1609,71 +1611,65 @@ static void h312BleTick(uint32_t nowMs) {
                            foundSvc.c_str(), foundChr.c_str(), (rxKind == 2) ? "bb02" : "bb01",
                            ff01Svc.c_str(), ff01Chr.c_str());
     }
-    if (gH312BleCharBb02 && gH312BleCharBb02->canNotify()) {
-      (void)h312BleEnableNotify(gH312BleCharBb02);
+    if (!gH312BleRuntimeIp.isEmpty()) {
+      h312BleDisconnectKeepSeed();
+      gH312BleNextPollMs = nowMs + 120;
+      return;
     }
   }
 
-  // Optional diagnostic only: BLE mode must not depend on Wi-Fi/IP transport.
   h312BleMaybeRefreshRuntimeIp(nowMs);
 
-  if (gH312BleCharBb02 && gH312BleCharBb02->canNotify() && !gH312BleNotifySubscribed) {
-    (void)h312BleEnableNotify(gH312BleCharBb02);
-  }
-
-  bool parsed = false;
-  int rawLen = 0;
-  const char *src = "ble";
-
-  std::string notifyRaw = h312BleTakeNotifyBuffer();
-  std::string json;
-  if (!notifyRaw.empty()) {
-    rawLen = (int)notifyRaw.size();
-    if (h312BleTakeLatestJsonFromStream(notifyRaw, &gH312BleJsonBuf, &json)) {
-      parsed = h312BleParseTelemetry(json, &rt, &ws, &hf, &setTemp, &realFan, &setFan);
-      src = "ble_notify";
-    }
-  }
-
-  if (!parsed && gH312BleCharBb02 && gH312BleCharBb02->canRead()) {
-    std::string readRaw = gH312BleCharBb02->readValue();
-    if (!readRaw.empty() && !h312BleLooksLikeBb02AckFrame(readRaw)) {
-      rawLen = (int)readRaw.size();
-      if (gH312BleCharKind == 1) {
-        parsed = h312BleParseBb01Approx(readRaw, &rt);
-        ws = -1;
-        hf = -1;
-        setTemp = -1;
-        realFan = -1;
-        setFan = -1;
-      } else {
-        std::string readJson;
-        if (!h312BleTakeLatestJsonFromStream(readRaw, &gH312BleJsonBuf, &readJson)) {
-          (void)h312BleExtractJsonObject(readRaw, &readJson);
-        }
-        parsed = h312BleParseTelemetry(readJson, &rt, &ws, &hf, &setTemp, &realFan, &setFan);
-      }
-      src = "ble_read";
-    }
-  }
-
-  if (parsed) {
-    gH312BlePrevRt = (int16_t)rt;
-    gH312BlePrevRtMs = nowMs;
-    gH312BleSecLikeStreak = 0;
-    h312BleAcceptTelemetry(nowMs, rawLen, src, rt, ws, hf, setTemp, realFan, setFan);
+  if (gH312BleRuntimeIp.isEmpty()) {
+    gH312LastError = "h312 ble ff01 ip missing";
+    gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
+    if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "timeout");
+    h312BleHardDropIfNeeded(nowMs, "ip_missing");
+    if (gH312BleFailStreak >= 24) h312BleReleaseClient();
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
     return;
   }
 
-  gH312LastError = "h312 ble no telemetry";
-  gH312BleJsonWaitStreak = (gH312BleJsonWaitStreak < 250) ? (uint8_t)(gH312BleJsonWaitStreak + 1) : gH312BleJsonWaitStreak;
-  if (gH312BleJsonWaitStreak >= 3) {
+  IPAddress runtimeIp;
+  if (!runtimeIp.fromString(gH312BleRuntimeIp)) {
+    gH312LastError = "h312 ble ff01 ip invalid";
     gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
-    h312BleMarkError(h312Slot, "timeout");
+    if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "bad_response");
+    h312BleHardDropIfNeeded(nowMs, "ip_invalid");
+    if (gH312BleFailStreak >= 24) h312BleReleaseClient();
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
+    return;
   }
-  h312BleHardDropIfNeeded(nowMs, "no_ble_telemetry");
-  if (gH312BleJsonWaitStreak >= 24) h312BleReleaseClient();
-  h312BleScheduleRetry(nowMs);
+
+  h312::H312ProbeOptions opt;
+  opt.connectTimeoutMs = kH312BleTcpConnectMs;
+  opt.readMs = kH312BleTcpReadMs;
+  opt.startupDelayMs = kH312BleTcpStartupDelayMs;
+  opt.keepaliveAfterMs = kH312BleTcpKeepaliveAfterMs;
+  opt.requireRealTimeTemp = true;
+  h312::H312ProbeResult pr;
+  String reason;
+  bool ok = h312::probeHost(runtimeIp, h312Port, opt, &pr, &reason);
+  if (!ok || pr.rt <= -200) {
+    gH312LastError = String("h312 ble tcp no temp: ") + (reason.length() ? reason : "timeout");
+    gH312BleFailStreak = (gH312BleFailStreak < 120) ? (int8_t)(gH312BleFailStreak + 1) : gH312BleFailStreak;
+    if (gH312BleFailStreak >= 8) h312BleMarkError(h312Slot, "timeout");
+    h312BleHardDropIfNeeded(nowMs, "tcp_no_temp");
+    if (gH312BleFailStreak >= 30) h312BleReleaseClient();
+    h312BleScheduleRetry(nowMs, kH312BleTcpFailBackoffMs);
+    return;
+  }
+
+  rt = pr.rt;
+  ws = pr.ws;
+  hf = pr.hf;
+  setTemp = -1;
+  realFan = -1;
+  setFan = -1;
+  gH312BlePrevRt = (int16_t)rt;
+  gH312BlePrevRtMs = nowMs;
+  gH312BleSecLikeStreak = 0;
+  h312BleAcceptTelemetry(nowMs, 0, "tcp", rt, ws, hf, setTemp, realFan, setFan);
 }
 
 static const char *h312ErrText(h312::H312Error e) {
