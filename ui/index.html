@@ -59,14 +59,16 @@
               <div id="lbModelRow" class="modelRow" aria-label="LB model">
                 <div class="hint" style="margin:0" data-i18n="label_lb_model">Model</div>
                 <div class="modelPills" role="group" aria-label="LB model select">
-                  <button id="lbES02" type="button" class="modelBtn active" data-model="ES02" aria-pressed="true">ES02</button>
-                  <button id="lbT420D" type="button" class="modelBtn active" data-model="T420D" aria-pressed="true">T420D</button>
-                  <button id="lbH312" type="button" class="modelBtn" data-model="H312" aria-pressed="false">H310/H312</button>
+                  <button id="lbES02" type="button" class="modelBtn hidden" data-model="ES02" aria-pressed="false">ES02</button>
+                  <button id="lbT420D" type="button" class="modelBtn hidden" data-model="T420D" aria-pressed="false">T420D</button>
+                  <button id="lbH312" type="button" class="modelBtn hidden" data-model="H312" aria-pressed="false">H310/H312</button>
+                  <button id="btnAddDevice" type="button" class="modelBtn addEquipmentWide" aria-label="Add equipment" data-i18n-title="btn_add_device" title="Add equipment">Add equipment</button>
+                  <button id="btnRemoveDevice" type="button" class="modelBtn hidden" aria-label="Remove device" data-i18n-title="btn_remove_device" title="Remove device">-</button>
                 </div>
               </div>
             </div>
             <div style="height:10px"></div>
-            <div class="grid2">
+            <div class="grid2 connectivityGrid">
               <div>
                 <div id="wifiStaSummary" class="inset hidden">
                   <div class="labelRow">
@@ -130,8 +132,8 @@
                 </div>
               </div>
 
-              <div>
-                <div id="extractorTile" class="inset" aria-label="Extractor">
+              <div class="deviceTilesGrid">
+                <div id="extractorTile" class="inset deviceTile" aria-label="Extractor">
                   <div class="labelRow">
                     <div class="label labelWithSignal">
                       <span data-i18n="section_extractor_reg">Extractor (ES02)</span>
@@ -215,7 +217,7 @@
                   </div>
                 </div>
 
-                <div id="hotAirTile" class="inset" aria-label="Hot Air" style="margin-top:10px;">
+                <div id="hotAirTile" class="inset deviceTile" aria-label="Hot Air">
                   <div class="labelRow">
                     <div class="label" data-i18n="section_hotair_bind">Hot Air (H310/H312)</div>
                     <div class="hotAirBindMeta">
@@ -268,6 +270,7 @@
                   <div id="hotAirScanList" class="list hidden" style="margin-top:10px;"></div>
                   <div id="hotAirBindHint" class="hint">H310/H312 IP.</div>
                 </div>
+                <div id="slaveDeviceList" class="slaveDeviceGrid hidden" data-master-only="1"></div>
               </div>
             </div>
 
@@ -283,7 +286,8 @@
           <div class="cardBody">
             <div class="label" data-i18n="label_power_condition">Extractor Power Condition</div>
             <div style="height:8px"></div>
-            <div class="grid3" aria-label="Tool names">
+            <div id="logicDynamicSources" class="logicSourceGrid" aria-label="Active logic sources"></div>
+            <div class="grid3 logicLegacyUi" aria-label="Tool names">
               <div id="logicIron1Wrap">
                 <div class="label" data-i18n="label_iron1_name">Iron 1 Name</div>
                 <input id="iron1Name" type="text" value="Iron 1" />
@@ -306,7 +310,7 @@
               </div>
             </div>
             <div style="height:12px"></div>
-            <div id="t420dGpioWrap" class="grid3 logicBlock" aria-label="T420D GPIO mapping">
+            <div id="t420dGpioWrap" class="grid3 logicBlock logicLegacyUi" aria-label="T420D GPIO mapping">
               <div id="logicHotAirTempWrap" class="hidden">
                 <div id="hotAirTempOnLbl" class="label hierarchy-l1" data-i18n="label_hotair_temp_on">Temperature Trigger Threshold</div>
                 <div style="height:8px"></div>
@@ -317,7 +321,7 @@
               </div>
             </div>
             <div style="height:12px"></div>
-            <div class="logicBlock">
+            <div class="logicBlock logicLegacyUi">
               <div class="label" data-i18n="label_light_mode">Light Mode On Activation</div>
               <div style="height:8px"></div>
               <div class="grid3" aria-label="Light mode per tool">
@@ -351,7 +355,7 @@
               </div>
             </div>
             <div style="height:10px"></div>
-            <div class="logicBlock">
+            <div class="logicBlock logicLegacyUi">
               <div class="label" data-i18n="label_light_brightness">Light Brightness</div>
               <div style="height:8px"></div>
               <div class="grid3 manualSpeedGrid" aria-label="Light brightness per tool">
@@ -400,7 +404,7 @@
               </div>
             </div>
             <div style="height:12px"></div>
-            <div class="logicBlock">
+            <div class="logicBlock logicLegacyUi">
               <div class="label hierarchy-l1" data-i18n="label_start_delay">Start Delay</div>
               <div style="height:8px"></div>
               <div class="grid3" aria-label="Start delay per tool">
@@ -436,7 +440,7 @@
               </div>
             </div>
             <div style="height:10px"></div>
-            <div class="logicBlock">
+            <div class="logicBlock logicLegacyUi">
               <div class="label" data-i18n="label_speed_restore">Speed Restore</div>
               <div class="speedRestoreBtnRow">
                 <button id="btnSpeedRestoreMode" class="pillBtn restoreToggle active" type="button" data-i18n="value_last_set_speed">
@@ -476,9 +480,138 @@
             </div>
           </div>
         </section>
+
       </div>
 
       <div class="stack">
+        <section class="card hidden" id="slaveModuleCard" aria-label="Slave module" data-slave-only="1">
+          <div class="cardHeader">
+            <h2 class="cardTitle"><span class="dot"></span><span data-i18n="slave_module_title">Module</span></h2>
+          </div>
+          <div class="cardBody">
+            <div class="grid2">
+              <div>
+                <div class="label" data-i18n="label_device_role">Role</div>
+                <span class="pill cyan" data-device-role-label>station</span>
+              </div>
+              <div>
+                <div class="label" data-i18n="label_device_name">Name</div>
+                <input id="deviceIdentityName" type="text" autocomplete="off" value="" />
+              </div>
+            </div>
+            <div class="hint" data-i18n="device_identity_hint">This module advertises its role for master/slave registration.</div>
+            <div class="cardDivider"></div>
+            <div class="label" data-i18n="slave_link_channels">Master communication channels</div>
+            <div class="modelPills slaveChannelPills" role="group" aria-label="Master communication channels">
+              <button id="slaveWifiOn" type="button" class="modelBtn active" aria-pressed="true">Wi-Fi</button>
+              <button id="slaveBleOn" type="button" class="modelBtn active" aria-pressed="true">BLE</button>
+            </div>
+            <div id="slaveLinkHint" class="hint" data-i18n="slave_link_hint">Wi-Fi or BLE must stay enabled for master communication.</div>
+            <div class="cardDivider"></div>
+            <div id="slaveGpioConfig">
+              <div class="label" data-i18n="slave_gpio_title">Reaction GPIO</div>
+              <div class="grid2 authGrid">
+                <div>
+                  <div class="label" data-i18n="slave_gpio_pin">GPIO pin</div>
+                  <select id="slaveGpioPin"></select>
+                </div>
+                <div>
+                  <div class="label" data-i18n="slave_gpio_mode">GPIO mode</div>
+                  <select id="slaveGpioMode">
+                    <option value="input_pullup" data-i18n="slave_gpio_input_pullup">Input Pull-up</option>
+                    <option value="input_pulldown" data-i18n="slave_gpio_input_pulldown">Input Pull-down</option>
+                    <option value="active_high" data-i18n="slave_gpio_active_high">Active High</option>
+                    <option value="active_low" data-i18n="slave_gpio_active_low">Active Low</option>
+                    <option value="adc_threshold" data-i18n="slave_gpio_adc_threshold">ADC threshold</option>
+                  </select>
+                </div>
+              </div>
+              <div id="slaveGpioThresholdWrap" class="authGrid hidden">
+                <div class="label" data-i18n="slave_gpio_threshold">ADC threshold</div>
+                <input id="slaveGpioThreshold" type="number" min="0" max="4095" step="1" value="1800" />
+              </div>
+              <div class="hint" data-i18n="slave_gpio_hint">For a custom hot air module this defines how the slave detects tool activity before reporting it to master.</div>
+            </div>
+            <div id="slaveExtractorGpioConfig" class="hidden">
+              <div class="label" data-i18n="slave_extractor_control_title">Extractor control</div>
+              <div class="grid2 authGrid">
+                <div>
+                  <div class="label" data-i18n="slave_extractor_control_type">Motor control type</div>
+                  <select id="slaveExtractorControlType">
+                    <option value="buttons" data-i18n="slave_extractor_control_buttons">Panel buttons</option>
+                    <option value="pwm4" data-i18n="slave_extractor_control_pwm4">4-pin PWM / Reobas</option>
+                    <option value="mosfet_dc" data-i18n="slave_extractor_control_mosfet">DC motor via MOSFET</option>
+                    <option value="relay" data-i18n="slave_extractor_control_relay">Relay / ON-OFF</option>
+                    <option value="analog" data-i18n="slave_extractor_control_analog">Analog 0-5V / 0-10V</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="label" data-i18n="slave_signal_active_level">Active signal level</div>
+                  <select id="slaveExtractorActiveLevel">
+                    <option value="low" data-i18n="slave_signal_active_low">Active LOW</option>
+                    <option value="high" data-i18n="slave_signal_active_high">Active HIGH</option>
+                  </select>
+                </div>
+              </div>
+              <div id="slaveExtractorButtonsConfig">
+                <div class="label hierarchy-l1" data-i18n="slave_extractor_gpio_title">Extractor GPIO commands</div>
+                <div class="slaveActionGrid authGrid">
+                  <div><div class="label" data-i18n="slave_extractor_gpio_power">On / Off</div><select id="slaveExtractorGpioPower"></select></div>
+                  <div><div class="label" data-i18n="slave_extractor_gpio_speed_up">Speed +</div><select id="slaveExtractorGpioSpeedUp"></select></div>
+                  <div><div class="label" data-i18n="slave_extractor_gpio_speed_down">Speed -</div><select id="slaveExtractorGpioSpeedDown"></select></div>
+                  <div><div class="label" data-i18n="slave_extractor_gpio_apply">Apply / ENT</div><select id="slaveExtractorGpioApply"></select></div>
+                </div>
+                <div class="grid2 authGrid">
+                  <div>
+                    <div class="label" data-i18n="slave_extractor_gpio_mode">Output mode</div>
+                    <select id="slaveExtractorGpioMode">
+                      <option value="contact_pulse" data-i18n="slave_extractor_gpio_contact_pulse">Contact pulse</option>
+                      <option value="contact_hold" data-i18n="slave_extractor_gpio_contact_hold">Contact hold</option>
+                      <option value="active_low" data-i18n="slave_extractor_gpio_active_low">Active Low</option>
+                      <option value="active_high" data-i18n="slave_extractor_gpio_active_high">Active High</option>
+                    </select>
+                  </div>
+                  <div><div class="label" data-i18n="slave_extractor_gpio_pulse_ms">Pulse time (ms)</div><input id="slaveExtractorGpioPulseMs" type="number" min="20" max="5000" step="10" value="180" /></div>
+                </div>
+              </div>
+              <div id="slaveExtractorMotorConfig" class="hidden">
+                <div class="label hierarchy-l1" data-i18n="slave_extractor_motor_title">Motor output</div>
+                <div class="slaveActionGrid authGrid">
+                  <div><div class="label" data-i18n="slave_extractor_gpio_enable">Enable GPIO</div><select id="slaveExtractorGpioEnable"></select></div>
+                  <div><div class="label" data-i18n="slave_extractor_gpio_speed">Speed GPIO</div><select id="slaveExtractorGpioSpeed"></select></div>
+                  <div><div class="label" data-i18n="slave_pwm_frequency">PWM frequency (Hz)</div><input id="slaveExtractorPwmFreq" type="number" min="10" max="50000" step="10" value="25000" /></div>
+                  <div><div class="label" data-i18n="slave_pwm_invert">Invert PWM</div><select id="slaveExtractorPwmInvert"><option value="0" data-i18n="opt_off">OFF</option><option value="1" data-i18n="opt_on">ON</option></select></div>
+                  <div><div class="label" data-i18n="slave_speed_min">Min speed (%)</div><input id="slaveExtractorSpeedMin" type="number" min="0" max="100" step="1" value="20" /></div>
+                  <div><div class="label" data-i18n="slave_speed_max">Max speed (%)</div><input id="slaveExtractorSpeedMax" type="number" min="0" max="100" step="1" value="100" /></div>
+                  <div><div class="label" data-i18n="slave_start_boost">Start boost (ms)</div><input id="slaveExtractorBoostMs" type="number" min="0" max="10000" step="100" value="700" /></div>
+                  <div><div class="label" data-i18n="slave_failsafe_off">Failsafe off (s)</div><input id="slaveExtractorFailsafeSec" type="number" min="0" max="3600" step="1" value="30" /></div>
+                </div>
+              </div>
+              <div id="slaveExtractorAnalogConfig" class="hidden">
+                <div class="label hierarchy-l1" data-i18n="slave_analog_title">Analog output</div>
+                <div class="grid2 authGrid">
+                  <div><div class="label" data-i18n="slave_analog_range">Analog range</div><select id="slaveExtractorAnalogRange"><option value="0_5" data-i18n="slave_analog_0_5">0-5V</option><option value="0_10" data-i18n="slave_analog_0_10">0-10V</option></select></div>
+                  <div class="hint" data-i18n="slave_analog_hint">Requires external DAC/PWM filter and amplifier.</div>
+                </div>
+              </div>
+              <div class="cardDivider"></div>
+              <div id="slaveExtractorLightConfig">
+                <div class="label hierarchy-l1" data-i18n="slave_light_title">Light output</div>
+                <div class="slaveActionGrid authGrid">
+                  <div><div class="label" data-i18n="slave_light_gpio">Light GPIO</div><select id="slaveLightGpio"></select></div>
+                  <div><div class="label" data-i18n="slave_light_mode">Light mode</div><select id="slaveLightMode"><option value="disabled" data-i18n="opt_gpio_disabled">Disabled</option><option value="on_off" data-i18n="slave_light_on_off">ON/OFF</option><option value="pwm" data-i18n="slave_light_pwm">PWM brightness</option><option value="follow_motor" data-i18n="slave_light_follow_motor">Follow motor</option></select></div>
+                  <div><div class="label" data-i18n="slave_light_active_level">Light active level</div><select id="slaveLightActiveLevel"><option value="low" data-i18n="slave_signal_active_low">Active LOW</option><option value="high" data-i18n="slave_signal_active_high">Active HIGH</option></select></div>
+                  <div><div class="label" data-i18n="slave_light_default_brightness">Default brightness (%)</div><input id="slaveLightDefaultBrightness" type="number" min="0" max="100" step="1" value="60" /></div>
+                </div>
+              </div>
+              <div class="hint" data-i18n="slave_extractor_gpio_hint">Use optocouplers or transistor keys when wiring ESP32 GPIO to external button pads.</div>
+            </div>
+            <div class="btnRow">
+              <button id="btnSaveIdentity" type="button" data-i18n="btn_save_identity">Save Identity</button>
+            </div>
+          </div>
+        </section>
+
         <section class="card" aria-label="Apply and diagnostics">
           <div class="cardHeader">
             <h2 class="cardTitle"><span class="dot good"></span><span data-i18n="section_apply_diag">Apply and Diagnostics</span></h2>
@@ -493,6 +626,7 @@
                 </span>
               </button>
               <button id="btnReboot" type="button" data-i18n="btn_reboot">Reboot</button>
+              <button id="btnMode" type="button" data-i18n="btn_mode">Mode</button>
               <button id="btnEnterRecovery" type="button" data-i18n="btn_enter_recovery">Enter Recovery Mode</button>
               <button id="btnExportLog" type="button" data-i18n="btn_export_log">Export Log (.txt)</button>
               <button id="btnResetSettings" class="danger" type="button" data-i18n="btn_reset_settings">Reset Settings</button>
@@ -631,6 +765,71 @@
         <div class="btnRow" style="justify-content:center">
           <button id="btnShortcutOfferClose" type="button" data-i18n="shortcut_offer_done">Done</button>
         </div>
+      </div>
+    </div>
+  </div>
+  <div id="modeDialog" class="shortcutOfferModal hidden" role="dialog" aria-modal="true" aria-labelledby="modeDialogTitle">
+    <div class="shortcutOfferBox">
+      <div id="modeDialogTitle" class="shortcutOfferTitle" data-i18n="mode_dialog_title">Where is this module installed?</div>
+      <div id="modeDialogHint" class="shortcutOfferText" data-i18n="mode_dialog_hint">Choose the device type that this module is connected to.</div>
+      <div class="btnRow" style="justify-content:center;flex-wrap:wrap">
+        <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="station" data-i18n="mode_station">Soldering station</button>
+        <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="hot_air" data-i18n="mode_hot_air">Hot air station</button>
+        <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="fume_extractor" data-i18n="mode_fume_extractor">Fume extractor</button>
+        <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="preheater" data-i18n="mode_preheater">Preheater for PCB rework</button>
+      </div>
+      <div class="btnRow" style="justify-content:center">
+        <button id="modeCancelBtn" type="button" data-i18n="mode_cancel">Cancel</button>
+        <button id="modeSaveBtn" type="button" class="primary" data-i18n="mode_save">Save Mode</button>
+      </div>
+    </div>
+  </div>
+  <div id="addDeviceDialog" class="shortcutOfferModal hidden" role="dialog" aria-modal="true" aria-labelledby="addDeviceDialogTitle">
+    <div class="shortcutOfferBox">
+      <div id="addDeviceDialogTitle" class="shortcutOfferTitle" data-i18n="add_device_title">Which device do you want to add?</div>
+      <div class="shortcutOfferText" data-i18n="add_device_hint">Select an equipment family, then choose a device type.</div>
+
+      <div class="addDeviceGroupRow" role="group" aria-label="Device family">
+        <button type="button" class="pillBtn gray addDeviceGroupBtn" data-add-device-group="aixun" data-i18n="add_device_aixun_group">Aixun equipment</button>
+        <button type="button" class="pillBtn gray addDeviceGroupBtn" data-add-device-group="esp32" data-i18n="add_device_esp32_group">ESP32 modules</button>
+      </div>
+
+      <div id="addDeviceAixunPanel" class="addDevicePanel hidden">
+        <div class="hint" data-i18n="add_device_aixun_group">Aixun equipment</div>
+        <div class="btnRow" style="justify-content:center;flex-wrap:wrap">
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="aixun_es02" data-i18n="add_device_es02">ES02</button>
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="aixun_t420d" data-i18n="add_device_t420d">T420D</button>
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="aixun_h310_h312" data-i18n="add_device_h310_h312">H310/H312</button>
+        </div>
+      </div>
+
+      <div id="addDeviceEsp32Panel" class="addDevicePanel hidden">
+        <div class="hint" data-i18n="add_device_esp32_group">ESP32 modules</div>
+        <div class="btnRow" style="justify-content:center;flex-wrap:wrap">
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="esp32_fume_extractor" data-i18n="add_device_esp32_fume">Fume extractor</button>
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="esp32_hot_air" data-i18n="add_device_esp32_hot_air">Hot air</button>
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="esp32_preheater" data-i18n="add_device_esp32_preheater">Preheater</button>
+          <button type="button" class="pillBtn gray addDeviceChoice" data-add-device="esp32_custom" data-i18n="add_device_esp32_custom">Custom</button>
+        </div>
+      </div>
+
+      <div id="addDeviceNameWrap" class="addDeviceNameWrap hidden">
+        <div class="hint" data-i18n="add_device_custom_name">Custom name</div>
+        <input id="addDeviceCustomName" type="text" autocomplete="off" data-i18n-placeholder="add_device_custom_placeholder" placeholder="My device" />
+      </div>
+      <div class="btnRow" style="justify-content:center">
+        <button id="addDeviceCancelBtn" type="button" data-i18n="mode_cancel">Cancel</button>
+        <button id="addDeviceSaveBtn" type="button" class="primary" data-i18n="btn_save">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="removeDeviceDialog" class="shortcutOfferModal hidden" role="dialog" aria-modal="true" aria-labelledby="removeDeviceDialogTitle">
+    <div class="shortcutOfferBox">
+      <div id="removeDeviceDialogTitle" class="shortcutOfferTitle" data-i18n="remove_device_title">Remove equipment</div>
+      <div class="shortcutOfferText" data-i18n="remove_device_hint">Choose an added device to remove.</div>
+      <div id="removeDeviceList" class="addDevicePanel"></div>
+      <div class="btnRow" style="justify-content:center">
+        <button id="removeDeviceCancelBtn" type="button" data-i18n="mode_cancel">Cancel</button>
       </div>
     </div>
   </div>

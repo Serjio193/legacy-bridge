@@ -389,6 +389,20 @@
 
     .cardBody{padding:14px 16px 16px;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .connectivityGrid{
+      grid-template-columns:minmax(270px, .86fr) minmax(340px, 1.34fr);
+      align-items:start;
+    }
+    .deviceTilesGrid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+      gap:10px;
+      align-items:start;
+    }
+    .deviceTile{
+      min-width:0;
+      margin-top:0 !important;
+    }
     .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
     .cardDivider{
       height:1px;
@@ -412,6 +426,41 @@
       margin-top: 10px;
       padding-top: 12px;
       border-top:1px solid rgba(255,255,255,.05);
+    }
+    .logicSourceGrid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+      gap:12px;
+      align-items:start;
+    }
+    .logicSourceCard{
+      min-width:0;
+      display:grid;
+      gap:10px;
+    }
+    .logicSourceHead{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .logicSourceName{
+      font-family:var(--mono);
+      font-size:12px;
+      color:rgba(231,238,247,.95);
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .logicSourceSection{
+      display:grid;
+      gap:6px;
+    }
+    .logicSourceInline{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
     }
     #t420dGpioWrap #logicHotAirTempWrap{
       grid-column: 3;
@@ -609,6 +658,30 @@
     .inset:active{
       border-color: rgba(255,255,255,.06);
       background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.07));
+    }
+    .slaveDeviceGrid{
+      display:contents;
+    }
+    .slaveDeviceTile{
+      min-width:0;
+    }
+    .slaveDeviceTile .hotAirSlots,
+    .slaveDeviceTile .slaveModeRow{
+      margin-top:8px;
+    }
+    .slaveFieldWrap{
+      margin-top:8px;
+    }
+    .slaveChannelPills{
+      margin-top:10px;
+    }
+    .slaveChannelPills .modelBtn{
+      min-width:86px;
+    }
+    .slaveActionGrid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+      gap:10px;
     }
     .pickList{margin-top:10px;display:grid;gap:8px;}
     .pickItem{
@@ -832,6 +905,13 @@
       filter: saturate(0.0);
       box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset;
     }
+    .pillBtn.gray.active{
+      border-color: rgba(var(--cyan-ui-rgb),.30);
+      color: rgba(var(--cyan-ui-rgb),.90);
+      background: linear-gradient(180deg, rgba(var(--cyan-ui-rgb),.12), rgba(var(--cyan-ui-rgb),.04));
+      filter: none;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 8px 18px rgba(var(--cyan-ui-rgb),.10);
+    }
     .pillBtn.restoreToggle{
       padding: 12px 14px;
       font-size: 12.5px;
@@ -992,6 +1072,30 @@
       outline: none;
       border-color: rgba(var(--accent-rgb), .34);
       box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 0 0 2px rgba(var(--accent-rgb), .10);
+    }
+    .addDeviceGroupRow{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-top:14px;
+    }
+    .addDeviceGroupRow .pillBtn{
+      width:100%;
+      justify-content:center;
+    }
+    .addDevicePanel{
+      margin-top:14px;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.14));
+      box-shadow:0 0 0 1px rgba(0,0,0,.30) inset;
+    }
+    .addDeviceNameWrap{
+      margin-top:12px;
+    }
+    @media (max-width: 560px){
+      .addDeviceGroupRow{grid-template-columns:1fr;}
     }
     .fwUpdateMenuModal{
       position: fixed;
@@ -1428,6 +1532,17 @@
       stroke-linejoin:round;
     }
     .modelBtn.static{cursor:default;pointer-events:none;}
+    .modelBtn.addEquipmentWide{
+      min-width: 176px;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+    .topEsp32Btn{
+      max-width: 160px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
     .modelBtn:hover{border-color: rgba(var(--accent-rgb),.18);}
     .modelBtn.active,
     .senseChip.on,
@@ -1455,6 +1570,8 @@
       .below{grid-template-columns:1fr}
       .grid3{grid-template-columns:1fr}
       .grid2{grid-template-columns:1fr}
+      .connectivityGrid{grid-template-columns:1fr}
+      .deviceTilesGrid{grid-template-columns:repeat(auto-fit, minmax(min(100%, 340px), 1fr));}
       .heroTitle{font-size:48px}
       .heroPhotoImg{right:14px;top:-2px;height:111%;}
       .heroCopy{max-width: none;}

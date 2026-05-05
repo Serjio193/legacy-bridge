@@ -29,6 +29,7 @@
           v_enabled: "ENABLED",
           v_ap_fallback: "AP FALLBACK",
           v_not_paired: "PAIR: NONE",
+          v_paired: "PAIRED",
           v_idle: "IDLE",
           v_armed: "ARMED",
           v_ready: "READY",
@@ -281,6 +282,114 @@
           btn_reboot: "Reboot",
           btn_export_log: "Export Log (.txt)",
           btn_reset_settings: "Reset Settings",
+          btn_mode: "Mode",
+          mode_dialog_title: "Where is this module installed?",
+          mode_dialog_hint: "Choose the device type that this module is connected to.",
+          mode_station: "Soldering station",
+          mode_hot_air: "Hot air station",
+          mode_fume_extractor: "Fume extractor",
+          mode_preheater: "Preheater for PCB rework",
+          mode_cancel: "Cancel",
+          mode_save: "Save Mode",
+          btn_add_device: "Add equipment",
+          btn_remove_device: "Remove device",
+          add_device_title: "Which device do you want to add?",
+          add_device_hint: "Select an equipment family, then choose a device type.",
+          add_device_aixun_group: "Aixun equipment",
+          add_device_esp32_group: "ESP32 modules",
+          add_device_es02: "ES02",
+          add_device_t420d: "T420D",
+          add_device_h310_h312: "H310/H312",
+          add_device_esp32_fume: "Fume extractor",
+          add_device_esp32_hot_air: "Hot air",
+          add_device_esp32_preheater: "Preheater",
+          add_device_esp32_custom: "Custom",
+          add_device_custom_name: "Custom name",
+          add_device_custom_placeholder: "My device",
+          remove_device_title: "Remove equipment",
+          remove_device_hint: "Choose an added device to remove.",
+          remove_device_empty: "No added equipment.",
+          slave_devices_title: "Slave Devices",
+          slave_devices_hint: "Registered ESP32 slave modules will appear here.",
+          btn_scan_slaves: "Scan Slaves",
+          btn_pair_slave: "Pair Slave",
+          label_slave_ip: "IP address",
+          label_slave_ble_addr: "BLE address",
+          btn_bind_slave: "Bind Slave",
+          slave_module_title: "Module",
+          master_link_title: "Master Link",
+          master_link_hint: "Slave mode waits for registration. Pairing is started from the master module.",
+          master_link_state_waiting: "Waiting",
+          btn_scan_master: "Find Master",
+          btn_wait_master: "Waiting for Master",
+          btn_forget_master: "Forget Master",
+          slave_link_channels: "Master communication channels",
+          slave_link_hint: "Wi-Fi or BLE must stay enabled for master communication.",
+          slave_link_one_required: "At least one channel must stay enabled.",
+          label_pair_token: "Pair token",
+          btn_generate_token: "Generate Token",
+          pair_token_hint: "Enter the same token on master slave-card. It is separate from web login.",
+          pair_token_saved: "Pair token saved in master.",
+          pair_token_need_bind: "Press Bind Slave to create token on slave.",
+          device_identity_title: "Device Identity",
+          device_identity_hint: "This module advertises its role for master/slave registration.",
+          label_device_role: "Role",
+          label_device_name: "Name",
+          btn_save_identity: "Save Identity",
+          slave_gpio_title: "Reaction GPIO",
+          slave_gpio_pin: "GPIO pin",
+          slave_gpio_mode: "GPIO mode",
+          slave_gpio_input_pullup: "Input Pull-up",
+          slave_gpio_input_pulldown: "Input Pull-down",
+          slave_gpio_active_high: "Active High",
+          slave_gpio_active_low: "Active Low",
+          slave_gpio_adc_threshold: "ADC threshold",
+          slave_gpio_threshold: "ADC threshold",
+          slave_gpio_hint: "For a custom hot air module this defines how the slave detects tool activity before reporting it to master.",
+          slave_extractor_gpio_title: "Extractor GPIO commands",
+          slave_extractor_gpio_power: "On / Off",
+          slave_extractor_gpio_speed_up: "Speed +",
+          slave_extractor_gpio_speed_down: "Speed -",
+          slave_extractor_gpio_apply: "Apply / ENT",
+          slave_extractor_gpio_mode: "Output mode",
+          slave_extractor_gpio_contact_pulse: "Contact pulse",
+          slave_extractor_gpio_contact_hold: "Contact hold",
+          slave_extractor_gpio_active_low: "Active Low",
+          slave_extractor_gpio_active_high: "Active High",
+          slave_extractor_gpio_pulse_ms: "Pulse time (ms)",
+          slave_extractor_gpio_hint: "Recommended: contact pulse through an optocoupler/transistor key. Do not feed ESP32 voltage directly into button pads.",
+          slave_extractor_control_title: "Extractor control",
+          slave_extractor_control_type: "Motor control type",
+          slave_extractor_control_buttons: "Panel buttons",
+          slave_extractor_control_pwm4: "4-pin PWM / Reobas",
+          slave_extractor_control_mosfet: "DC motor via MOSFET",
+          slave_extractor_control_relay: "Relay / ON-OFF",
+          slave_extractor_control_analog: "Analog 0-5V / 0-10V",
+          slave_signal_active_level: "Active signal level",
+          slave_signal_active_low: "Active LOW",
+          slave_signal_active_high: "Active HIGH",
+          slave_extractor_motor_title: "Motor output",
+          slave_extractor_gpio_enable: "Enable GPIO",
+          slave_extractor_gpio_speed: "Speed GPIO",
+          slave_pwm_frequency: "PWM frequency (Hz)",
+          slave_pwm_invert: "Invert PWM",
+          slave_speed_min: "Min speed (%)",
+          slave_speed_max: "Max speed (%)",
+          slave_start_boost: "Start boost (ms)",
+          slave_failsafe_off: "Failsafe off (s)",
+          slave_analog_title: "Analog output",
+          slave_analog_range: "Analog range",
+          slave_analog_0_5: "0-5V",
+          slave_analog_0_10: "0-10V",
+          slave_analog_hint: "Requires external DAC/PWM filter and amplifier.",
+          slave_light_title: "Light output",
+          slave_light_gpio: "Light GPIO",
+          slave_light_mode: "Light mode",
+          slave_light_on_off: "ON/OFF",
+          slave_light_pwm: "PWM brightness",
+          slave_light_follow_motor: "Follow motor",
+          slave_light_active_level: "Light active level",
+          slave_light_default_brightness: "Default brightness (%)",
           label_web_auth: "Web Access",
           label_web_user: "Login",
           label_web_pass_new: "New Password",
@@ -351,6 +460,7 @@
           v_enabled: "ВКЛ",
           v_ap_fallback: "AP РЕЖИМ",
           v_not_paired: "PAIR: NONE",
+          v_paired: "ПРИВЯЗАН",
           v_idle: "ОЖИДАНИЕ",
           v_armed: "АКТИВЕН",
           v_ready: "ГОТОВ",
@@ -603,6 +713,114 @@
           btn_reboot: "Перезагрузка",
           btn_export_log: "Экспорт лога (.txt)",
           btn_reset_settings: "Сброс настроек",
+          btn_mode: "Режим",
+          mode_dialog_title: "Куда установлен модуль?",
+          mode_dialog_hint: "Выберите устройство, к которому подключен модуль.",
+          mode_station: "Паяльная станция",
+          mode_hot_air: "Фен",
+          mode_fume_extractor: "Дымоуловитель",
+          mode_preheater: "Прехиттер для ремонта плат",
+          mode_cancel: "Отмена",
+          mode_save: "Сохранить режим",
+          btn_add_device: "Добавить оборудование",
+          btn_remove_device: "Удалить устройство",
+          add_device_title: "Какое устройство добавить?",
+          add_device_hint: "Выберите семейство оборудования, затем тип устройства.",
+          add_device_aixun_group: "Оборудование Aixun",
+          add_device_esp32_group: "ESP32-модули",
+          add_device_es02: "ES02",
+          add_device_t420d: "T420D",
+          add_device_h310_h312: "H310/H312",
+          add_device_esp32_fume: "Дымоуловитель",
+          add_device_esp32_hot_air: "Фен",
+          add_device_esp32_preheater: "Прехитер",
+          add_device_esp32_custom: "Кастом",
+          add_device_custom_name: "Своё имя",
+          add_device_custom_placeholder: "Моё устройство",
+          remove_device_title: "Удалить оборудование",
+          remove_device_hint: "Выберите добавленное устройство для удаления.",
+          remove_device_empty: "Добавленного оборудования нет.",
+          slave_devices_title: "Slave-устройства",
+          slave_devices_hint: "Зарегистрированные ESP32 slave-модули будут отображаться здесь.",
+          btn_scan_slaves: "Сканировать Slaves",
+          btn_pair_slave: "Привязать Slave",
+          label_slave_ip: "IP адрес",
+          label_slave_ble_addr: "BLE адрес",
+          btn_bind_slave: "Привязать Slave",
+          slave_module_title: "Модуль",
+          master_link_title: "Связь с Master",
+          master_link_hint: "В slave-режиме модуль ждёт регистрации. Привязку запускает master-модуль.",
+          master_link_state_waiting: "Ожидание",
+          btn_scan_master: "Найти Master",
+          btn_wait_master: "Ждёт Master",
+          btn_forget_master: "Забыть Master",
+          slave_link_channels: "Каналы связи с Master",
+          slave_link_hint: "Wi-Fi или BLE должны оставаться включены для связи с master.",
+          slave_link_one_required: "Нельзя выключить оба канала связи.",
+          label_pair_token: "Токен пары",
+          btn_generate_token: "Создать токен",
+          pair_token_hint: "Введите этот же токен на карточке slave в master. Это отдельный ключ, не web-пароль.",
+          pair_token_saved: "Токен пары сохранён в master.",
+          pair_token_need_bind: "Нажмите «Привязать Slave», чтобы slave создал токен.",
+          device_identity_title: "Идентификация устройства",
+          device_identity_hint: "Модуль сообщает свою роль при регистрации master/slave.",
+          label_device_role: "Роль",
+          label_device_name: "Имя",
+          btn_save_identity: "Сохранить имя",
+          slave_gpio_title: "GPIO реакции",
+          slave_gpio_pin: "Пин GPIO",
+          slave_gpio_mode: "Режим GPIO",
+          slave_gpio_input_pullup: "Вход Pull-up",
+          slave_gpio_input_pulldown: "Вход Pull-down",
+          slave_gpio_active_high: "Активный высокий",
+          slave_gpio_active_low: "Активный низкий",
+          slave_gpio_adc_threshold: "ADC порог",
+          slave_gpio_threshold: "ADC порог",
+          slave_gpio_hint: "Для кастомного фена это задаёт, как slave определяет активность инструмента перед отправкой статуса master.",
+          slave_extractor_gpio_title: "GPIO-команды дымоуловителя",
+          slave_extractor_gpio_power: "Вкл / Выкл",
+          slave_extractor_gpio_speed_up: "Скорость +",
+          slave_extractor_gpio_speed_down: "Скорость -",
+          slave_extractor_gpio_apply: "Применить / ENT",
+          slave_extractor_gpio_mode: "Режим выхода",
+          slave_extractor_gpio_contact_pulse: "Импульсное замыкание",
+          slave_extractor_gpio_contact_hold: "Удержание контакта",
+          slave_extractor_gpio_active_low: "Активный LOW",
+          slave_extractor_gpio_active_high: "Активный HIGH",
+          slave_extractor_gpio_pulse_ms: "Время импульса (мс)",
+          slave_extractor_gpio_hint: "Рекомендуется импульсное замыкание через оптопару/транзисторный ключ. Не подавай напряжение ESP32 напрямую на контакты кнопок.",
+          slave_extractor_control_title: "Управление дымоуловителем",
+          slave_extractor_control_type: "Тип управления мотором",
+          slave_extractor_control_buttons: "Кнопки панели",
+          slave_extractor_control_pwm4: "4-pin PWM / Реобас",
+          slave_extractor_control_mosfet: "DC мотор через MOSFET",
+          slave_extractor_control_relay: "Реле / ON-OFF",
+          slave_extractor_control_analog: "Аналог 0-5V / 0-10V",
+          slave_signal_active_level: "Активный уровень сигнала",
+          slave_signal_active_low: "Активный LOW",
+          slave_signal_active_high: "Активный HIGH",
+          slave_extractor_motor_title: "Выход мотора",
+          slave_extractor_gpio_enable: "GPIO включения",
+          slave_extractor_gpio_speed: "GPIO скорости",
+          slave_pwm_frequency: "Частота PWM (Hz)",
+          slave_pwm_invert: "Инверсия PWM",
+          slave_speed_min: "Мин. скорость (%)",
+          slave_speed_max: "Макс. скорость (%)",
+          slave_start_boost: "Стартовый буст (мс)",
+          slave_failsafe_off: "Failsafe выкл. (с)",
+          slave_analog_title: "Аналоговый выход",
+          slave_analog_range: "Диапазон аналога",
+          slave_analog_0_5: "0-5V",
+          slave_analog_0_10: "0-10V",
+          slave_analog_hint: "Нужен внешний DAC/PWM-фильтр и усилитель.",
+          slave_light_title: "Выход подсветки",
+          slave_light_gpio: "GPIO подсветки",
+          slave_light_mode: "Режим подсветки",
+          slave_light_on_off: "ON/OFF",
+          slave_light_pwm: "PWM яркость",
+          slave_light_follow_motor: "Следовать мотору",
+          slave_light_active_level: "Активный уровень подсветки",
+          slave_light_default_brightness: "Яркость по умолчанию (%)",
           label_web_auth: "Доступ к веб-интерфейсу",
           label_web_user: "Логин",
           label_web_pass_new: "Новый пароль",
@@ -673,6 +891,7 @@
           v_enabled: "УВІМК",
           v_ap_fallback: "РЕЖИМ AP",
           v_not_paired: "PAIR: NONE",
+          v_paired: "ПРИВ'ЯЗАНО",
           v_idle: "ОЧІКУВАННЯ",
           v_armed: "АКТИВНО",
           v_ready: "ГОТОВО",
@@ -925,6 +1144,114 @@
           btn_reboot: "Перезавантаження",
           btn_export_log: "Експорт логу (.txt)",
           btn_reset_settings: "Скидання налаштувань",
+          btn_mode: "Режим",
+          mode_dialog_title: "Куди встановлено модуль?",
+          mode_dialog_hint: "Оберіть пристрій, до якого підключений модуль.",
+          mode_station: "Паяльна станція",
+          mode_hot_air: "Фен",
+          mode_fume_extractor: "Димовідсмоктувач",
+          mode_preheater: "Прехітер для ремонту плат",
+          mode_cancel: "Скасувати",
+          mode_save: "Зберегти режим",
+          btn_add_device: "Додати обладнання",
+          btn_remove_device: "Видалити пристрій",
+          add_device_title: "Який пристрій додати?",
+          add_device_hint: "Оберіть сімейство обладнання, потім тип пристрою.",
+          add_device_aixun_group: "Обладнання Aixun",
+          add_device_esp32_group: "ESP32-модулі",
+          add_device_es02: "ES02",
+          add_device_t420d: "T420D",
+          add_device_h310_h312: "H310/H312",
+          add_device_esp32_fume: "Димовідсмоктувач",
+          add_device_esp32_hot_air: "Фен",
+          add_device_esp32_preheater: "Прехітер",
+          add_device_esp32_custom: "Кастом",
+          add_device_custom_name: "Власна назва",
+          add_device_custom_placeholder: "Мій пристрій",
+          remove_device_title: "Видалити обладнання",
+          remove_device_hint: "Оберіть доданий пристрій для видалення.",
+          remove_device_empty: "Доданого обладнання немає.",
+          slave_devices_title: "Slave-пристрої",
+          slave_devices_hint: "Зареєстровані ESP32 slave-модулі відображатимуться тут.",
+          btn_scan_slaves: "Сканувати Slaves",
+          btn_pair_slave: "Прив'язати Slave",
+          label_slave_ip: "IP адреса",
+          label_slave_ble_addr: "BLE адреса",
+          btn_bind_slave: "Прив'язати Slave",
+          slave_module_title: "Модуль",
+          master_link_title: "Зв'язок з Master",
+          master_link_hint: "У slave-режимі модуль очікує реєстрації. Прив'язку запускає master-модуль.",
+          master_link_state_waiting: "Очікування",
+          btn_scan_master: "Знайти Master",
+          btn_wait_master: "Очікує Master",
+          btn_forget_master: "Забути Master",
+          slave_link_channels: "Канали зв'язку з Master",
+          slave_link_hint: "Wi-Fi або BLE мають залишатися увімкненими для зв'язку з master.",
+          slave_link_one_required: "Не можна вимкнути обидва канали зв'язку.",
+          label_pair_token: "Токен пари",
+          btn_generate_token: "Створити токен",
+          pair_token_hint: "Введіть цей самий токен на slave-картці в master. Це окремий ключ, не web-пароль.",
+          pair_token_saved: "Токен пари збережено в master.",
+          pair_token_need_bind: "Натисніть «Прив'язати Slave», щоб slave створив токен.",
+          device_identity_title: "Ідентифікація пристрою",
+          device_identity_hint: "Модуль повідомляє свою роль під час реєстрації master/slave.",
+          label_device_role: "Роль",
+          label_device_name: "Ім'я",
+          btn_save_identity: "Зберегти ім'я",
+          slave_gpio_title: "GPIO реакції",
+          slave_gpio_pin: "Пін GPIO",
+          slave_gpio_mode: "Режим GPIO",
+          slave_gpio_input_pullup: "Вхід Pull-up",
+          slave_gpio_input_pulldown: "Вхід Pull-down",
+          slave_gpio_active_high: "Активний високий",
+          slave_gpio_active_low: "Активний низький",
+          slave_gpio_adc_threshold: "ADC поріг",
+          slave_gpio_threshold: "ADC поріг",
+          slave_gpio_hint: "Для кастомного фена це задає, як slave визначає активність інструмента перед відправкою статусу master.",
+          slave_extractor_gpio_title: "GPIO-команди димовідсмоктувача",
+          slave_extractor_gpio_power: "Увімк / Вимк",
+          slave_extractor_gpio_speed_up: "Швидкість +",
+          slave_extractor_gpio_speed_down: "Швидкість -",
+          slave_extractor_gpio_apply: "Застосувати / ENT",
+          slave_extractor_gpio_mode: "Режим виходу",
+          slave_extractor_gpio_contact_pulse: "Імпульсне замикання",
+          slave_extractor_gpio_contact_hold: "Утримання контакту",
+          slave_extractor_gpio_active_low: "Активний LOW",
+          slave_extractor_gpio_active_high: "Активний HIGH",
+          slave_extractor_gpio_pulse_ms: "Час імпульсу (мс)",
+          slave_extractor_gpio_hint: "Рекомендовано імпульсне замикання через оптопару/транзисторний ключ. Не подавай напругу ESP32 напряму на контакти кнопок.",
+          slave_extractor_control_title: "Керування димовідсмоктувачем",
+          slave_extractor_control_type: "Тип керування мотором",
+          slave_extractor_control_buttons: "Кнопки панелі",
+          slave_extractor_control_pwm4: "4-pin PWM / Реобас",
+          slave_extractor_control_mosfet: "DC мотор через MOSFET",
+          slave_extractor_control_relay: "Реле / ON-OFF",
+          slave_extractor_control_analog: "Аналог 0-5V / 0-10V",
+          slave_signal_active_level: "Активний рівень сигналу",
+          slave_signal_active_low: "Активний LOW",
+          slave_signal_active_high: "Активний HIGH",
+          slave_extractor_motor_title: "Вихід мотора",
+          slave_extractor_gpio_enable: "GPIO увімкнення",
+          slave_extractor_gpio_speed: "GPIO швидкості",
+          slave_pwm_frequency: "Частота PWM (Hz)",
+          slave_pwm_invert: "Інверсія PWM",
+          slave_speed_min: "Мін. швидкість (%)",
+          slave_speed_max: "Макс. швидкість (%)",
+          slave_start_boost: "Стартовий буст (мс)",
+          slave_failsafe_off: "Failsafe вимк. (с)",
+          slave_analog_title: "Аналоговий вихід",
+          slave_analog_range: "Діапазон аналога",
+          slave_analog_0_5: "0-5V",
+          slave_analog_0_10: "0-10V",
+          slave_analog_hint: "Потрібен зовнішній DAC/PWM-фільтр і підсилювач.",
+          slave_light_title: "Вихід підсвітки",
+          slave_light_gpio: "GPIO підсвітки",
+          slave_light_mode: "Режим підсвітки",
+          slave_light_on_off: "ON/OFF",
+          slave_light_pwm: "PWM яскравість",
+          slave_light_follow_motor: "Слідувати мотору",
+          slave_light_active_level: "Активний рівень підсвітки",
+          slave_light_default_brightness: "Яскравість за замовчуванням (%)",
           label_web_auth: "Доступ до веб-інтерфейсу",
           label_web_user: "Логін",
           label_web_pass_new: "Новий пароль",
@@ -995,7 +1322,15 @@
           const v = pack[key];
           if (typeof v === "string") el.setAttribute("title", v);
         });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+          const key = el.getAttribute("data-i18n-placeholder");
+          const v = pack[key];
+          if (typeof v === "string") el.setAttribute("placeholder", v);
+        });
         renderFormatted(pack);
+        if (typeof window.__refreshEquipmentLabels === "function") {
+          window.__refreshEquipmentLabels();
+        }
       }
       const sel = document.getElementById("lang");
       const iron1Input = document.getElementById("iron1Name"); // T420D handle 1
@@ -1302,6 +1637,7 @@
           iron1Input.addEventListener("input", () => {
             setStoredName("alb_h1_name", iron1Input.value);
             renderFormatted(i18n[normalizeLang(sel.value)] || i18n.en);
+            if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
           });
         }
         if (iron2Input) {
@@ -1310,6 +1646,7 @@
           iron2Input.addEventListener("input", () => {
             setStoredName("alb_h2_name", iron2Input.value);
             renderFormatted(i18n[normalizeLang(sel.value)] || i18n.en);
+            if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
           });
         }
         if (hotAirInput) {
@@ -1318,6 +1655,7 @@
           hotAirInput.addEventListener("input", () => {
             setStoredName("alb_ha_name", hotAirInput.value);
             renderFormatted(i18n[normalizeLang(sel.value)] || i18n.en);
+            if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
           });
         }
       }
@@ -1332,6 +1670,23 @@
         const btnES02 = document.getElementById("lbES02");
         const btnT420D = document.getElementById("lbT420D");
         const btnH312 = document.getElementById("lbH312");
+        const btnAddDevice = document.getElementById("btnAddDevice");
+        const btnRemoveDevice = document.getElementById("btnRemoveDevice");
+        const modelPills = btnAddDevice ? btnAddDevice.parentElement : null;
+        const addDeviceDialog = document.getElementById("addDeviceDialog");
+        const addDeviceCancelBtn = document.getElementById("addDeviceCancelBtn");
+        const addDeviceSaveBtn = document.getElementById("addDeviceSaveBtn");
+        const addDeviceCustomName = document.getElementById("addDeviceCustomName");
+        const addDeviceNameWrap = document.getElementById("addDeviceNameWrap");
+        const addDeviceAixunPanel = document.getElementById("addDeviceAixunPanel");
+        const addDeviceEsp32Panel = document.getElementById("addDeviceEsp32Panel");
+        const addDeviceGroupBtns = Array.from(document.querySelectorAll(".addDeviceGroupBtn"));
+        const addDeviceChoices = Array.from(document.querySelectorAll(".addDeviceChoice"));
+        const removeDeviceDialog = document.getElementById("removeDeviceDialog");
+        const removeDeviceCancelBtn = document.getElementById("removeDeviceCancelBtn");
+        const removeDeviceList = document.getElementById("removeDeviceList");
+        const slaveDeviceList = document.getElementById("slaveDeviceList");
+        const slaveDeviceCount = document.getElementById("slaveDeviceCount");
         const h1LiftPill = document.getElementById("h1LiftPill");
         const h2LiftPill = document.getElementById("h2LiftPill");
         const btnCalH1 = document.getElementById("btnCalH1");
@@ -1356,81 +1711,275 @@
         function save(key, v) {
           try { localStorage.setItem(key, v); } catch (_) {}
         }
+        function removeKey(key) {
+          try { localStorage.removeItem(key); } catch (_) {}
+        }
+        function appendDeviceLog(line) {
+          const logEl = document.getElementById("eventLog");
+          if (!logEl) return;
+          const cur = (logEl.textContent || "").replace(/\s+$/, "");
+          logEl.textContent = `${cur}\n[ui] ${line}`;
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+        function renderEsp32TopButtons() {
+          if (!modelPills || !btnAddDevice) return [];
+          modelPills.querySelectorAll("[data-top-esp32='1']").forEach((el) => el.remove());
+          const devices = getAddedEsp32Devices();
+          devices.forEach((d) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "modelBtn active topEsp32Btn";
+            btn.setAttribute("aria-pressed", "true");
+            btn.setAttribute("data-top-esp32", "1");
+            btn.setAttribute("data-device-type", d.type);
+            btn.textContent = d.label;
+            modelPills.insertBefore(btn, btnAddDevice);
+          });
+          return devices;
+        }
         function renderLBButtons(es02On, t420dOn, h312On) {
+          const esp32Devices = renderEsp32TopButtons();
+          const anyAixun = !!(es02On || t420dOn || h312On);
+          const anyEquipment = anyAixun || esp32Devices.length > 0;
           if (btnES02) {
             setTogglePressed(btnES02, !!es02On);
+            btnES02.classList.toggle("hidden", !es02On);
           }
           if (btnT420D) {
             setTogglePressed(btnT420D, !!t420dOn);
+            btnT420D.classList.toggle("hidden", !t420dOn);
           }
           if (btnH312) {
             setTogglePressed(btnH312, !!h312On);
+            btnH312.classList.toggle("hidden", !h312On);
+          }
+          if (btnAddDevice) {
+            btnAddDevice.classList.toggle("addEquipmentWide", !anyEquipment);
+            btnAddDevice.textContent = anyEquipment ? "+" : tr("btn_add_device", "Add device");
+          }
+          if (btnRemoveDevice) {
+            btnRemoveDevice.classList.toggle("hidden", !anyEquipment);
           }
         }
         function renderLBModelVisibility() {
           if (!modelRow) return;
-          modelRow.classList.toggle("hidden", !isLBEnabled());
+          modelRow.classList.toggle("hidden", !isLBEnabled() || isSlaveDeviceMode(getLocalDeviceMode()));
         }
         function renderDeviceTileVisibility() {
           const lbEnabled = isLBEnabled();
+          const slaveMode = isSlaveDeviceMode(getLocalDeviceMode());
           const es02Enabled = !!(btnES02 && btnES02.classList.contains("active"));
           const h312Enabled = !!(btnH312 && btnH312.classList.contains("active"));
-          if (extractorTile) extractorTile.classList.toggle("hidden", !lbEnabled || !es02Enabled);
-          if (hotAirTile) hotAirTile.classList.toggle("hidden", !lbEnabled || !h312Enabled);
+          if (extractorTile) extractorTile.classList.toggle("hidden", slaveMode || !lbEnabled || !es02Enabled);
+          if (hotAirTile) hotAirTile.classList.toggle("hidden", slaveMode || !lbEnabled || !h312Enabled);
+        }
+        function readH312SlotCount() {
+          const n = parseInt(loadStr("alb_h312_slot_count", "1"), 10);
+          if (!Number.isFinite(n)) return 1;
+          return Math.max(1, Math.min(3, n));
+        }
+        function getLogicSources() {
+          const sources = [];
+          const t420dEnabled = !!(btnT420D && btnT420D.classList.contains("active"));
+          const h312Enabled = !!(btnH312 && btnH312.classList.contains("active"));
+          if (t420dEnabled) {
+            sources.push({ key: "h1", kind: "iron", label: (iron1Input && iron1Input.value.trim()) || tr("default_iron1", "Handle 1"), calibrate: true });
+            sources.push({ key: "h2", kind: "iron", label: (iron2Input && iron2Input.value.trim()) || tr("default_iron2", "Handle 2"), calibrate: true });
+          }
+          if (h312Enabled) {
+            const count = readH312SlotCount();
+            for (let i = 1; i <= count; i++) {
+              const name = (i === 1 && hotAirInput && hotAirInput.value.trim()) ? hotAirInput.value.trim() : `Hot Air ${i}`;
+              sources.push({ key: `ha${i}`, kind: "hot_air", label: name, temp: true });
+            }
+          }
+          getAddedEsp32Devices().forEach((d, idx) => {
+            if (d.type === "esp32_hot_air") {
+              sources.push({ key: `esp32_ha_${d.id}`, kind: "hot_air", label: d.label || `${tr("add_device_esp32_hot_air", "Hot air")} ${idx + 1}`, temp: true });
+            } else if (d.type === "esp32_preheater") {
+              sources.push({ key: `esp32_preheater_${d.id}`, kind: "preheater", label: d.label || tr("add_device_esp32_preheater", "Preheater"), temp: true });
+            } else if (d.type === "esp32_custom") {
+              sources.push({ key: `esp32_custom_${d.id}`, kind: "custom", label: d.label || tr("add_device_esp32_custom", "Custom"), temp: false });
+            }
+          });
+          return sources;
+        }
+        function logicStorageKey(source, suffix) {
+          const id = String(source && source.key || "source").replace(/[^a-z0-9_]+/gi, "_");
+          return `alb_logic_${id}_${suffix}`;
+        }
+        function makeLogicSelect(source) {
+          const select = document.createElement("select");
+          const opts = [
+            ["0", tr("opt_light_off", "Off")],
+            ["1", tr("opt_light_white", "White")],
+            ["2", tr("opt_light_green", "Green")],
+            ["3", tr("opt_light_last", "Last Enabled")]
+          ];
+          opts.forEach(([value, label]) => {
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = label;
+            select.appendChild(opt);
+          });
+          select.value = loadStr(logicStorageKey(source, "light"), "0");
+          const saveNow = () => save(logicStorageKey(source, "light"), select.value);
+          select.addEventListener("change", saveNow);
+          return select;
+        }
+        function bindLogicInput(input, source, suffix, fallback) {
+          input.value = loadStr(logicStorageKey(source, suffix), fallback);
+          const saveNow = () => save(logicStorageKey(source, suffix), input.value);
+          input.addEventListener("input", saveNow);
+          input.addEventListener("change", saveNow);
+          input.addEventListener("blur", saveNow);
+        }
+        function makeLogicRange(source, suffix, fallback, min, max, labelSuffix) {
+          const wrap = document.createElement("div");
+          const lbl = document.createElement("div");
+          lbl.className = "miniLabel";
+          const input = document.createElement("input");
+          input.type = "range";
+          input.min = String(min);
+          input.max = String(max);
+          input.step = "1";
+          input.value = loadStr(logicStorageKey(source, suffix), String(fallback));
+          function sync() {
+            const n = Math.max(min, Math.min(max, parseInt(String(input.value || fallback), 10) || fallback));
+            input.value = String(n);
+            save(logicStorageKey(source, suffix), String(n));
+            lbl.textContent = `${labelSuffix} (${n}${suffix === "temp" ? "°C" : "%"})`;
+            const span = (max - min) || 1;
+            input.style.setProperty("--range-pct", `${Math.max(0, Math.min(100, ((n - min) * 100) / span))}%`);
+          }
+          input.addEventListener("input", sync);
+          input.addEventListener("change", sync);
+          wrap.appendChild(lbl);
+          wrap.appendChild(input);
+          sync();
+          return wrap;
+        }
+        function renderDynamicLogicSources() {
+          const root = document.getElementById("logicDynamicSources");
+          if (!root) return [];
+          const sources = getLogicSources();
+          root.textContent = "";
+          root.classList.toggle("hidden", sources.length === 0);
+          document.querySelectorAll(".logicLegacyUi").forEach((el) => el.classList.add("hidden"));
+          sources.forEach((source) => {
+            const card = document.createElement("div");
+            card.className = "inset logicSourceCard";
+            const head = document.createElement("div");
+            head.className = "logicSourceHead";
+            const left = document.createElement("div");
+            const title = document.createElement("div");
+            title.className = "label";
+            title.textContent = source.kind === "iron" ? "T420D" : (source.kind === "preheater" ? tr("add_device_esp32_preheater", "Preheater") : source.kind === "custom" ? tr("add_device_esp32_custom", "Custom") : tr("add_device_esp32_hot_air", "Hot air"));
+            const name = document.createElement("div");
+            name.className = "logicSourceName";
+            name.textContent = source.label;
+            left.appendChild(title);
+            left.appendChild(name);
+            head.appendChild(left);
+            const kind = document.createElement("span");
+            kind.className = "pill cyan";
+            kind.textContent = source.kind === "iron" ? "IRON" : (source.kind === "preheater" ? "PREHEAT" : source.kind === "custom" ? "CUSTOM" : "HOT AIR");
+            head.appendChild(kind);
+            card.appendChild(head);
+
+            if (source.calibrate) {
+              const row = document.createElement("div");
+              row.className = "handleLiftRow";
+              const pill = document.createElement("span");
+              pill.className = "pill warn";
+              pill.textContent = `${source.label}: ${tr("v_idle", "Idle")}`;
+              const cal = document.createElement("button");
+              cal.type = "button";
+              cal.className = "pillBtn gray";
+              cal.textContent = tr("btn_calibrate", "Calibrate");
+              cal.addEventListener("click", () => appendDeviceLog(`calibrate source=${source.key}`));
+              row.appendChild(pill);
+              row.appendChild(cal);
+              card.appendChild(row);
+            }
+
+            if (source.temp) {
+              const section = document.createElement("div");
+              section.className = "logicSourceSection";
+              const label = document.createElement("div");
+              label.className = "label hierarchy-l1";
+              label.textContent = tr("label_hotair_temp_on", "Temperature Trigger Threshold");
+              section.appendChild(label);
+              section.appendChild(makeLogicRange(source, "temp", source.kind === "preheater" ? 120 : 140, 30, 500, source.label));
+              card.appendChild(section);
+            }
+
+            const light = document.createElement("div");
+            light.className = "logicSourceSection";
+            const lightLabel = document.createElement("div");
+            lightLabel.className = "label";
+            lightLabel.textContent = tr("label_light_mode", "Light Mode On Activation");
+            light.appendChild(lightLabel);
+            light.appendChild(makeLogicSelect(source));
+            card.appendChild(light);
+
+            const brightness = document.createElement("div");
+            brightness.className = "logicSourceSection";
+            const brightnessLabel = document.createElement("div");
+            brightnessLabel.className = "label";
+            brightnessLabel.textContent = tr("label_light_brightness", "Light Brightness");
+            brightness.appendChild(brightnessLabel);
+            brightness.appendChild(makeLogicRange(source, "brightness", 60, 0, 100, tr("label_light_brightness_manual", "Manual Brightness")));
+            card.appendChild(brightness);
+
+            const delays = document.createElement("div");
+            delays.className = "logicSourceInline";
+            const start = document.createElement("div");
+            const startLabel = document.createElement("div");
+            startLabel.className = "label hierarchy-l1";
+            startLabel.textContent = tr("label_start_delay", "Start Delay");
+            const startInput = document.createElement("input");
+            startInput.type = "text";
+            bindLogicInput(startInput, source, "start_delay", "5 s");
+            start.appendChild(startLabel);
+            start.appendChild(startInput);
+            const stop = document.createElement("div");
+            const stopLabel = document.createElement("div");
+            stopLabel.className = "label hierarchy-l1";
+            stopLabel.textContent = tr("label_stop_delay", "Stop Delay");
+            const stopInput = document.createElement("input");
+            stopInput.type = "text";
+            bindLogicInput(stopInput, source, "stop_delay", "20 s");
+            stop.appendChild(stopLabel);
+            stop.appendChild(stopInput);
+            delays.appendChild(start);
+            delays.appendChild(stop);
+            card.appendChild(delays);
+
+            const speed = document.createElement("div");
+            speed.className = "logicSourceSection";
+            const speedLabel = document.createElement("div");
+            speedLabel.className = "label";
+            speedLabel.textContent = tr("label_speed_restore", "Speed Restore");
+            speed.appendChild(speedLabel);
+            speed.appendChild(makeLogicRange(source, "manual_speed", 35, 0, 100, tr("label_manual_speed", "Manual Speed")));
+            card.appendChild(speed);
+
+            root.appendChild(card);
+          });
+          return sources;
         }
         function renderLogicVisibility() {
           const logicCard = document.getElementById("logicCard");
-          const w1 = document.getElementById("logicIron1Wrap");
-          const w2 = document.getElementById("logicIron2Wrap");
-          const wHa = document.getElementById("logicHotAirWrap");
-          const wHaTemp = document.getElementById("logicHotAirTempWrap");
-          const b1 = document.getElementById("senseH1");
-          const b2 = document.getElementById("senseH2");
-          const bHa = document.getElementById("senseHA");
-          const sdH1 = document.getElementById("sdH1Wrap");
-          const sdH2 = document.getElementById("sdH2Wrap");
-          const sdHA = document.getElementById("sdHAWrap");
-          const stH1 = document.getElementById("stH1Wrap");
-          const stH2 = document.getElementById("stH2Wrap");
-          const stHA = document.getElementById("stHAWrap");
-          const ltH1 = document.getElementById("lightH1Wrap");
-          const ltH2 = document.getElementById("lightH2Wrap");
-          const ltHA = document.getElementById("lightHAWrap");
-          const lbH1 = document.getElementById("lbH1Wrap");
-          const lbH2 = document.getElementById("lbH2Wrap");
-          const lbHA = document.getElementById("lbHAWrap");
-          const gpioH1 = document.getElementById("gpioH1Wrap");
-          const gpioH2 = document.getElementById("gpioH2Wrap");
           if (!logicCard) return;
           const lbEnabled = isLBEnabled();
-          const t420dEnabled = !!(btnT420D && btnT420D.classList.contains("active"));
-          const h312Enabled = !!(btnH312 && btnH312.classList.contains("active"));
-          const h1Enabled = t420dEnabled;
-          const h2Enabled = t420dEnabled;
-          const sources = (t420dEnabled ? 2 : 0) + (h312Enabled ? 1 : 0);
-          logicCard.classList.toggle("hidden", !lbEnabled || sources === 0);
-          if (!lbEnabled) return;
-          if (w1) w1.classList.toggle("hidden", !h1Enabled);
-          if (b1) b1.classList.toggle("hidden", !h1Enabled);
-          if (w2) w2.classList.toggle("hidden", !h2Enabled);
-          if (b2) b2.classList.toggle("hidden", !h2Enabled);
-          if (wHa) wHa.classList.toggle("hidden", !h312Enabled);
-          if (wHaTemp) wHaTemp.classList.toggle("hidden", !h312Enabled);
-          if (bHa) bHa.classList.toggle("hidden", !h312Enabled);
-          if (sdH1) sdH1.classList.toggle("hidden", !h1Enabled);
-          if (sdH2) sdH2.classList.toggle("hidden", !h2Enabled);
-          if (sdHA) sdHA.classList.toggle("hidden", !h312Enabled);
-          if (stH1) stH1.classList.toggle("hidden", !h1Enabled);
-          if (stH2) stH2.classList.toggle("hidden", !h2Enabled);
-          if (stHA) stHA.classList.toggle("hidden", !h312Enabled);
-          if (ltH1) ltH1.classList.toggle("hidden", !h1Enabled);
-          if (ltH2) ltH2.classList.toggle("hidden", !h2Enabled);
-          if (ltHA) ltHA.classList.toggle("hidden", !h312Enabled);
-          if (lbH1) lbH1.classList.toggle("hidden", !h1Enabled);
-          if (lbH2) lbH2.classList.toggle("hidden", !h2Enabled);
-          if (lbHA) lbHA.classList.toggle("hidden", !h312Enabled);
-          if (gpioH1) gpioH1.classList.toggle("hidden", !h1Enabled);
-          if (gpioH2) gpioH2.classList.toggle("hidden", !h2Enabled);
+          const slaveMode = isSlaveDeviceMode(getLocalDeviceMode());
+          const sources = renderDynamicLogicSources();
+          logicCard.classList.toggle("hidden", slaveMode || !lbEnabled || sources.length === 0);
+          if (slaveMode || !lbEnabled) {
+            renderDeviceTileVisibility();
+            return;
+          }
           if (typeof window.__refreshManualSpeedVisibility === "function") {
             window.__refreshManualSpeedVisibility();
           }
@@ -1478,37 +2027,632 @@
           setTogglePressed(thirdInactive, !v);
         }
         if (thirdActive && thirdInactive) setThirdEnabled(t !== "0");
+        const esp32DeviceDefs = [
+          { type: "esp32_fume_extractor", key: "alb_esp32_fume_extractor", nameKey: "alb_esp32_fume_extractor_name", labelKey: "add_device_esp32_fume", fallback: "Fume extractor" },
+          { type: "esp32_hot_air", key: "alb_esp32_hot_air", nameKey: "alb_esp32_hot_air_name", labelKey: "add_device_esp32_hot_air", fallback: "Hot air" },
+          { type: "esp32_preheater", key: "alb_esp32_preheater", nameKey: "alb_esp32_preheater_name", labelKey: "add_device_esp32_preheater", fallback: "Preheater" },
+          { type: "esp32_custom", key: "alb_esp32_custom", nameKey: "alb_esp32_custom_name", labelKey: "add_device_esp32_custom", fallback: "Custom" }
+        ];
+        const ESP32_LIST_KEY = "alb_esp32_devices_v2";
+        function hasEsp32Devices() {
+          return getAddedEsp32Devices().length > 0;
+        }
+        function isEsp32DeviceEnabled(type) {
+          const def = esp32DefByType(type);
+          return !!(def && getAddedEsp32Devices().some((d) => d.type === type));
+        }
+        function esp32DefByType(type) {
+          return esp32DeviceDefs.find((d) => d.type === type) || null;
+        }
+        function makeEsp32Id(type) {
+          const raw = `${type}_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+          return raw.replace(/[^a-z0-9_]+/gi, "_").toLowerCase();
+        }
+        function readEsp32ListRaw() {
+          try {
+            const arr = JSON.parse(localStorage.getItem(ESP32_LIST_KEY) || "[]");
+            return Array.isArray(arr) ? arr : [];
+          } catch (_) {
+            return [];
+          }
+        }
+        function normalizeEsp32Item(item) {
+          const type = String(item && item.type || "");
+          const def = esp32DefByType(type);
+          if (!def) return null;
+          const id = String(item && item.id || "").trim() || makeEsp32Id(type);
+          const label = String(item && item.label || "").trim();
+          return { id, type, label };
+        }
+        function writeEsp32List(list) {
+          const safe = [];
+          (Array.isArray(list) ? list : []).forEach((item) => {
+            const n = normalizeEsp32Item(item);
+            if (n) safe.push(n);
+          });
+          try { localStorage.setItem(ESP32_LIST_KEY, JSON.stringify(safe)); } catch (_) {}
+          esp32DeviceDefs.forEach((def) => {
+            const first = safe.find((d) => d.type === def.type) || null;
+            save(def.key, first ? "1" : "0");
+            if (first && first.label) save(def.nameKey, first.label);
+            else removeKey(def.nameKey);
+          });
+          return safe;
+        }
+        function getEsp32List() {
+          const list = readEsp32ListRaw().map(normalizeEsp32Item).filter(Boolean);
+          const seen = new Set(list.map((d) => d.id));
+          esp32DeviceDefs.forEach((def) => {
+            if (loadStr(def.key, "0") !== "1") return;
+            if (list.some((d) => d.type === def.type)) return;
+            const legacy = {
+              id: `${def.type}_legacy`,
+              type: def.type,
+              label: loadStr(def.nameKey, "")
+            };
+            if (!seen.has(legacy.id)) {
+              list.push(legacy);
+              seen.add(legacy.id);
+            }
+          });
+          writeEsp32List(list);
+          return list;
+        }
+        function esp32DisplayLabel(device) {
+          const def = esp32DefByType(device && device.type);
+          if (!def) return "";
+          const label = String(device && device.label || "").trim();
+          return label || tr(def.labelKey, def.fallback);
+        }
+        function addEsp32Device(type, label) {
+          const def = esp32DefByType(type);
+          if (!def) return null;
+          const list = getEsp32List();
+          const item = {
+            id: makeEsp32Id(type),
+            type,
+            label: String(label || "").trim()
+          };
+          list.push(item);
+          writeEsp32List(list);
+          return item;
+        }
+        function removeEsp32Device(idOrType) {
+          const needle = String(idOrType || "");
+          const list = getEsp32List().filter((d) => d.id !== needle && !(d.type === needle && d.id === `${needle}_legacy`));
+          writeEsp32List(list);
+        }
+        function getAddedDevices() {
+          const out = [];
+          if (loadStr("alb_lb_es02", "0") === "1") out.push({ type: "aixun_es02", label: "ES02" });
+          if (loadStr("alb_lb_t420d", "0") === "1") out.push({ type: "aixun_t420d", label: "T420D" });
+          if (loadStr("alb_lb_h312", "0") === "1") out.push({ type: "aixun_h310_h312", label: "H310/H312" });
+          getAddedEsp32Devices().forEach((d) => {
+            out.push({ type: d.type, id: d.id, label: d.label });
+          });
+          return out;
+        }
+        function getAddedEsp32Devices() {
+          return getEsp32List().map((d) => {
+            const def = esp32DefByType(d.type);
+            return { id: d.id, type: d.type, label: esp32DisplayLabel(d), def };
+          });
+        }
+        function slaveCfgKey(device, suffix) {
+          const id = String((device && device.id) || (device && device.type) || "slave").replace(/[^a-z0-9_]+/gi, "_");
+          return `alb_${id}_${suffix}`;
+        }
+        function setSlaveMode(device, mode, root) {
+          const next = String(mode || "").toLowerCase() === "ble" ? "ble" : "wifi";
+          save(slaveCfgKey(device, "mode"), next);
+          if (!root) return;
+          const wifiBtn = root.querySelector("[data-slave-mode='wifi']");
+          const bleBtn = root.querySelector("[data-slave-mode='ble']");
+          setTogglePressed(wifiBtn, next === "wifi");
+          setTogglePressed(bleBtn, next === "ble");
+          const ipWrap = root.querySelector("[data-slave-ip-wrap='1']");
+          const bleWrap = root.querySelector("[data-slave-ble-wrap='1']");
+          if (ipWrap) ipWrap.classList.toggle("hidden", next !== "wifi");
+          if (bleWrap) bleWrap.classList.toggle("hidden", next !== "ble");
+        }
+        function makeSlaveModeButton(mode, title) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "modelBtn modeIconBtn";
+          btn.setAttribute("data-slave-mode", mode);
+          btn.setAttribute("aria-label", title);
+          btn.setAttribute("title", title);
+          const icon = document.createElement("span");
+          icon.className = "modeIcon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.innerHTML = mode === "wifi"
+            ? '<svg viewBox="0 0 24 24"><path d="M4 9.8a12.2 12.2 0 0 1 16 0"></path><path d="M7 13a7.8 7.8 0 0 1 10 0"></path><path d="M10 16.2a3.5 3.5 0 0 1 4 0"></path><circle cx="12" cy="19.2" r="1.1" fill="currentColor" stroke="none"></circle></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M12 12l6-5-4-4v18l4-4-6-5z"></path><path d="M6 8l6 4"></path><path d="M6 16l6-4"></path></svg>';
+          btn.appendChild(icon);
+          return btn;
+        }
+        async function sendSlaveCommand(device, action, payload) {
+          const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          const pairToken = loadStr(slaveCfgKey(device, "token"), "").trim();
+          if (!ip) {
+            appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_ip`);
+            return;
+          }
+          if (pairToken.length < 16) {
+            appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_pair_token`);
+            return;
+          }
+          const body = Object.assign({ target_ip: ip, pair_token: pairToken, action }, payload || {});
+          const r = await apiJson("/api/slave/command", {
+            method: "POST",
+            body: JSON.stringify(body),
+            timeout_ms: 7000
+          });
+          if (r && r.ok) appendDeviceLog(`slave_command ok type=${device.type} action=${action}`);
+          else appendDeviceLog(`slave_command fail type=${device.type} action=${action} err=${(r && r.error) ? r.error : "unknown"}`);
+        }
+        function remoteSlaveUrl(device, path) {
+          const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          if (!ip) return "";
+          return `http://${ip}${path}`;
+        }
+        async function remoteSlaveFetch(device, path, opts) {
+          const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          const pairToken = loadStr(slaveCfgKey(device, "token"), "").trim();
+          if (!ip) throw new Error("slave IP is not set");
+          if (pairToken.length < 16) throw new Error("slave pair token is not set");
+          const init = Object.assign({}, opts || {});
+          const method = String(init.method || "GET").toUpperCase();
+          const body = {
+            target_ip: ip,
+            pair_token: pairToken,
+            op: method === "POST" ? "set" : "get"
+          };
+          if (method === "POST" && init.body) {
+            try { body.config = JSON.parse(init.body); } catch (_) { body.config = {}; }
+          }
+          const r = await apiJson("/api/slave/config", {
+            method: "POST",
+            body: JSON.stringify(body),
+            timeout_ms: 9000
+          });
+          if (!r || !r.ok) throw new Error((r && r.error) ? r.error : "slave config failed");
+          return r.config || r;
+        }
+        function makeSelect(options, value) {
+          const selEl = document.createElement("select");
+          options.forEach(([val, label]) => {
+            const opt = document.createElement("option");
+            opt.value = String(val);
+            opt.textContent = String(label);
+            selEl.appendChild(opt);
+          });
+          selEl.value = String(value == null ? options[0][0] : value);
+          return selEl;
+        }
+        function makeNumber(value, min, max, step) {
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = String(min);
+          input.max = String(max);
+          input.step = String(step || 1);
+          input.value = String(value);
+          return input;
+        }
+        function modalField(grid, label, input) {
+          const wrap = document.createElement("div");
+          const l = document.createElement("div");
+          l.className = "label";
+          l.textContent = label;
+          wrap.appendChild(l);
+          wrap.appendChild(input);
+          grid.appendChild(wrap);
+          return input;
+        }
+        async function openRemoteSlaveSettings(device) {
+          const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          if (!ip) {
+            appendDeviceLog(`slave_settings skipped type=${device.type} no_ip`);
+            return;
+          }
+          const overlay = document.createElement("div");
+          overlay.className = "fwUpdateMenuModal";
+          const box = document.createElement("div");
+          box.className = "fwUpdateMenuBox remoteSlaveSettingsBox";
+          box.style.width = "min(760px, 96vw)";
+          const title = document.createElement("div");
+          title.className = "fwUpdateMenuTitle";
+          title.textContent = `${device.label || "Slave"} settings`;
+          const text = document.createElement("div");
+          text.className = "fwUpdateMenuText";
+          text.textContent = `Remote config: ${ip}`;
+          const grid = document.createElement("div");
+          grid.className = "slaveActionGrid authGrid";
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "These settings are read from and saved to the selected slave device.";
+          const actions = document.createElement("div");
+          actions.className = "btnRow";
+          actions.style.justifyContent = "center";
+          const btnSave = document.createElement("button");
+          btnSave.type = "button";
+          btnSave.className = "primary";
+          btnSave.textContent = tr("btn_save", "Save");
+          const btnClose = document.createElement("button");
+          btnClose.type = "button";
+          btnClose.textContent = tr("btn_close", "Close");
+          actions.appendChild(btnSave);
+          actions.appendChild(btnClose);
+          box.appendChild(title);
+          box.appendChild(text);
+          box.appendChild(grid);
+          box.appendChild(hint);
+          box.appendChild(actions);
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          const close = () => overlay.remove();
+          btnClose.addEventListener("click", close);
+          overlay.addEventListener("click", (ev) => { if (ev.target === overlay) close(); });
+          try {
+            const cfg = await remoteSlaveFetch(device, "/api/config", { method: "GET" });
+            grid.textContent = "";
+            const controlType = modalField(grid, tr("slave_extractor_control_type", "Motor control type"), makeSelect([
+              ["buttons", tr("slave_extractor_control_buttons", "Panel buttons")],
+              ["pwm4", tr("slave_extractor_control_pwm4", "4-pin PWM / Reobas")],
+              ["mosfet_dc", tr("slave_extractor_control_mosfet", "DC motor via MOSFET")],
+              ["relay", tr("slave_extractor_control_relay", "Relay / ON-OFF")],
+              ["analog", tr("slave_extractor_control_analog", "Analog 0-5V / 0-10V")]
+            ], cfg.slave_extractor_control_type || "buttons"));
+            const activeLevel = modalField(grid, tr("slave_signal_active_level", "Active signal level"), makeSelect([["low", "LOW"], ["high", "HIGH"]], cfg.slave_extractor_active_level || "low"));
+            const gpioPower = modalField(grid, tr("slave_extractor_gpio_power", "On / Off"), makeNumber(cfg.slave_extractor_gpio_power ?? 4, -1, 21, 1));
+            const gpioSpeedUp = modalField(grid, tr("slave_extractor_gpio_speed_up", "Speed +"), makeNumber(cfg.slave_extractor_gpio_speed_up ?? 5, -1, 21, 1));
+            const gpioSpeedDown = modalField(grid, tr("slave_extractor_gpio_speed_down", "Speed -"), makeNumber(cfg.slave_extractor_gpio_speed_down ?? 6, -1, 21, 1));
+            const gpioApply = modalField(grid, tr("slave_extractor_gpio_apply", "Apply / ENT"), makeNumber(cfg.slave_extractor_gpio_apply ?? 7, -1, 21, 1));
+            const gpioMode = modalField(grid, tr("slave_extractor_gpio_mode", "Output mode"), makeSelect([
+              ["contact_pulse", tr("slave_extractor_gpio_contact_pulse", "Contact pulse")],
+              ["contact_hold", tr("slave_extractor_gpio_contact_hold", "Contact hold")],
+              ["active_low", tr("slave_extractor_gpio_active_low", "Active LOW")],
+              ["active_high", tr("slave_extractor_gpio_active_high", "Active HIGH")]
+            ], cfg.slave_extractor_gpio_mode || "contact_pulse"));
+            const pulseMs = modalField(grid, tr("slave_extractor_gpio_pulse_ms", "Pulse time (ms)"), makeNumber(cfg.slave_extractor_gpio_pulse_ms ?? 180, 20, 5000, 10));
+            const gpioEnable = modalField(grid, tr("slave_extractor_gpio_enable", "Enable GPIO"), makeNumber(cfg.slave_extractor_gpio_enable ?? 8, -1, 21, 1));
+            const gpioSpeed = modalField(grid, tr("slave_extractor_gpio_speed", "Speed GPIO"), makeNumber(cfg.slave_extractor_gpio_speed ?? 9, -1, 21, 1));
+            const pwmFreq = modalField(grid, tr("slave_pwm_frequency", "PWM frequency (Hz)"), makeNumber(cfg.slave_extractor_pwm_freq ?? 25000, 10, 50000, 10));
+            const pwmInvert = modalField(grid, tr("slave_pwm_invert", "Invert PWM"), makeSelect([["0", "OFF"], ["1", "ON"]], cfg.slave_extractor_pwm_invert ? "1" : "0"));
+            const speedMin = modalField(grid, tr("slave_speed_min", "Min speed (%)"), makeNumber(cfg.slave_extractor_speed_min ?? 20, 0, 100, 1));
+            const speedMax = modalField(grid, tr("slave_speed_max", "Max speed (%)"), makeNumber(cfg.slave_extractor_speed_max ?? 100, 0, 100, 1));
+            const boostMs = modalField(grid, tr("slave_start_boost", "Start boost (ms)"), makeNumber(cfg.slave_extractor_boost_ms ?? 700, 0, 10000, 100));
+            const failsafeSec = modalField(grid, tr("slave_failsafe_off", "Failsafe off (s)"), makeNumber(cfg.slave_extractor_failsafe_sec ?? 30, 0, 3600, 1));
+            const analogRange = modalField(grid, tr("slave_analog_range", "Analog range"), makeSelect([["0_5", "0-5V"], ["0_10", "0-10V"]], cfg.slave_extractor_analog_range || "0_5"));
+            const lightGpio = modalField(grid, tr("slave_light_gpio", "Light GPIO"), makeNumber(cfg.slave_light_gpio ?? -1, -1, 21, 1));
+            const lightMode = modalField(grid, tr("slave_light_mode", "Light mode"), makeSelect([["disabled", "Disabled"], ["on_off", "ON/OFF"], ["pwm", "PWM"], ["follow_motor", "Follow motor"]], cfg.slave_light_mode || "disabled"));
+            const lightLevel = modalField(grid, tr("slave_light_active_level", "Light active level"), makeSelect([["low", "LOW"], ["high", "HIGH"]], cfg.slave_light_active_level || "high"));
+            const lightBri = modalField(grid, tr("slave_light_default_brightness", "Default brightness (%)"), makeNumber(cfg.slave_light_default_brightness ?? 60, 0, 100, 1));
+            btnSave.addEventListener("click", async () => {
+              const body = {
+                slave_extractor_control_type: controlType.value,
+                slave_extractor_active_level: activeLevel.value,
+                slave_extractor_gpio_power: parseInt(gpioPower.value, 10),
+                slave_extractor_gpio_speed_up: parseInt(gpioSpeedUp.value, 10),
+                slave_extractor_gpio_speed_down: parseInt(gpioSpeedDown.value, 10),
+                slave_extractor_gpio_apply: parseInt(gpioApply.value, 10),
+                slave_extractor_gpio_mode: gpioMode.value,
+                slave_extractor_gpio_pulse_ms: parseInt(pulseMs.value, 10),
+                slave_extractor_gpio_enable: parseInt(gpioEnable.value, 10),
+                slave_extractor_gpio_speed: parseInt(gpioSpeed.value, 10),
+                slave_extractor_pwm_freq: parseInt(pwmFreq.value, 10),
+                slave_extractor_pwm_invert: pwmInvert.value === "1",
+                slave_extractor_speed_min: parseInt(speedMin.value, 10),
+                slave_extractor_speed_max: parseInt(speedMax.value, 10),
+                slave_extractor_boost_ms: parseInt(boostMs.value, 10),
+                slave_extractor_failsafe_sec: parseInt(failsafeSec.value, 10),
+                slave_extractor_analog_range: analogRange.value,
+                slave_light_gpio: parseInt(lightGpio.value, 10),
+                slave_light_mode: lightMode.value,
+                slave_light_active_level: lightLevel.value,
+                slave_light_default_brightness: parseInt(lightBri.value, 10)
+              };
+              await remoteSlaveFetch(device, "/api/config", { method: "POST", body: JSON.stringify(body) });
+              appendDeviceLog(`slave_settings saved type=${device.type}`);
+              close();
+            });
+          } catch (e) {
+            grid.textContent = "";
+            hint.classList.add("err");
+            hint.textContent = `Remote config failed: ${String((e && e.message) ? e.message : e)}`;
+          }
+        }
+        function appendFumeExtractorCommandControls(tile, device) {
+          const wrap = document.createElement("div");
+          wrap.className = "btnRow";
+          wrap.style.marginTop = "10px";
+          const commands = [
+            ["power_on", "ON"],
+            ["power_off", "OFF"],
+            ["speed_up", "Speed +"],
+            ["speed_down", "Speed -"],
+            ["apply", "Apply"],
+            ["light", "Light"]
+          ];
+          commands.forEach(([action, label]) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = action === "power_on" ? "primary" : "";
+            btn.textContent = label;
+            btn.addEventListener("click", () => {
+              sendSlaveCommand(device, action).catch(() => {});
+            });
+            wrap.appendChild(btn);
+          });
+          const settingsBtn = document.createElement("button");
+          settingsBtn.type = "button";
+          settingsBtn.textContent = tr("btn_save_identity", "Settings");
+          settingsBtn.addEventListener("click", () => openRemoteSlaveSettings(device).catch(() => {}));
+          wrap.appendChild(settingsBtn);
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "Master sends commands. Settings are read from and saved to the selected slave.";
+          tile.appendChild(wrap);
+          tile.appendChild(hint);
+        }
+        function renderSlaveDeviceList() {
+          if (!slaveDeviceList) return;
+          const devices = getAddedEsp32Devices();
+          if (slaveDeviceCount) {
+            slaveDeviceCount.textContent = String(devices.length);
+            slaveDeviceCount.className = `pill ${devices.length ? "cyan" : "warn"}`;
+          }
+          slaveDeviceList.textContent = "";
+          slaveDeviceList.classList.toggle("hidden", devices.length === 0);
+          devices.forEach((d) => {
+            const tile = document.createElement("div");
+            tile.className = "inset deviceTile slaveDeviceTile";
+            const head = document.createElement("div");
+            head.className = "labelRow";
+            const title = document.createElement("div");
+            title.className = "label";
+            title.textContent = d.label;
+            const state = document.createElement("span");
+            const hasPairToken = loadStr(slaveCfgKey(d, "token"), "").trim().length >= 16;
+            state.className = hasPairToken ? "pill good" : "pill warn";
+            state.textContent = hasPairToken ? tr("v_paired", "PAIRED") : tr("v_not_paired", "PAIR: NONE");
+            head.appendChild(title);
+            head.appendChild(state);
+            tile.appendChild(head);
+
+            const slots = document.createElement("div");
+            slots.className = "modelPills hotAirSlots";
+            slots.setAttribute("role", "group");
+            slots.setAttribute("aria-label", d.label);
+            const slotBtn = document.createElement("button");
+            slotBtn.type = "button";
+            slotBtn.className = "modelBtn active";
+            slotBtn.setAttribute("aria-pressed", "true");
+            slotBtn.textContent = d.label;
+            slots.appendChild(slotBtn);
+            tile.appendChild(slots);
+
+            const modeRow = document.createElement("div");
+            modeRow.className = "modelPills slaveModeRow";
+            const wifiBtn = makeSlaveModeButton("wifi", "Wi-Fi");
+            const bleBtn = makeSlaveModeButton("ble", "Bluetooth");
+            modeRow.appendChild(wifiBtn);
+            modeRow.appendChild(bleBtn);
+            tile.appendChild(modeRow);
+
+            const ipWrap = document.createElement("div");
+            ipWrap.setAttribute("data-slave-ip-wrap", "1");
+            ipWrap.className = "slaveFieldWrap";
+            const ipLabel = document.createElement("div");
+            ipLabel.className = "label";
+            ipLabel.textContent = tr("label_slave_ip", "IP address");
+            const ipInput = document.createElement("input");
+            ipInput.type = "text";
+            ipInput.value = loadStr(slaveCfgKey(d, "ip"), "");
+            ipInput.placeholder = "192.168.1.122";
+            ipInput.addEventListener("change", () => save(slaveCfgKey(d, "ip"), ipInput.value.trim()));
+            ipInput.addEventListener("blur", () => save(slaveCfgKey(d, "ip"), ipInput.value.trim()));
+            ipWrap.appendChild(ipLabel);
+            ipWrap.appendChild(ipInput);
+            tile.appendChild(ipWrap);
+
+            const tokenHint = document.createElement("div");
+            tokenHint.className = "hint";
+            tokenHint.setAttribute("data-slave-token-state", "1");
+            tokenHint.textContent = hasPairToken
+              ? tr("pair_token_saved", "Pair token saved in master.")
+              : tr("pair_token_need_bind", "Press Bind Slave to create token on slave.");
+            tile.appendChild(tokenHint);
+
+            const bleWrap = document.createElement("div");
+            bleWrap.setAttribute("data-slave-ble-wrap", "1");
+            bleWrap.className = "slaveFieldWrap hidden";
+            const bleLabel = document.createElement("div");
+            bleLabel.className = "label";
+            bleLabel.textContent = tr("label_slave_ble_addr", "BLE address");
+            const bleInput = document.createElement("input");
+            bleInput.type = "text";
+            bleInput.value = loadStr(slaveCfgKey(d, "ble"), "");
+            bleInput.placeholder = "AA:BB:CC:DD:EE:FF";
+            bleInput.addEventListener("change", () => save(slaveCfgKey(d, "ble"), bleInput.value.trim()));
+            bleInput.addEventListener("blur", () => save(slaveCfgKey(d, "ble"), bleInput.value.trim()));
+            bleWrap.appendChild(bleLabel);
+            bleWrap.appendChild(bleInput);
+            tile.appendChild(bleWrap);
+
+            if (d.type === "esp32_fume_extractor") {
+              appendFumeExtractorCommandControls(tile, d);
+            }
+
+            const actions = document.createElement("div");
+            actions.className = "btnRow";
+            const scanBtn = document.createElement("button");
+            scanBtn.type = "button";
+            scanBtn.textContent = tr("btn_scan_slaves", "Scan Slaves");
+            scanBtn.addEventListener("click", () => appendDeviceLog(`slave_scan type=${d.type}`));
+            const bindBtn = document.createElement("button");
+            bindBtn.type = "button";
+            bindBtn.className = "primary";
+            bindBtn.textContent = tr("btn_bind_slave", "Bind Slave");
+            bindBtn.addEventListener("click", async () => {
+              const ip = loadStr(slaveCfgKey(d, "ip"), "").trim();
+              if (!ip) {
+                appendDeviceLog(`slave_bind skipped type=${d.type} no_ip`);
+                return;
+              }
+              try {
+                const r = await apiJson("/api/slave/pair", {
+                  method: "POST",
+                  body: JSON.stringify({ target_ip: ip }),
+                  timeout_ms: 9000
+                });
+                if (!r || !r.ok || !r.pair_token) throw new Error((r && r.error) ? r.error : "pair failed");
+                save(slaveCfgKey(d, "token"), String(r.pair_token).trim());
+                state.textContent = tr("v_paired", "PAIRED");
+                state.className = "pill good";
+                tokenHint.textContent = tr("pair_token_saved", "Pair token saved in master.");
+                appendDeviceLog(`slave_bind ok type=${d.type} mode=${loadStr(slaveCfgKey(d, "mode"), "wifi")}`);
+              } catch (e) {
+                appendDeviceLog(`slave_bind fail type=${d.type} err=${String((e && e.message) ? e.message : e)}`);
+              }
+            });
+            actions.appendChild(scanBtn);
+            actions.appendChild(bindBtn);
+            tile.appendChild(actions);
+
+            wifiBtn.addEventListener("click", () => setSlaveMode(d, "wifi", tile));
+            bleBtn.addEventListener("click", () => setSlaveMode(d, "ble", tile));
+            setSlaveMode(d, loadStr(slaveCfgKey(d, "mode"), "wifi"), tile);
+            slaveDeviceList.appendChild(tile);
+          });
+        }
+        function renderEquipmentState() {
+          renderLBButtons(
+            loadStr("alb_lb_es02", "0") === "1",
+            loadStr("alb_lb_t420d", "0") === "1",
+            loadStr("alb_lb_h312", "0") === "1"
+          );
+          renderSlaveDeviceList();
+          renderLBModelVisibility();
+          renderLogicVisibility();
+        }
         let es02 = loadStr("alb_lb_es02", "");
         let t420d = loadStr("alb_lb_t420d", "");
         let h312 = loadStr("alb_lb_h312", "");
-        const legacy = loadStr("alb_lb_model", "T420D");
+        const legacy = loadStr("alb_lb_model", "");
         if (es02 !== "0" && es02 !== "1") {
-          es02 = "1";
+          es02 = "0";
         }
         if (t420d !== "0" && t420d !== "1") {
-          t420d = (legacy === "H312") ? "0" : "1";
+          t420d = legacy ? ((legacy === "H312") ? "0" : "1") : "0";
         }
         if (h312 !== "0" && h312 !== "1") {
           h312 = (legacy === "H312") ? "1" : "0";
         }
-        if (es02 !== "0" && es02 !== "1") es02 = "1";
-        if (t420d !== "0" && t420d !== "1") t420d = "1";
+        if (es02 !== "0" && es02 !== "1") es02 = "0";
+        if (t420d !== "0" && t420d !== "1") t420d = "0";
         if (h312 !== "0" && h312 !== "1") h312 = "0";
         save("alb_lb_es02", es02);
         save("alb_lb_t420d", t420d);
         save("alb_lb_h312", h312);
-        renderLBButtons(es02 === "1", t420d === "1", h312 === "1");
+        renderEquipmentState();
+        let addDeviceGroup = "";
+        let addDeviceType = "";
+        function setAddDeviceGroup(group) {
+          addDeviceGroup = String(group || "");
+          addDeviceGroupBtns.forEach((btn) => {
+            const on = String(btn.getAttribute("data-add-device-group") || "") === addDeviceGroup;
+            setTogglePressed(btn, on);
+          });
+          if (addDeviceAixunPanel) addDeviceAixunPanel.classList.toggle("hidden", addDeviceGroup !== "aixun");
+          if (addDeviceEsp32Panel) addDeviceEsp32Panel.classList.toggle("hidden", addDeviceGroup !== "esp32");
+          if (addDeviceNameWrap) addDeviceNameWrap.classList.toggle("hidden", addDeviceGroup !== "esp32");
+          setAddDeviceType("");
+        }
+        function setAddDeviceType(type) {
+          addDeviceType = String(type || "");
+          addDeviceChoices.forEach((btn) => {
+            btn.classList.toggle("active", String(btn.getAttribute("data-add-device") || "") === addDeviceType);
+          });
+        }
+        function openAddDeviceDialog() {
+          setAddDeviceGroup("");
+          if (addDeviceCustomName) addDeviceCustomName.value = "";
+          if (addDeviceDialog) addDeviceDialog.classList.remove("hidden");
+        }
+        function closeAddDeviceDialog() {
+          if (addDeviceDialog) addDeviceDialog.classList.add("hidden");
+        }
+        addDeviceGroupBtns.forEach((btn) => {
+          btn.addEventListener("click", () => setAddDeviceGroup(btn.getAttribute("data-add-device-group") || ""));
+        });
+        addDeviceChoices.forEach((btn) => {
+          btn.addEventListener("click", () => setAddDeviceType(btn.getAttribute("data-add-device") || ""));
+        });
+        if (btnAddDevice) btnAddDevice.addEventListener("click", openAddDeviceDialog);
+        if (addDeviceCancelBtn) addDeviceCancelBtn.addEventListener("click", closeAddDeviceDialog);
+        if (addDeviceDialog) addDeviceDialog.addEventListener("click", (ev) => { if (ev.target === addDeviceDialog) closeAddDeviceDialog(); });
+        if (addDeviceSaveBtn) addDeviceSaveBtn.addEventListener("click", () => {
+          if (!addDeviceType) return;
+          const customName = String((addDeviceCustomName && addDeviceCustomName.value) || "").trim();
+          if (addDeviceType === "aixun_es02") save("alb_lb_es02", "1");
+          if (addDeviceType === "aixun_t420d") save("alb_lb_t420d", "1");
+          if (addDeviceType === "aixun_h310_h312") save("alb_lb_h312", "1");
+          if (addDeviceType.startsWith("esp32_")) {
+            addEsp32Device(addDeviceType, customName);
+            save("alb_pending_slave_type", addDeviceType);
+            if (customName) save("alb_pending_slave_name", customName);
+          }
+          renderEquipmentState();
+          appendDeviceLog(`add_device type=${addDeviceType}${customName ? ` name=${customName}` : ""}`);
+          closeAddDeviceDialog();
+        });
+        function closeRemoveDeviceDialog() {
+          if (removeDeviceDialog) removeDeviceDialog.classList.add("hidden");
+        }
+        function removeDevice(type) {
+          if (type === "aixun_es02") save("alb_lb_es02", "0");
+          if (type === "aixun_t420d") save("alb_lb_t420d", "0");
+          if (type === "aixun_h310_h312") save("alb_lb_h312", "0");
+          removeEsp32Device(type);
+          renderEquipmentState();
+          appendDeviceLog(`remove_device type=${type}`);
+          closeRemoveDeviceDialog();
+        }
+        function openRemoveDeviceDialog() {
+          if (!removeDeviceDialog || !removeDeviceList) return;
+          removeDeviceList.textContent = "";
+          const devices = getAddedDevices();
+          if (!devices.length) {
+            const empty = document.createElement("div");
+            empty.className = "hint";
+            empty.textContent = tr("remove_device_empty", "No added equipment.");
+            removeDeviceList.appendChild(empty);
+          } else {
+            const row = document.createElement("div");
+            row.className = "btnRow";
+            row.style.justifyContent = "center";
+            row.style.flexWrap = "wrap";
+            devices.forEach((d) => {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "pillBtn gray";
+              btn.textContent = d.label;
+              btn.addEventListener("click", () => removeDevice(d.id || d.type));
+              row.appendChild(btn);
+            });
+            removeDeviceList.appendChild(row);
+          }
+          removeDeviceDialog.classList.remove("hidden");
+        }
+        if (btnRemoveDevice) btnRemoveDevice.addEventListener("click", openRemoveDeviceDialog);
+        if (removeDeviceCancelBtn) removeDeviceCancelBtn.addEventListener("click", closeRemoveDeviceDialog);
+        if (removeDeviceDialog) removeDeviceDialog.addEventListener("click", (ev) => { if (ev.target === removeDeviceDialog) closeRemoveDeviceDialog(); });
         if (btnES02) {
           btnES02.addEventListener("click", () => {
             const next = btnES02.classList.contains("active") ? "0" : "1";
             save("alb_lb_es02", next);
-            renderLBButtons(
-              next === "1",
-              (loadStr("alb_lb_t420d", t420d) === "1"),
-              (loadStr("alb_lb_h312", h312) === "1")
-            );
-            renderLBModelVisibility();
-            renderLogicVisibility();
+            renderEquipmentState();
           });
         }
         function toRaised(v) {
@@ -1754,26 +2898,14 @@
           btnT420D.addEventListener("click", () => {
             const next = btnT420D.classList.contains("active") ? "0" : "1";
             save("alb_lb_t420d", next);
-            renderLBButtons(
-              (loadStr("alb_lb_es02", es02) === "1"),
-              next === "1",
-              (loadStr("alb_lb_h312", h312) === "1")
-            );
-            renderLBModelVisibility();
-            renderLogicVisibility();
+            renderEquipmentState();
           });
         }
         if (btnH312) {
           btnH312.addEventListener("click", () => {
             const next = btnH312.classList.contains("active") ? "0" : "1";
             save("alb_lb_h312", next);
-            renderLBButtons(
-              (loadStr("alb_lb_es02", es02) === "1"),
-              (loadStr("alb_lb_t420d", t420d) === "1"),
-              next === "1"
-            );
-            renderLBModelVisibility();
-            renderLogicVisibility();
+            renderEquipmentState();
           });
         }
         if (hasLBToggle) {
@@ -1802,6 +2934,12 @@
             renderTofVisibility();
           });
         }
+        window.__refreshDeviceTileLayout = function () {
+          renderLBModelVisibility();
+          renderDeviceTileVisibility();
+          renderLogicVisibility();
+        };
+        window.__refreshEquipmentLabels = renderEquipmentState;
         renderLBModelVisibility();
         renderDeviceTileVisibility();
         renderLogicVisibility();
@@ -5048,6 +6186,7 @@
             saveCurrentUiToSlot(activeSlot);
             setSlotCount(slotCount + 1);
             renderSlotControls();
+            if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
             const next = slotCount;
             activateSlot(next).catch(() => {});
             setHint(`${slotTitle(next)} added. Scan and bind.`, "ok");
@@ -5060,6 +6199,7 @@
             const removedSlot = slotCount;
             clearSlotProfile(removedSlot);
             setSlotCount(slotCount - 1);
+            if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
             const next = Math.min(activeSlot, slotCount);
             saveStr(KEY_SLOT_ACTIVE, String(next));
             applySlotToUi(next, `${slotTitle(removedSlot)} removed`);
@@ -5464,6 +6604,467 @@
           const st = await apiJson("/api/time/status", { method: "GET", timeout_ms: 7000 });
           applyStatus(st);
         }, 30000);
+      }
+      function normalizeDeviceMode(mode) {
+        const m = String(mode || "").trim().toLowerCase();
+        if (m === "hot_air" || m === "hotair" || m === "fen") return "hot_air";
+        if (m === "fume_extractor" || m === "extractor" || m === "fume") return "fume_extractor";
+        if (m === "preheater" || m === "preheat") return "preheater";
+        return "station";
+      }
+      function isSlaveDeviceMode(mode) {
+        return normalizeDeviceMode(mode) !== "station";
+      }
+      function getLocalDeviceMode() {
+        const bodyMode = document.body ? document.body.getAttribute("data-device-mode") : "";
+        if (bodyMode) return normalizeDeviceMode(bodyMode);
+        try { return normalizeDeviceMode(localStorage.getItem("alb_device_mode") || "station"); } catch (_) { return "station"; }
+      }
+      function saveLocalDeviceMode(mode) {
+        try { localStorage.setItem("alb_device_mode", normalizeDeviceMode(mode)); } catch (_) {}
+      }
+      function defaultDeviceIdentityName(mode) {
+        const currentMode = normalizeDeviceMode(mode);
+        if (currentMode === "hot_air") return tr("add_device_esp32_hot_air", "Hot air");
+        if (currentMode === "fume_extractor") return tr("add_device_esp32_fume", "Fume extractor");
+        if (currentMode === "preheater") return tr("add_device_esp32_preheater", "Preheater");
+        return "LB Master";
+      }
+      function isLegacyDefaultIdentityName(value) {
+        const v = String(value || "").trim().toLowerCase();
+        return !v || v === "lb master" || v === "lb hot air" || v === "lb fume extractor" || v === "lb preheater" ||
+          v === "lb hot_air" || v === "lb fume_extractor";
+      }
+      function appendEventLog(line) {
+        const logEl = document.getElementById("eventLog");
+        if (!logEl) return;
+        const cur = (logEl.textContent || "").replace(/\s+$/, "");
+        logEl.textContent = `${cur}\n${line}`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      function applyDeviceModeLayout(mode) {
+        const currentMode = normalizeDeviceMode(mode);
+        const slaveMode = isSlaveDeviceMode(currentMode);
+        document.body.setAttribute("data-device-mode", currentMode);
+        document.querySelectorAll("[data-master-only='1']").forEach((el) => {
+          el.classList.toggle("hidden", slaveMode);
+        });
+        document.querySelectorAll("[data-slave-only='1']").forEach((el) => {
+          el.classList.toggle("hidden", !slaveMode);
+        });
+        document.querySelectorAll("[data-device-role-label]").forEach((el) => {
+          el.textContent = currentMode;
+        });
+        const identityName = document.getElementById("deviceIdentityName");
+        if (identityName && isLegacyDefaultIdentityName(identityName.value)) {
+          identityName.value = defaultDeviceIdentityName(currentMode);
+        }
+        if (typeof window.__refreshDeviceTileLayout === "function") {
+          window.__refreshDeviceTileLayout();
+        }
+        if (typeof window.__refreshSlaveSettingsLayout === "function") {
+          window.__refreshSlaveSettingsLayout();
+        }
+      }
+      function initDeviceInstallMode() {
+        const btnMode = document.getElementById("btnMode");
+        const modeDialog = document.getElementById("modeDialog");
+        const modeCancelBtn = document.getElementById("modeCancelBtn");
+        const modeSaveBtn = document.getElementById("modeSaveBtn");
+        const modeChoiceBtns = Array.from(document.querySelectorAll(".modeChoiceBtn"));
+        if (!btnMode || !modeDialog) return;
+        let selectedMode = "station";
+        let persistedMode = getLocalDeviceMode();
+        function setSelectedMode(mode) {
+          selectedMode = normalizeDeviceMode(mode);
+          modeChoiceBtns.forEach((btn) => {
+            btn.classList.toggle("active", String(btn.getAttribute("data-mode-choice") || "") === selectedMode);
+          });
+          applyDeviceModeLayout(selectedMode);
+        }
+        function openModeDialog() { modeDialog.classList.remove("hidden"); }
+        function closeModeDialog() { modeDialog.classList.add("hidden"); }
+        setSelectedMode(getLocalDeviceMode());
+        apiJson("/api/config", { method: "GET", timeout_ms: 4000 }).then((r) => {
+          if (!r || !r.ok || !r.device_mode) return;
+          persistedMode = normalizeDeviceMode(r.device_mode);
+          setSelectedMode(r.device_mode);
+          saveLocalDeviceMode(r.device_mode);
+        }).catch(() => {});
+        modeChoiceBtns.forEach((btn) => {
+          btn.addEventListener("click", () => setSelectedMode(btn.getAttribute("data-mode-choice") || "station"));
+        });
+        btnMode.addEventListener("click", openModeDialog);
+        if (modeCancelBtn) modeCancelBtn.addEventListener("click", () => {
+          setSelectedMode(persistedMode);
+          closeModeDialog();
+        });
+        if (modeSaveBtn) modeSaveBtn.addEventListener("click", async () => {
+          saveLocalDeviceMode(selectedMode);
+          applyDeviceModeLayout(selectedMode);
+          const r = await apiJson("/api/config", {
+            method: "POST",
+            body: JSON.stringify({ device_mode: selectedMode }),
+            timeout_ms: 6000
+          });
+          if (!r || !r.ok) {
+            appendEventLog(`[mode] save failed: ${(r && r.error) ? r.error : "unknown"}`);
+            saveLocalDeviceMode(persistedMode);
+            setSelectedMode(persistedMode);
+            return;
+          }
+          persistedMode = selectedMode;
+          appendEventLog(`[mode] selected=${selectedMode}`);
+          applyDeviceModeLayout(selectedMode);
+          closeModeDialog();
+        });
+        modeDialog.addEventListener("click", (ev) => {
+          if (ev.target === modeDialog) {
+            setSelectedMode(persistedMode);
+            closeModeDialog();
+          }
+        });
+      }
+      function initMasterSlavePlaceholders() {
+        const identityName = document.getElementById("deviceIdentityName");
+        const btnSaveIdentity = document.getElementById("btnSaveIdentity");
+        const btnScanSlaves = document.getElementById("btnScanSlaves");
+        const btnPairSlave = document.getElementById("btnPairSlave");
+        const slaveWifiOn = document.getElementById("slaveWifiOn");
+        const slaveBleOn = document.getElementById("slaveBleOn");
+        const slaveLinkHint = document.getElementById("slaveLinkHint");
+        const slaveGpioPin = document.getElementById("slaveGpioPin");
+        const slaveGpioMode = document.getElementById("slaveGpioMode");
+        const slaveGpioThreshold = document.getElementById("slaveGpioThreshold");
+        const slaveGpioThresholdWrap = document.getElementById("slaveGpioThresholdWrap");
+        const slaveGpioConfig = document.getElementById("slaveGpioConfig");
+        const slaveExtractorGpioConfig = document.getElementById("slaveExtractorGpioConfig");
+        const slaveExtractorGpioPower = document.getElementById("slaveExtractorGpioPower");
+        const slaveExtractorGpioSpeedUp = document.getElementById("slaveExtractorGpioSpeedUp");
+        const slaveExtractorGpioSpeedDown = document.getElementById("slaveExtractorGpioSpeedDown");
+        const slaveExtractorGpioApply = document.getElementById("slaveExtractorGpioApply");
+        const slaveExtractorGpioMode = document.getElementById("slaveExtractorGpioMode");
+        const slaveExtractorGpioPulseMs = document.getElementById("slaveExtractorGpioPulseMs");
+        const slaveExtractorControlType = document.getElementById("slaveExtractorControlType");
+        const slaveExtractorActiveLevel = document.getElementById("slaveExtractorActiveLevel");
+        const slaveExtractorButtonsConfig = document.getElementById("slaveExtractorButtonsConfig");
+        const slaveExtractorMotorConfig = document.getElementById("slaveExtractorMotorConfig");
+        const slaveExtractorAnalogConfig = document.getElementById("slaveExtractorAnalogConfig");
+        const slaveExtractorGpioEnable = document.getElementById("slaveExtractorGpioEnable");
+        const slaveExtractorGpioSpeed = document.getElementById("slaveExtractorGpioSpeed");
+        const slaveExtractorPwmFreq = document.getElementById("slaveExtractorPwmFreq");
+        const slaveExtractorPwmInvert = document.getElementById("slaveExtractorPwmInvert");
+        const slaveExtractorSpeedMin = document.getElementById("slaveExtractorSpeedMin");
+        const slaveExtractorSpeedMax = document.getElementById("slaveExtractorSpeedMax");
+        const slaveExtractorBoostMs = document.getElementById("slaveExtractorBoostMs");
+        const slaveExtractorFailsafeSec = document.getElementById("slaveExtractorFailsafeSec");
+        const slaveExtractorAnalogRange = document.getElementById("slaveExtractorAnalogRange");
+        const slaveLightGpio = document.getElementById("slaveLightGpio");
+        const slaveLightMode = document.getElementById("slaveLightMode");
+        const slaveLightActiveLevel = document.getElementById("slaveLightActiveLevel");
+        const slaveLightDefaultBrightness = document.getElementById("slaveLightDefaultBrightness");
+        const gpioCandidates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 21];
+        const extractorGpioSelects = [
+          { el: slaveExtractorGpioPower, key: "alb_slave_extractor_gpio_power", api: "slave_extractor_gpio_power", def: "4" },
+          { el: slaveExtractorGpioSpeedUp, key: "alb_slave_extractor_gpio_speed_up", api: "slave_extractor_gpio_speed_up", def: "5" },
+          { el: slaveExtractorGpioSpeedDown, key: "alb_slave_extractor_gpio_speed_down", api: "slave_extractor_gpio_speed_down", def: "6" },
+          { el: slaveExtractorGpioApply, key: "alb_slave_extractor_gpio_apply", api: "slave_extractor_gpio_apply", def: "7" }
+        ];
+        const extractorExtraGpioSelects = [
+          { el: slaveExtractorGpioEnable, key: "alb_slave_extractor_gpio_enable", api: "slave_extractor_gpio_enable", def: "8" },
+          { el: slaveExtractorGpioSpeed, key: "alb_slave_extractor_gpio_speed", api: "slave_extractor_gpio_speed", def: "9" },
+          { el: slaveLightGpio, key: "alb_slave_light_gpio", api: "slave_light_gpio", def: "-1" }
+        ];
+        function loadSlaveSetting(key, def) {
+          try {
+            const v = localStorage.getItem(key);
+            if (v == null || v === "") return def;
+            return v;
+          } catch (_) {
+            return def;
+          }
+        }
+        function saveSlaveSetting(key, value) {
+          try { localStorage.setItem(key, String(value)); } catch (_) {}
+        }
+        function setSlaveHint(text, cls) {
+          if (!slaveLinkHint) return;
+          slaveLinkHint.textContent = String(text || tr("slave_link_hint", "Wi-Fi or BLE must stay enabled for master communication."));
+          slaveLinkHint.classList.remove("ok", "err");
+          if (cls) slaveLinkHint.classList.add(cls);
+        }
+        function slaveLinkState() {
+          return {
+            wifi: isTogglePressed(slaveWifiOn),
+            ble: isTogglePressed(slaveBleOn)
+          };
+        }
+        function renderSlaveLinkState() {
+          const wifi = loadSlaveSetting("alb_slave_wifi_enabled", "1") !== "0";
+          const ble = loadSlaveSetting("alb_slave_ble_enabled", "1") !== "0";
+          const safeWifi = wifi || !ble;
+          const safeBle = ble || !safeWifi;
+          setTogglePressed(slaveWifiOn, safeWifi);
+          setTogglePressed(slaveBleOn, safeBle);
+          saveSlaveSetting("alb_slave_wifi_enabled", safeWifi ? "1" : "0");
+          saveSlaveSetting("alb_slave_ble_enabled", safeBle ? "1" : "0");
+        }
+        function applySlaveSettingsPayload(cfg) {
+          if (!cfg || typeof cfg !== "object") return;
+          if (cfg.slave_wifi_enabled != null) saveSlaveSetting("alb_slave_wifi_enabled", cfg.slave_wifi_enabled ? "1" : "0");
+          if (cfg.slave_ble_enabled != null) saveSlaveSetting("alb_slave_ble_enabled", cfg.slave_ble_enabled ? "1" : "0");
+          if (cfg.slave_gpio_pin != null) saveSlaveSetting("alb_slave_gpio_pin", cfg.slave_gpio_pin);
+          if (cfg.slave_gpio_mode != null) saveSlaveSetting("alb_slave_gpio_mode", cfg.slave_gpio_mode);
+          if (cfg.slave_gpio_threshold != null) saveSlaveSetting("alb_slave_gpio_threshold", cfg.slave_gpio_threshold);
+          extractorGpioSelects.forEach((item) => {
+            if (cfg[item.api] != null) saveSlaveSetting(item.key, cfg[item.api]);
+          });
+          if (cfg.slave_extractor_gpio_mode != null) saveSlaveSetting("alb_slave_extractor_gpio_mode", cfg.slave_extractor_gpio_mode);
+          if (cfg.slave_extractor_gpio_pulse_ms != null) saveSlaveSetting("alb_slave_extractor_gpio_pulse_ms", cfg.slave_extractor_gpio_pulse_ms);
+          [
+            ["slave_extractor_control_type", "alb_slave_extractor_control_type"],
+            ["slave_extractor_active_level", "alb_slave_extractor_active_level"],
+            ["slave_extractor_pwm_freq", "alb_slave_extractor_pwm_freq"],
+            ["slave_extractor_pwm_invert", "alb_slave_extractor_pwm_invert"],
+            ["slave_extractor_speed_min", "alb_slave_extractor_speed_min"],
+            ["slave_extractor_speed_max", "alb_slave_extractor_speed_max"],
+            ["slave_extractor_boost_ms", "alb_slave_extractor_boost_ms"],
+            ["slave_extractor_failsafe_sec", "alb_slave_extractor_failsafe_sec"],
+            ["slave_extractor_analog_range", "alb_slave_extractor_analog_range"],
+            ["slave_light_mode", "alb_slave_light_mode"],
+            ["slave_light_active_level", "alb_slave_light_active_level"],
+            ["slave_light_default_brightness", "alb_slave_light_default_brightness"]
+          ].forEach(([apiKey, localKey]) => {
+            if (cfg[apiKey] != null) saveSlaveSetting(localKey, cfg[apiKey]);
+          });
+          extractorExtraGpioSelects.forEach((item) => {
+            if (cfg[item.api] != null) saveSlaveSetting(item.key, cfg[item.api]);
+          });
+          renderSlaveLinkState();
+          loadSlaveGpio();
+        }
+        async function pushSlaveSettings(reason) {
+          saveSlaveGpio();
+          const link = slaveLinkState();
+          const body = {
+            slave_wifi_enabled: !!link.wifi,
+            slave_ble_enabled: !!link.ble,
+            slave_gpio_pin: parseInt(loadSlaveSetting("alb_slave_gpio_pin", "4"), 10) || 4,
+            slave_gpio_mode: loadSlaveSetting("alb_slave_gpio_mode", "active_high"),
+            slave_gpio_threshold: parseInt(loadSlaveSetting("alb_slave_gpio_threshold", "1800"), 10) || 1800,
+            slave_extractor_gpio_power: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_power", "4"), 10),
+            slave_extractor_gpio_speed_up: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_speed_up", "5"), 10),
+            slave_extractor_gpio_speed_down: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_speed_down", "6"), 10),
+            slave_extractor_gpio_apply: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_apply", "7"), 10),
+            slave_extractor_gpio_mode: loadSlaveSetting("alb_slave_extractor_gpio_mode", "contact_pulse"),
+            slave_extractor_gpio_pulse_ms: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_pulse_ms", "180"), 10) || 180,
+            slave_extractor_control_type: loadSlaveSetting("alb_slave_extractor_control_type", "buttons"),
+            slave_extractor_active_level: loadSlaveSetting("alb_slave_extractor_active_level", "low"),
+            slave_extractor_gpio_enable: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_enable", "8"), 10),
+            slave_extractor_gpio_speed: parseInt(loadSlaveSetting("alb_slave_extractor_gpio_speed", "9"), 10),
+            slave_extractor_pwm_freq: parseInt(loadSlaveSetting("alb_slave_extractor_pwm_freq", "25000"), 10) || 25000,
+            slave_extractor_pwm_invert: loadSlaveSetting("alb_slave_extractor_pwm_invert", "0") === "1",
+            slave_extractor_speed_min: parseInt(loadSlaveSetting("alb_slave_extractor_speed_min", "20"), 10) || 20,
+            slave_extractor_speed_max: parseInt(loadSlaveSetting("alb_slave_extractor_speed_max", "100"), 10) || 100,
+            slave_extractor_boost_ms: parseInt(loadSlaveSetting("alb_slave_extractor_boost_ms", "700"), 10) || 0,
+            slave_extractor_failsafe_sec: parseInt(loadSlaveSetting("alb_slave_extractor_failsafe_sec", "30"), 10) || 0,
+            slave_extractor_analog_range: loadSlaveSetting("alb_slave_extractor_analog_range", "0_5"),
+            slave_light_gpio: parseInt(loadSlaveSetting("alb_slave_light_gpio", "-1"), 10),
+            slave_light_mode: loadSlaveSetting("alb_slave_light_mode", "disabled"),
+            slave_light_active_level: loadSlaveSetting("alb_slave_light_active_level", "high"),
+            slave_light_default_brightness: parseInt(loadSlaveSetting("alb_slave_light_default_brightness", "60"), 10) || 60
+          };
+          const r = await apiJson("/api/config", { method: "POST", body: JSON.stringify(body), timeout_ms: 6000 });
+          if (r && r.ok) {
+            appendEventLog(`[slave] ${reason}: config saved`);
+            return true;
+          }
+          appendEventLog(`[slave] ${reason}: config save failed: ${(r && r.error) ? r.error : "unknown"}`);
+          return false;
+        }
+        function toggleSlaveChannel(channel) {
+          const cur = slaveLinkState();
+          const next = {
+            wifi: channel === "wifi" ? !cur.wifi : cur.wifi,
+            ble: channel === "ble" ? !cur.ble : cur.ble
+          };
+          if (!next.wifi && !next.ble) {
+            setSlaveHint(tr("slave_link_one_required", "At least one channel must stay enabled."), "err");
+            return;
+          }
+          saveSlaveSetting("alb_slave_wifi_enabled", next.wifi ? "1" : "0");
+          saveSlaveSetting("alb_slave_ble_enabled", next.ble ? "1" : "0");
+          renderSlaveLinkState();
+          setSlaveHint(tr("slave_link_hint", "Wi-Fi or BLE must stay enabled for master communication."), "ok");
+          appendEventLog(`[master] link wifi=${next.wifi ? 1 : 0} ble=${next.ble ? 1 : 0}`);
+          pushSlaveSettings("link").catch(() => {});
+        }
+        function fillSlaveGpioPins() {
+          if (!slaveGpioPin || slaveGpioPin.options.length) return;
+          gpioCandidates.forEach((pin) => {
+            const opt = document.createElement("option");
+            opt.value = String(pin);
+            opt.textContent = `GPIO${pin}`;
+            slaveGpioPin.appendChild(opt);
+          });
+        }
+        function fillOneExtractorGpioSelect(selectEl) {
+          if (!selectEl || selectEl.options.length) return;
+          const off = document.createElement("option");
+          off.value = "-1";
+          off.textContent = "-";
+          selectEl.appendChild(off);
+          gpioCandidates.forEach((pin) => {
+            const opt = document.createElement("option");
+            opt.value = String(pin);
+            opt.textContent = `GPIO${pin}`;
+            selectEl.appendChild(opt);
+          });
+        }
+        function fillExtractorGpioPins() {
+          extractorGpioSelects.forEach((item) => fillOneExtractorGpioSelect(item.el));
+          extractorExtraGpioSelects.forEach((item) => fillOneExtractorGpioSelect(item.el));
+        }
+        function renderSlaveGpioVisibility() {
+          const mode = getLocalDeviceMode();
+          const controlType = slaveExtractorControlType ? String(slaveExtractorControlType.value || "buttons") : "buttons";
+          if (slaveGpioConfig) {
+            slaveGpioConfig.classList.toggle("hidden", mode !== "hot_air" && mode !== "preheater");
+          }
+          if (slaveExtractorGpioConfig) {
+            slaveExtractorGpioConfig.classList.toggle("hidden", mode !== "fume_extractor");
+          }
+          if (slaveExtractorButtonsConfig) slaveExtractorButtonsConfig.classList.toggle("hidden", controlType !== "buttons");
+          if (slaveExtractorMotorConfig) slaveExtractorMotorConfig.classList.toggle("hidden", controlType === "buttons");
+          if (slaveExtractorAnalogConfig) slaveExtractorAnalogConfig.classList.toggle("hidden", controlType !== "analog");
+          if (slaveGpioThresholdWrap && slaveGpioMode) {
+            slaveGpioThresholdWrap.classList.toggle("hidden", slaveGpioMode.value !== "adc_threshold");
+          }
+        }
+        function loadSlaveGpio() {
+          fillSlaveGpioPins();
+          fillExtractorGpioPins();
+          if (slaveGpioPin) slaveGpioPin.value = loadSlaveSetting("alb_slave_gpio_pin", "4");
+          if (slaveGpioMode) slaveGpioMode.value = loadSlaveSetting("alb_slave_gpio_mode", "active_high");
+          if (slaveGpioThreshold) slaveGpioThreshold.value = loadSlaveSetting("alb_slave_gpio_threshold", "1800");
+          extractorGpioSelects.forEach((item) => {
+            if (item.el) item.el.value = loadSlaveSetting(item.key, item.def);
+          });
+          if (slaveExtractorGpioMode) {
+            const storedMode = loadSlaveSetting("alb_slave_extractor_gpio_mode", "contact_pulse");
+            const migratedMode = storedMode === "pulse_low" || storedMode === "pulse_high" ? "contact_pulse" :
+              (storedMode === "hold_low" || storedMode === "hold_high" ? "contact_hold" : storedMode);
+            slaveExtractorGpioMode.value = migratedMode;
+            saveSlaveSetting("alb_slave_extractor_gpio_mode", migratedMode);
+          }
+          if (slaveExtractorGpioPulseMs) slaveExtractorGpioPulseMs.value = loadSlaveSetting("alb_slave_extractor_gpio_pulse_ms", "180");
+          if (slaveExtractorControlType) slaveExtractorControlType.value = loadSlaveSetting("alb_slave_extractor_control_type", "buttons");
+          if (slaveExtractorActiveLevel) slaveExtractorActiveLevel.value = loadSlaveSetting("alb_slave_extractor_active_level", "low");
+          extractorExtraGpioSelects.forEach((item) => { if (item.el) item.el.value = loadSlaveSetting(item.key, item.def); });
+          if (slaveExtractorPwmFreq) slaveExtractorPwmFreq.value = loadSlaveSetting("alb_slave_extractor_pwm_freq", "25000");
+          if (slaveExtractorPwmInvert) slaveExtractorPwmInvert.value = loadSlaveSetting("alb_slave_extractor_pwm_invert", "0");
+          if (slaveExtractorSpeedMin) slaveExtractorSpeedMin.value = loadSlaveSetting("alb_slave_extractor_speed_min", "20");
+          if (slaveExtractorSpeedMax) slaveExtractorSpeedMax.value = loadSlaveSetting("alb_slave_extractor_speed_max", "100");
+          if (slaveExtractorBoostMs) slaveExtractorBoostMs.value = loadSlaveSetting("alb_slave_extractor_boost_ms", "700");
+          if (slaveExtractorFailsafeSec) slaveExtractorFailsafeSec.value = loadSlaveSetting("alb_slave_extractor_failsafe_sec", "30");
+          if (slaveExtractorAnalogRange) slaveExtractorAnalogRange.value = loadSlaveSetting("alb_slave_extractor_analog_range", "0_5");
+          if (slaveLightMode) slaveLightMode.value = loadSlaveSetting("alb_slave_light_mode", "disabled");
+          if (slaveLightActiveLevel) slaveLightActiveLevel.value = loadSlaveSetting("alb_slave_light_active_level", "high");
+          if (slaveLightDefaultBrightness) slaveLightDefaultBrightness.value = loadSlaveSetting("alb_slave_light_default_brightness", "60");
+          renderSlaveGpioVisibility();
+        }
+        function saveSlaveGpio() {
+          if (slaveGpioPin) saveSlaveSetting("alb_slave_gpio_pin", slaveGpioPin.value || "4");
+          if (slaveGpioMode) saveSlaveSetting("alb_slave_gpio_mode", slaveGpioMode.value || "active_high");
+          if (slaveGpioThreshold) {
+            const n = Math.max(0, Math.min(4095, parseInt(String(slaveGpioThreshold.value || "1800"), 10) || 1800));
+            slaveGpioThreshold.value = String(n);
+            saveSlaveSetting("alb_slave_gpio_threshold", String(n));
+          }
+          extractorGpioSelects.forEach((item) => {
+            if (item.el) saveSlaveSetting(item.key, item.el.value || item.def);
+          });
+          if (slaveExtractorGpioMode) saveSlaveSetting("alb_slave_extractor_gpio_mode", slaveExtractorGpioMode.value || "contact_pulse");
+          if (slaveExtractorGpioPulseMs) {
+            const ms = Math.max(20, Math.min(5000, parseInt(String(slaveExtractorGpioPulseMs.value || "180"), 10) || 180));
+            slaveExtractorGpioPulseMs.value = String(ms);
+            saveSlaveSetting("alb_slave_extractor_gpio_pulse_ms", String(ms));
+          }
+          if (slaveExtractorControlType) saveSlaveSetting("alb_slave_extractor_control_type", slaveExtractorControlType.value || "buttons");
+          if (slaveExtractorActiveLevel) saveSlaveSetting("alb_slave_extractor_active_level", slaveExtractorActiveLevel.value || "low");
+          extractorExtraGpioSelects.forEach((item) => { if (item.el) saveSlaveSetting(item.key, item.el.value || item.def); });
+          function saveNum(el, key, def, min, max) {
+            if (!el) return;
+            const n = Math.max(min, Math.min(max, parseInt(String(el.value || def), 10) || def));
+            el.value = String(n);
+            saveSlaveSetting(key, String(n));
+          }
+          if (slaveExtractorPwmInvert) saveSlaveSetting("alb_slave_extractor_pwm_invert", slaveExtractorPwmInvert.value || "0");
+          if (slaveExtractorAnalogRange) saveSlaveSetting("alb_slave_extractor_analog_range", slaveExtractorAnalogRange.value || "0_5");
+          if (slaveLightMode) saveSlaveSetting("alb_slave_light_mode", slaveLightMode.value || "disabled");
+          if (slaveLightActiveLevel) saveSlaveSetting("alb_slave_light_active_level", slaveLightActiveLevel.value || "high");
+          saveNum(slaveExtractorPwmFreq, "alb_slave_extractor_pwm_freq", 25000, 10, 50000);
+          saveNum(slaveExtractorSpeedMin, "alb_slave_extractor_speed_min", 20, 0, 100);
+          saveNum(slaveExtractorSpeedMax, "alb_slave_extractor_speed_max", 100, 0, 100);
+          saveNum(slaveExtractorBoostMs, "alb_slave_extractor_boost_ms", 700, 0, 10000);
+          saveNum(slaveExtractorFailsafeSec, "alb_slave_extractor_failsafe_sec", 30, 0, 3600);
+          saveNum(slaveLightDefaultBrightness, "alb_slave_light_default_brightness", 60, 0, 100);
+          renderSlaveGpioVisibility();
+        }
+        try {
+          const savedName = localStorage.getItem("alb_device_identity_name") || "";
+          if (identityName && savedName) identityName.value = savedName;
+        } catch (_) {}
+        renderSlaveLinkState();
+        loadSlaveGpio();
+        apiJson("/api/config", { method: "GET", timeout_ms: 4000 }).then((r) => {
+          if (!r || !r.ok) return;
+          applySlaveSettingsPayload(r);
+        }).catch(() => {});
+        if (slaveWifiOn) slaveWifiOn.addEventListener("click", () => toggleSlaveChannel("wifi"));
+        if (slaveBleOn) slaveBleOn.addEventListener("click", () => toggleSlaveChannel("ble"));
+        if (slaveGpioPin) slaveGpioPin.addEventListener("change", saveSlaveGpio);
+        if (slaveGpioMode) slaveGpioMode.addEventListener("change", saveSlaveGpio);
+        if (slaveGpioThreshold) {
+          slaveGpioThreshold.addEventListener("input", saveSlaveGpio);
+          slaveGpioThreshold.addEventListener("change", saveSlaveGpio);
+          slaveGpioThreshold.addEventListener("blur", saveSlaveGpio);
+        }
+        extractorGpioSelects.forEach((item) => {
+          if (item.el) item.el.addEventListener("change", saveSlaveGpio);
+        });
+        if (slaveExtractorGpioMode) slaveExtractorGpioMode.addEventListener("change", saveSlaveGpio);
+        if (slaveExtractorGpioPulseMs) {
+          slaveExtractorGpioPulseMs.addEventListener("input", saveSlaveGpio);
+          slaveExtractorGpioPulseMs.addEventListener("change", saveSlaveGpio);
+          slaveExtractorGpioPulseMs.addEventListener("blur", saveSlaveGpio);
+        }
+        [
+          slaveExtractorControlType, slaveExtractorActiveLevel, slaveExtractorGpioEnable, slaveExtractorGpioSpeed,
+          slaveExtractorPwmFreq, slaveExtractorPwmInvert, slaveExtractorSpeedMin, slaveExtractorSpeedMax,
+          slaveExtractorBoostMs, slaveExtractorFailsafeSec, slaveExtractorAnalogRange, slaveLightGpio,
+          slaveLightMode, slaveLightActiveLevel, slaveLightDefaultBrightness
+        ].forEach((el) => {
+          if (!el) return;
+          el.addEventListener("input", saveSlaveGpio);
+          el.addEventListener("change", saveSlaveGpio);
+          el.addEventListener("blur", saveSlaveGpio);
+        });
+        if (btnSaveIdentity) {
+          btnSaveIdentity.addEventListener("click", () => {
+            const name = String((identityName && identityName.value) || "").trim();
+            try { localStorage.setItem("alb_device_identity_name", name); } catch (_) {}
+          saveSlaveGpio();
+          const link = slaveLinkState();
+          appendEventLog(`[identity] name=${name || "-"} wifi=${link.wifi ? 1 : 0} ble=${link.ble ? 1 : 0} gpio=${loadSlaveSetting("alb_slave_gpio_pin", "-")} mode=${loadSlaveSetting("alb_slave_gpio_mode", "-")}`);
+          pushSlaveSettings("identity").catch(() => {});
+        });
+        }
+        if (btnScanSlaves) btnScanSlaves.addEventListener("click", () => appendEventLog("[slave] scan requested"));
+        if (btnPairSlave) btnPairSlave.addEventListener("click", () => appendEventLog("[slave] pair requested"));
+        applyDeviceModeLayout(getLocalDeviceMode());
+        renderSlaveGpioVisibility();
+        window.__refreshSlaveSettingsLayout = renderSlaveGpioVisibility;
       }
       function initLightScheduleConfig() {
         const lightH1 = document.getElementById("lightH1");
@@ -6324,6 +7925,8 @@
       initExtractorPicker();
       initHotAirBinding();
       initDeviceClock();
+      initDeviceInstallMode();
+      initMasterSlavePlaceholders();
       initT420dGpioConfig();
       initSpeedRestore();
       initLightScheduleConfig();

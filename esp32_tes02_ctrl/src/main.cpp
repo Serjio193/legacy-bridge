@@ -119,6 +119,39 @@ static uint8_t gSourceManualBrightness[SRC_COUNT] = {60, 60, 60, 60, 60};
 static uint8_t gSourceLastBrightness[SRC_COUNT] = {60, 60, 60, 60, 60};
 static uint8_t lastOnSpeed = 30; // active source speed, kept for legacy API field "saved"
 static ExtractorSource gActiveSource = SRC_H1;
+static String deviceInstallMode = "station";
+static bool slaveWifiEnabled = true;
+static bool slaveBleEnabled = true;
+static String slavePairToken = "";
+static int8_t slaveGpioPin = 4;
+static String slaveGpioMode = "active_high";
+static uint16_t slaveGpioThreshold = 1800;
+static int8_t slaveExtractorGpioPower = 4;
+static int8_t slaveExtractorGpioSpeedUp = 5;
+static int8_t slaveExtractorGpioSpeedDown = 6;
+static int8_t slaveExtractorGpioApply = 7;
+static String slaveExtractorGpioMode = "contact_pulse";
+static uint16_t slaveExtractorGpioPulseMs = 180;
+static String slaveExtractorControlType = "buttons";
+static String slaveExtractorActiveLevel = "low";
+static int8_t slaveExtractorGpioEnable = 8;
+static int8_t slaveExtractorGpioSpeed = 9;
+static uint16_t slaveExtractorPwmFreq = 25000;
+static bool slaveExtractorPwmInvert = false;
+static uint8_t slaveExtractorSpeedMin = 20;
+static uint8_t slaveExtractorSpeedMax = 100;
+static uint16_t slaveExtractorBoostMs = 700;
+static uint16_t slaveExtractorFailsafeSec = 30;
+static String slaveExtractorAnalogRange = "0_5";
+static int8_t slaveLightGpio = -1;
+static String slaveLightMode = "disabled";
+static String slaveLightActiveLevel = "high";
+static uint8_t slaveLightDefaultBrightness = 60;
+static bool slaveExtractorMotorOn = false;
+static uint8_t slaveExtractorCurrentSpeed = 0;
+static bool slaveLightOn = false;
+static const uint8_t kSlaveExtractorPwmChannel = 4;
+static const uint8_t kSlaveLightPwmChannel = 5;
 enum H312TransportMode : uint8_t { H312_MODE_WIFI = 0, H312_MODE_BLE = 1 };
 static bool h312Enabled = false;
 static H312TransportMode h312Mode = H312_MODE_WIFI;
@@ -174,6 +207,7 @@ static uint8_t gWebAuthFailCount = 0;
 static uint32_t gWebAuthBlockUntilMs = 0;
 static bool gReqAuthedByToken = false;
 static bool gReqAuthedByBasic = false;
+static bool gReqAuthedByPairToken = false;
 static String gReqTokenHash;
 static h312::H312Driver gH312Driver;
 static tes02::Tes02Driver gTes02Driver;
@@ -604,6 +638,81 @@ static H312TransportMode h312ModeFromText(const String &raw) {
   s.toLowerCase();
   if (s == "ble" || s == "bluetooth") return H312_MODE_BLE;
   return H312_MODE_WIFI;
+}
+
+static String normalizeDeviceInstallMode(const String &raw) {
+  String s = raw;
+  s.trim();
+  s.toLowerCase();
+  if (s == "hot_air" || s == "hotair" || s == "fen") return "hot_air";
+  if (s == "fume_extractor" || s == "extractor" || s == "fume") return "fume_extractor";
+  if (s == "preheater" || s == "preheat") return "preheater";
+  return "station";
+}
+
+static String normalizeSlaveGpioMode(const String &raw) {
+  String s = raw;
+  s.trim();
+  s.toLowerCase();
+  if (s == "input_pullup" || s == "pullup") return "input_pullup";
+  if (s == "input_pulldown" || s == "pulldown") return "input_pulldown";
+  if (s == "active_low" || s == "low") return "active_low";
+  if (s == "adc_threshold" || s == "adc") return "adc_threshold";
+  return "active_high";
+}
+
+static String normalizeSlaveExtractorGpioMode(const String &raw) {
+  String s = raw;
+  s.trim();
+  s.toLowerCase();
+  if (s == "contact_hold" || s == "hold_low" || s == "hold_high") return "contact_hold";
+  if (s == "active_low") return "active_low";
+  if (s == "active_high") return "active_high";
+  return "contact_pulse";
+}
+static String normalizeSlaveExtractorControlType(const String &raw) {
+  String s = raw; s.trim(); s.toLowerCase();
+  if (s == "pwm4" || s == "mosfet_dc" || s == "relay" || s == "analog") return s;
+  return "buttons";
+}
+static String normalizeActiveLevel(const String &raw, const String &fallback = "high") {
+  String s = raw; s.trim(); s.toLowerCase();
+  if (s == "low") return "low";
+  if (s == "high") return "high";
+  return fallback;
+}
+static String normalizeSlaveLightMode(const String &raw) {
+  String s = raw; s.trim(); s.toLowerCase();
+  if (s == "on_off" || s == "pwm" || s == "follow_motor") return s;
+  return "disabled";
+}
+static String normalizeAnalogRange(const String &raw) {
+  String s = raw; s.trim(); s.toLowerCase();
+  if (s == "0_10" || s == "0-10" || s == "10") return "0_10";
+  return "0_5";
+}
+static uint8_t clampPct(int raw, uint8_t def) {
+  if (raw < 0) return 0;
+  if (raw > 100) return 100;
+  return (uint8_t)raw;
+}
+
+static int8_t normalizeSlaveGpioPin(int raw) {
+  if (raw < 0) return -1;
+  if (raw > 21) return 4;
+  return (int8_t)raw;
+}
+
+static uint16_t normalizeSlaveGpioThreshold(int raw) {
+  if (raw < 0) return 0;
+  if (raw > 4095) return 4095;
+  return (uint16_t)raw;
+}
+
+static uint16_t normalizeSlaveExtractorPulseMs(int raw) {
+  if (raw < 20) return 20;
+  if (raw > 5000) return 5000;
+  return (uint16_t)raw;
 }
 
 static bool h312BleAddrLooksValid(const String &addr) {
@@ -2941,6 +3050,39 @@ static void loadConfig() {
   gSourceLastBrightness[SRC_HA2] = (uint8_t)prefs.getUChar(extractorSourceBrightnessLastNvsKey(SRC_HA2), 60);
   gSourceLastBrightness[SRC_HA3] = (uint8_t)prefs.getUChar(extractorSourceBrightnessLastNvsKey(SRC_HA3), 60);
   wifiAutoOffMin = (uint16_t)prefs.getUShort("wifi_autooff", 0);
+  deviceInstallMode = normalizeDeviceInstallMode(prefs.getString("dev_mode", "station"));
+  slaveWifiEnabled = prefs.getBool("sl_wifi_en", true);
+  slaveBleEnabled = prefs.getBool("sl_ble_en", true);
+  slavePairToken = prefs.getString("sl_pair_tok", "");
+  if (!slaveWifiEnabled && !slaveBleEnabled) {
+    slaveWifiEnabled = true;
+    slaveBleEnabled = false;
+  }
+  slaveGpioPin = normalizeSlaveGpioPin((int)prefs.getChar("sl_gpio", 4));
+  slaveGpioMode = normalizeSlaveGpioMode(prefs.getString("sl_gpiomode", "active_high"));
+  slaveGpioThreshold = normalizeSlaveGpioThreshold((int)prefs.getUShort("sl_gpiothr", 1800));
+  slaveExtractorGpioPower = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_pwr", 4));
+  slaveExtractorGpioSpeedUp = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spup", 5));
+  slaveExtractorGpioSpeedDown = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spdn", 6));
+  slaveExtractorGpioApply = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_apply", 7));
+  slaveExtractorGpioMode = normalizeSlaveExtractorGpioMode(prefs.getString("sl_ex_mode", "contact_pulse"));
+  slaveExtractorGpioPulseMs = normalizeSlaveExtractorPulseMs((int)prefs.getUShort("sl_ex_pms", 180));
+  slaveExtractorControlType = normalizeSlaveExtractorControlType(prefs.getString("sl_ex_ctrl", "buttons"));
+  slaveExtractorActiveLevel = normalizeActiveLevel(prefs.getString("sl_ex_act", "low"), "low");
+  slaveExtractorGpioEnable = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_en", 8));
+  slaveExtractorGpioSpeed = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spd", 9));
+  slaveExtractorPwmFreq = (uint16_t)min(50000, max(10, (int)prefs.getUShort("sl_ex_pwmhz", 25000)));
+  slaveExtractorPwmInvert = prefs.getBool("sl_ex_pwminv", false);
+  slaveExtractorSpeedMin = clampPct((int)prefs.getUChar("sl_ex_min", 20), 20);
+  slaveExtractorSpeedMax = clampPct((int)prefs.getUChar("sl_ex_max", 100), 100);
+  if (slaveExtractorSpeedMin > slaveExtractorSpeedMax) slaveExtractorSpeedMin = slaveExtractorSpeedMax;
+  slaveExtractorBoostMs = (uint16_t)min(10000, max(0, (int)prefs.getUShort("sl_ex_boost", 700)));
+  slaveExtractorFailsafeSec = (uint16_t)min(3600, max(0, (int)prefs.getUShort("sl_ex_fail", 30)));
+  slaveExtractorAnalogRange = normalizeAnalogRange(prefs.getString("sl_ex_arng", "0_5"));
+  slaveLightGpio = normalizeSlaveGpioPin((int)prefs.getChar("sl_l_gpio", -1));
+  slaveLightMode = normalizeSlaveLightMode(prefs.getString("sl_l_mode", "disabled"));
+  slaveLightActiveLevel = normalizeActiveLevel(prefs.getString("sl_l_act", "high"), "high");
+  slaveLightDefaultBrightness = clampPct((int)prefs.getUChar("sl_l_bri", 60), 60);
   h312Enabled = prefs.getBool("h312_en", false);
   h312Mode = (H312TransportMode)prefs.getUChar("h312_mode", (uint8_t)H312_MODE_WIFI);
   h312Ip = prefs.getString("h312_ip", "");
@@ -3152,6 +3294,203 @@ static void saveWifiAutoOffMin(uint16_t v) {
   prefs.putUShort("wifi_autooff", v);
   prefs.end();
   wifiAutoOffMin = v;
+}
+
+static void saveDeviceInstallMode(const String &mode) {
+  String next = normalizeDeviceInstallMode(mode);
+  if (next == deviceInstallMode) return;
+  prefs.begin(kPrefsNs, false);
+  prefs.putString("dev_mode", next);
+  prefs.end();
+  deviceInstallMode = next;
+  extractorCmdLogPushf("[mode] device install mode=%s", deviceInstallMode.c_str());
+}
+
+static void saveSlaveConfig(bool wifiEn, bool bleEn, int gpioPin, const String &gpioMode, int gpioThreshold) {
+  if (!wifiEn && !bleEn) {
+    wifiEn = true;
+    bleEn = false;
+  }
+  int8_t nextPin = normalizeSlaveGpioPin(gpioPin);
+  String nextMode = normalizeSlaveGpioMode(gpioMode);
+  uint16_t nextThreshold = normalizeSlaveGpioThreshold(gpioThreshold);
+  bool changed = (slaveWifiEnabled != wifiEn) || (slaveBleEnabled != bleEn) || (slaveGpioPin != nextPin) ||
+                 (slaveGpioMode != nextMode) || (slaveGpioThreshold != nextThreshold);
+  if (!changed) return;
+  prefs.begin(kPrefsNs, false);
+  prefs.putBool("sl_wifi_en", wifiEn);
+  prefs.putBool("sl_ble_en", bleEn);
+  prefs.putChar("sl_gpio", nextPin);
+  prefs.putString("sl_gpiomode", nextMode);
+  prefs.putUShort("sl_gpiothr", nextThreshold);
+  prefs.end();
+  slaveWifiEnabled = wifiEn;
+  slaveBleEnabled = bleEn;
+  slaveGpioPin = nextPin;
+  slaveGpioMode = nextMode;
+  slaveGpioThreshold = nextThreshold;
+  extractorCmdLogPushf("[slave] config wifi=%u ble=%u gpio=%d mode=%s threshold=%u",
+                       slaveWifiEnabled ? 1 : 0, slaveBleEnabled ? 1 : 0, (int)slaveGpioPin,
+                       slaveGpioMode.c_str(), (unsigned int)slaveGpioThreshold);
+}
+
+static String normalizePairToken(const String &raw) {
+  String s = raw;
+  s.trim();
+  if (s.length() > 96) s = s.substring(0, 96);
+  return s;
+}
+
+static void saveSlavePairToken(const String &token) {
+  String next = normalizePairToken(token);
+  if (next == slavePairToken) return;
+  prefs.begin(kPrefsNs, false);
+  prefs.putString("sl_pair_tok", next);
+  prefs.end();
+  slavePairToken = next;
+  extractorCmdLogPushf("[slave] pair token %s", slavePairToken.length() >= 16 ? "set" : "cleared");
+}
+
+static void saveSlaveExtractorGpioConfig(int gpioPower, int gpioSpeedUp, int gpioSpeedDown, int gpioApply, const String &gpioMode, int pulseMs) {
+  int8_t nextPower = normalizeSlaveGpioPin(gpioPower);
+  int8_t nextSpeedUp = normalizeSlaveGpioPin(gpioSpeedUp);
+  int8_t nextSpeedDown = normalizeSlaveGpioPin(gpioSpeedDown);
+  int8_t nextApply = normalizeSlaveGpioPin(gpioApply);
+  String nextMode = normalizeSlaveExtractorGpioMode(gpioMode);
+  uint16_t nextPulseMs = normalizeSlaveExtractorPulseMs(pulseMs);
+  bool changed = (slaveExtractorGpioPower != nextPower) || (slaveExtractorGpioSpeedUp != nextSpeedUp) ||
+                 (slaveExtractorGpioSpeedDown != nextSpeedDown) || (slaveExtractorGpioApply != nextApply) ||
+                 (slaveExtractorGpioMode != nextMode) || (slaveExtractorGpioPulseMs != nextPulseMs);
+  if (!changed) return;
+  prefs.begin(kPrefsNs, false);
+  prefs.putChar("sl_ex_pwr", nextPower);
+  prefs.putChar("sl_ex_spup", nextSpeedUp);
+  prefs.putChar("sl_ex_spdn", nextSpeedDown);
+  prefs.putChar("sl_ex_apply", nextApply);
+  prefs.putString("sl_ex_mode", nextMode);
+  prefs.putUShort("sl_ex_pms", nextPulseMs);
+  prefs.end();
+  slaveExtractorGpioPower = nextPower;
+  slaveExtractorGpioSpeedUp = nextSpeedUp;
+  slaveExtractorGpioSpeedDown = nextSpeedDown;
+  slaveExtractorGpioApply = nextApply;
+  slaveExtractorGpioMode = nextMode;
+  slaveExtractorGpioPulseMs = nextPulseMs;
+  extractorCmdLogPushf("[slave] extractor gpio power=%d speed_up=%d speed_down=%d apply=%d mode=%s pulse_ms=%u",
+                       (int)slaveExtractorGpioPower, (int)slaveExtractorGpioSpeedUp, (int)slaveExtractorGpioSpeedDown,
+                       (int)slaveExtractorGpioApply, slaveExtractorGpioMode.c_str(), (unsigned int)slaveExtractorGpioPulseMs);
+}
+
+static void saveSlaveExtractorControlConfig(const String &controlType, const String &activeLevel, int gpioEnable, int gpioSpeed,
+                                            int pwmFreq, bool pwmInvert, int speedMin, int speedMax, int boostMs,
+                                            int failsafeSec, const String &analogRange, int lightGpio,
+                                            const String &lightMode, const String &lightActiveLevel, int lightBrightness) {
+  slaveExtractorControlType = normalizeSlaveExtractorControlType(controlType);
+  slaveExtractorActiveLevel = normalizeActiveLevel(activeLevel, "low");
+  slaveExtractorGpioEnable = normalizeSlaveGpioPin(gpioEnable);
+  slaveExtractorGpioSpeed = normalizeSlaveGpioPin(gpioSpeed);
+  slaveExtractorPwmFreq = (uint16_t)min(50000, max(10, pwmFreq));
+  slaveExtractorPwmInvert = pwmInvert;
+  slaveExtractorSpeedMin = clampPct(speedMin, 20);
+  slaveExtractorSpeedMax = clampPct(speedMax, 100);
+  if (slaveExtractorSpeedMin > slaveExtractorSpeedMax) slaveExtractorSpeedMin = slaveExtractorSpeedMax;
+  slaveExtractorBoostMs = (uint16_t)min(10000, max(0, boostMs));
+  slaveExtractorFailsafeSec = (uint16_t)min(3600, max(0, failsafeSec));
+  slaveExtractorAnalogRange = normalizeAnalogRange(analogRange);
+  slaveLightGpio = normalizeSlaveGpioPin(lightGpio);
+  slaveLightMode = normalizeSlaveLightMode(lightMode);
+  slaveLightActiveLevel = normalizeActiveLevel(lightActiveLevel, "high");
+  slaveLightDefaultBrightness = clampPct(lightBrightness, 60);
+  prefs.begin(kPrefsNs, false);
+  prefs.putString("sl_ex_ctrl", slaveExtractorControlType);
+  prefs.putString("sl_ex_act", slaveExtractorActiveLevel);
+  prefs.putChar("sl_ex_en", slaveExtractorGpioEnable);
+  prefs.putChar("sl_ex_spd", slaveExtractorGpioSpeed);
+  prefs.putUShort("sl_ex_pwmhz", slaveExtractorPwmFreq);
+  prefs.putBool("sl_ex_pwminv", slaveExtractorPwmInvert);
+  prefs.putUChar("sl_ex_min", slaveExtractorSpeedMin);
+  prefs.putUChar("sl_ex_max", slaveExtractorSpeedMax);
+  prefs.putUShort("sl_ex_boost", slaveExtractorBoostMs);
+  prefs.putUShort("sl_ex_fail", slaveExtractorFailsafeSec);
+  prefs.putString("sl_ex_arng", slaveExtractorAnalogRange);
+  prefs.putChar("sl_l_gpio", slaveLightGpio);
+  prefs.putString("sl_l_mode", slaveLightMode);
+  prefs.putString("sl_l_act", slaveLightActiveLevel);
+  prefs.putUChar("sl_l_bri", slaveLightDefaultBrightness);
+  prefs.end();
+}
+
+static bool slaveLevelIsActiveHigh(const String &level) {
+  String s = level;
+  s.trim();
+  s.toLowerCase();
+  return s == "high";
+}
+
+static void slaveWriteDigitalActive(int8_t gpio, const String &activeLevel, bool active) {
+  if (gpio < 0) return;
+  bool high = slaveLevelIsActiveHigh(activeLevel);
+  pinMode((uint8_t)gpio, OUTPUT);
+  digitalWrite((uint8_t)gpio, (active == high) ? HIGH : LOW);
+}
+
+static void slavePulseGpio(int8_t gpio, const String &activeLevel, uint16_t pulseMs) {
+  if (gpio < 0) return;
+  uint16_t ms = normalizeSlaveExtractorPulseMs((int)pulseMs);
+  slaveWriteDigitalActive(gpio, activeLevel, false);
+  delay(2);
+  slaveWriteDigitalActive(gpio, activeLevel, true);
+  delay(ms);
+  slaveWriteDigitalActive(gpio, activeLevel, false);
+}
+
+static int8_t slaveExtractorButtonGpioForAction(const String &action) {
+  if (action == "power" || action == "power_toggle" || action == "power_on" || action == "power_off") return slaveExtractorGpioPower;
+  if (action == "speed_up") return slaveExtractorGpioSpeedUp;
+  if (action == "speed_down") return slaveExtractorGpioSpeedDown;
+  if (action == "apply") return slaveExtractorGpioApply;
+  return -1;
+}
+
+static void slaveApplyPwm(uint8_t channel, int8_t gpio, uint16_t freq, uint8_t pct, bool invert) {
+  if (gpio < 0) return;
+  uint8_t out = clampPct((int)pct, 0);
+  if (invert) out = 100 - out;
+  ledcSetup(channel, (double)max((uint16_t)10, freq), 8);
+  ledcAttachPin((uint8_t)gpio, channel);
+  ledcWrite(channel, map(out, 0, 100, 0, 255));
+}
+
+static void slaveExtractorSetMotor(bool on, uint8_t speedPct) {
+  slaveExtractorMotorOn = on;
+  slaveExtractorCurrentSpeed = clampPct((int)speedPct, slaveExtractorSpeedMin);
+  if (!on) {
+    slaveWriteDigitalActive(slaveExtractorGpioEnable, slaveExtractorActiveLevel, false);
+    slaveApplyPwm(kSlaveExtractorPwmChannel, slaveExtractorGpioSpeed, slaveExtractorPwmFreq, 0, slaveExtractorPwmInvert);
+    return;
+  }
+  uint8_t spd = max(slaveExtractorSpeedMin, min(slaveExtractorSpeedMax, slaveExtractorCurrentSpeed));
+  slaveWriteDigitalActive(slaveExtractorGpioEnable, slaveExtractorActiveLevel, true);
+  if (slaveExtractorBoostMs > 0 && (slaveExtractorControlType == "pwm4" || slaveExtractorControlType == "mosfet_dc")) {
+    slaveApplyPwm(kSlaveExtractorPwmChannel, slaveExtractorGpioSpeed, slaveExtractorPwmFreq, slaveExtractorSpeedMax, slaveExtractorPwmInvert);
+    delay(slaveExtractorBoostMs);
+  }
+  if (slaveExtractorControlType == "relay") {
+    slaveWriteDigitalActive(slaveExtractorGpioSpeed, slaveExtractorActiveLevel, spd > 0);
+  } else {
+    slaveApplyPwm(kSlaveExtractorPwmChannel, slaveExtractorGpioSpeed, slaveExtractorPwmFreq, spd, slaveExtractorPwmInvert);
+  }
+}
+
+static void slaveSetLight(bool on, uint8_t brightnessPct) {
+  slaveLightOn = on;
+  uint8_t bri = clampPct((int)brightnessPct, slaveLightDefaultBrightness);
+  if (slaveLightMode == "disabled" || slaveLightGpio < 0) return;
+  if (slaveLightMode == "pwm") {
+    slaveApplyPwm(kSlaveLightPwmChannel, slaveLightGpio, 1000, on ? bri : 0, slaveLevelIsActiveHigh(slaveLightActiveLevel) ? false : true);
+  } else {
+    slaveWriteDigitalActive(slaveLightGpio, slaveLightActiveLevel, on);
+  }
 }
 
 static void saveSourceSpeed(ExtractorSource src, uint8_t spd) {
@@ -4444,6 +4783,7 @@ static bool isApiPath(const String &uri) {
 static bool webAuthGuard() {
   gReqAuthedByToken = false;
   gReqAuthedByBasic = false;
+  gReqAuthedByPairToken = false;
   gReqTokenHash = "";
   const String uri = server.uri();
   const bool api = isApiPath(uri);
@@ -4459,6 +4799,15 @@ static bool webAuthGuard() {
 
   if (isRecoveryUnlockActive(nowMs) && isRecoveryUnlockUri(uri)) {
     return true;
+  }
+
+  if (api && (uri == "/api/config" || uri == "/api/slave/command" || uri == "/api/status")) {
+    String pairToken = server.header("X-LB-Pair-Token");
+    pairToken.trim();
+    if (slavePairToken.length() >= 16 && pairToken.length() >= 16 && pairToken == slavePairToken) {
+      gReqAuthedByPairToken = true;
+      return true;
+    }
   }
 
   if (gWebAuthBlockUntilMs != 0 && rip == gWebAuthFailIp && (int32_t)(gWebAuthBlockUntilMs - nowMs) > 0) {
@@ -5855,6 +6204,63 @@ static void handleApiConfigGet() {
   body.reserve(1400);
   body += F("{\"ok\":true,\"wifi_autooff_min\":");
   body += String((uint32_t)wifiAutoOffMin);
+  body += F(",\"device_mode\":\"");
+  body += jsonEscape(deviceInstallMode);
+  body += F("\"");
+  body += F(",\"slave_wifi_enabled\":");
+  body += (slaveWifiEnabled ? "true" : "false");
+  body += F(",\"slave_ble_enabled\":");
+  body += (slaveBleEnabled ? "true" : "false");
+  body += F(",\"slave_pair_token_set\":");
+  body += (slavePairToken.length() >= 16 ? "true" : "false");
+  body += F(",\"slave_gpio_pin\":");
+  body += String((int)slaveGpioPin);
+  body += F(",\"slave_gpio_mode\":\"");
+  body += jsonEscape(slaveGpioMode);
+  body += F("\",\"slave_gpio_threshold\":");
+  body += String((uint32_t)slaveGpioThreshold);
+  body += F(",\"slave_extractor_gpio_power\":");
+  body += String((int)slaveExtractorGpioPower);
+  body += F(",\"slave_extractor_gpio_speed_up\":");
+  body += String((int)slaveExtractorGpioSpeedUp);
+  body += F(",\"slave_extractor_gpio_speed_down\":");
+  body += String((int)slaveExtractorGpioSpeedDown);
+  body += F(",\"slave_extractor_gpio_apply\":");
+  body += String((int)slaveExtractorGpioApply);
+  body += F(",\"slave_extractor_gpio_mode\":\"");
+  body += jsonEscape(slaveExtractorGpioMode);
+  body += F("\",\"slave_extractor_gpio_pulse_ms\":");
+  body += String((uint32_t)slaveExtractorGpioPulseMs);
+  body += F(",\"slave_extractor_control_type\":\"");
+  body += jsonEscape(slaveExtractorControlType);
+  body += F("\",\"slave_extractor_active_level\":\"");
+  body += jsonEscape(slaveExtractorActiveLevel);
+  body += F("\",\"slave_extractor_gpio_enable\":");
+  body += String((int)slaveExtractorGpioEnable);
+  body += F(",\"slave_extractor_gpio_speed\":");
+  body += String((int)slaveExtractorGpioSpeed);
+  body += F(",\"slave_extractor_pwm_freq\":");
+  body += String((uint32_t)slaveExtractorPwmFreq);
+  body += F(",\"slave_extractor_pwm_invert\":");
+  body += (slaveExtractorPwmInvert ? "true" : "false");
+  body += F(",\"slave_extractor_speed_min\":");
+  body += String((uint32_t)slaveExtractorSpeedMin);
+  body += F(",\"slave_extractor_speed_max\":");
+  body += String((uint32_t)slaveExtractorSpeedMax);
+  body += F(",\"slave_extractor_boost_ms\":");
+  body += String((uint32_t)slaveExtractorBoostMs);
+  body += F(",\"slave_extractor_failsafe_sec\":");
+  body += String((uint32_t)slaveExtractorFailsafeSec);
+  body += F(",\"slave_extractor_analog_range\":\"");
+  body += jsonEscape(slaveExtractorAnalogRange);
+  body += F("\",\"slave_light_gpio\":");
+  body += String((int)slaveLightGpio);
+  body += F(",\"slave_light_mode\":\"");
+  body += jsonEscape(slaveLightMode);
+  body += F("\",\"slave_light_active_level\":\"");
+  body += jsonEscape(slaveLightActiveLevel);
+  body += F("\",\"slave_light_default_brightness\":");
+  body += String((uint32_t)slaveLightDefaultBrightness);
   body += F(",\"ble_bound\":");
   body += (bleBound ? "true" : "false");
   body += F(",\"ble_prefix\":\"");
@@ -5901,10 +6307,66 @@ static void handleApiConfigSet() {
     if (v > 1440) v = 1440;
     saveWifiAutoOffMin((uint16_t)v);
   }
+  if (!doc["device_mode"].isNull()) {
+    saveDeviceInstallMode(String((const char *)doc["device_mode"]));
+  }
+  if (!doc["slave_wifi_enabled"].isNull() || !doc["slave_ble_enabled"].isNull() || !doc["slave_gpio_pin"].isNull() ||
+      !doc["slave_gpio_mode"].isNull() || !doc["slave_gpio_threshold"].isNull()) {
+    bool wifiEn = doc["slave_wifi_enabled"].isNull() ? slaveWifiEnabled : (bool)doc["slave_wifi_enabled"];
+    bool bleEn = doc["slave_ble_enabled"].isNull() ? slaveBleEnabled : (bool)doc["slave_ble_enabled"];
+    int gpioPin = doc["slave_gpio_pin"].isNull() ? (int)slaveGpioPin : (int)(doc["slave_gpio_pin"] | (int)slaveGpioPin);
+    String gpioMode = doc["slave_gpio_mode"].isNull() ? slaveGpioMode : String((const char *)doc["slave_gpio_mode"]);
+    int gpioThreshold = doc["slave_gpio_threshold"].isNull() ? (int)slaveGpioThreshold : (int)(doc["slave_gpio_threshold"] | (int)slaveGpioThreshold);
+    if (!wifiEn && !bleEn) {
+      sendJsonError(400, "slave link requires wifi or ble");
+      return;
+    }
+    saveSlaveConfig(wifiEn, bleEn, gpioPin, gpioMode, gpioThreshold);
+  }
+  if (!doc["slave_extractor_gpio_power"].isNull() || !doc["slave_extractor_gpio_speed_up"].isNull() ||
+      !doc["slave_extractor_gpio_speed_down"].isNull() || !doc["slave_extractor_gpio_apply"].isNull() ||
+      !doc["slave_extractor_gpio_mode"].isNull() || !doc["slave_extractor_gpio_pulse_ms"].isNull()) {
+    int gpioPower = doc["slave_extractor_gpio_power"].isNull() ? (int)slaveExtractorGpioPower : (int)(doc["slave_extractor_gpio_power"] | (int)slaveExtractorGpioPower);
+    int gpioSpeedUp = doc["slave_extractor_gpio_speed_up"].isNull() ? (int)slaveExtractorGpioSpeedUp : (int)(doc["slave_extractor_gpio_speed_up"] | (int)slaveExtractorGpioSpeedUp);
+    int gpioSpeedDown = doc["slave_extractor_gpio_speed_down"].isNull() ? (int)slaveExtractorGpioSpeedDown : (int)(doc["slave_extractor_gpio_speed_down"] | (int)slaveExtractorGpioSpeedDown);
+    int gpioApply = doc["slave_extractor_gpio_apply"].isNull() ? (int)slaveExtractorGpioApply : (int)(doc["slave_extractor_gpio_apply"] | (int)slaveExtractorGpioApply);
+    String gpioMode = doc["slave_extractor_gpio_mode"].isNull() ? slaveExtractorGpioMode : String((const char *)doc["slave_extractor_gpio_mode"]);
+    int pulseMs = doc["slave_extractor_gpio_pulse_ms"].isNull() ? (int)slaveExtractorGpioPulseMs : (int)(doc["slave_extractor_gpio_pulse_ms"] | (int)slaveExtractorGpioPulseMs);
+    saveSlaveExtractorGpioConfig(gpioPower, gpioSpeedUp, gpioSpeedDown, gpioApply, gpioMode, pulseMs);
+  }
+  if (!doc["slave_extractor_control_type"].isNull() || !doc["slave_extractor_active_level"].isNull() ||
+      !doc["slave_extractor_gpio_enable"].isNull() || !doc["slave_extractor_gpio_speed"].isNull() ||
+      !doc["slave_extractor_pwm_freq"].isNull() || !doc["slave_extractor_pwm_invert"].isNull() ||
+      !doc["slave_extractor_speed_min"].isNull() || !doc["slave_extractor_speed_max"].isNull() ||
+      !doc["slave_extractor_boost_ms"].isNull() || !doc["slave_extractor_failsafe_sec"].isNull() ||
+      !doc["slave_extractor_analog_range"].isNull() || !doc["slave_light_gpio"].isNull() ||
+      !doc["slave_light_mode"].isNull() || !doc["slave_light_active_level"].isNull() ||
+      !doc["slave_light_default_brightness"].isNull()) {
+    saveSlaveExtractorControlConfig(
+      doc["slave_extractor_control_type"].isNull() ? slaveExtractorControlType : String((const char *)doc["slave_extractor_control_type"]),
+      doc["slave_extractor_active_level"].isNull() ? slaveExtractorActiveLevel : String((const char *)doc["slave_extractor_active_level"]),
+      doc["slave_extractor_gpio_enable"] | (int)slaveExtractorGpioEnable,
+      doc["slave_extractor_gpio_speed"] | (int)slaveExtractorGpioSpeed,
+      doc["slave_extractor_pwm_freq"] | (int)slaveExtractorPwmFreq,
+      doc["slave_extractor_pwm_invert"].isNull() ? slaveExtractorPwmInvert : (bool)doc["slave_extractor_pwm_invert"],
+      doc["slave_extractor_speed_min"] | (int)slaveExtractorSpeedMin,
+      doc["slave_extractor_speed_max"] | (int)slaveExtractorSpeedMax,
+      doc["slave_extractor_boost_ms"] | (int)slaveExtractorBoostMs,
+      doc["slave_extractor_failsafe_sec"] | (int)slaveExtractorFailsafeSec,
+      doc["slave_extractor_analog_range"].isNull() ? slaveExtractorAnalogRange : String((const char *)doc["slave_extractor_analog_range"]),
+      doc["slave_light_gpio"] | (int)slaveLightGpio,
+      doc["slave_light_mode"].isNull() ? slaveLightMode : String((const char *)doc["slave_light_mode"]),
+      doc["slave_light_active_level"].isNull() ? slaveLightActiveLevel : String((const char *)doc["slave_light_active_level"]),
+      doc["slave_light_default_brightness"] | (int)slaveLightDefaultBrightness);
+  }
   String nextWebUser = gWebAuthUser;
   String nextWebPass = gWebAuthPass;
   bool hasWebUser = !doc["web_user"].isNull();
   bool hasWebPass = !doc["web_pass"].isNull();
+  if (gReqAuthedByPairToken && (hasWebUser || hasWebPass)) {
+    sendJsonError(403, "pair token cannot change web access");
+    return;
+  }
   if (hasWebUser) {
     nextWebUser = String((const char *)doc["web_user"]);
     nextWebUser.trim();
@@ -6160,6 +6622,236 @@ static void handleApiConfigSet() {
     saveAutoStopConfig(en, (uint16_t)mod);
   }
   sendJson(200, "{\"ok\":true}");
+}
+
+static void handleApiSlaveCommand() {
+  JsonDocument doc;
+  if (!parseJsonBody(doc)) {
+    sendJsonError(400, "bad json");
+    return;
+  }
+  String action = doc["action"] | "";
+  action.trim();
+  action.toLowerCase();
+  if (action.length() == 0) {
+    sendJsonError(400, "action required");
+    return;
+  }
+  String targetIp = doc["target_ip"] | "";
+  targetIp.trim();
+  if (targetIp.length() > 0) {
+    String pairToken = doc["pair_token"] | "";
+    pairToken.trim();
+    if (pairToken.length() < 16) {
+      sendJsonError(400, "pair_token required");
+      return;
+    }
+    String payload = "{\"action\":\"" + jsonEscape(action) + "\"";
+    if (!doc["speed"].isNull()) {
+      payload += ",\"speed\":";
+      payload += String((int)(doc["speed"] | 0));
+    }
+    if (!doc["on"].isNull()) {
+      payload += ",\"on\":";
+      payload += ((bool)doc["on"]) ? "true" : "false";
+    }
+    if (!doc["brightness"].isNull()) {
+      payload += ",\"brightness\":";
+      payload += String((int)(doc["brightness"] | 0));
+    }
+    payload += "}";
+    HTTPClient http;
+    String url = "http://" + targetIp + "/api/slave/command";
+    if (!http.begin(url)) {
+      sendJsonError(502, "slave command begin failed");
+      return;
+    }
+    http.setTimeout(4000);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("X-LB-Pair-Token", pairToken);
+    int code = http.POST(payload);
+    String resp = http.getString();
+    http.end();
+    if (code < 200 || code >= 300) {
+      String err = "{\"ok\":false,\"status\":";
+      err += String(code);
+      err += ",\"error\":\"slave command failed\"}";
+      sendJson(502, err);
+      return;
+    }
+    if (resp.length() > 0) sendJson(200, resp);
+    else sendJson(200, "{\"ok\":true,\"proxied\":true}");
+    return;
+  }
+  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater") {
+    sendJsonError(409, "not in slave mode");
+    return;
+  }
+
+  if (deviceInstallMode == "fume_extractor") {
+    if (slaveExtractorControlType == "buttons") {
+      int8_t gpio = slaveExtractorButtonGpioForAction(action);
+      if (gpio < 0) {
+        sendJsonError(400, "unsupported button action");
+        return;
+      }
+      if (slaveExtractorGpioMode == "contact_hold") {
+        slaveWriteDigitalActive(gpio, slaveExtractorActiveLevel, true);
+      } else if (slaveExtractorGpioMode == "active_low") {
+        slaveWriteDigitalActive(gpio, "low", true);
+      } else if (slaveExtractorGpioMode == "active_high") {
+        slaveWriteDigitalActive(gpio, "high", true);
+      } else {
+        slavePulseGpio(gpio, slaveExtractorActiveLevel, slaveExtractorGpioPulseMs);
+      }
+      sendJson(200, "{\"ok\":true,\"mode\":\"buttons\"}");
+      return;
+    }
+
+    if (action == "power_on" || action == "on") {
+      uint8_t spd = (uint8_t)(doc["speed"] | (int)max((uint8_t)slaveExtractorSpeedMin, slaveExtractorCurrentSpeed));
+      slaveExtractorSetMotor(true, spd);
+      if (slaveLightMode == "follow_motor") slaveSetLight(true, slaveLightDefaultBrightness);
+      sendJson(200, "{\"ok\":true,\"motor\":true}");
+      return;
+    }
+    if (action == "power_off" || action == "off") {
+      slaveExtractorSetMotor(false, 0);
+      if (slaveLightMode == "follow_motor") slaveSetLight(false, 0);
+      sendJson(200, "{\"ok\":true,\"motor\":false}");
+      return;
+    }
+    if (action == "speed") {
+      uint8_t spd = clampPct((int)(doc["speed"] | (int)slaveExtractorCurrentSpeed), slaveExtractorCurrentSpeed);
+      slaveExtractorSetMotor(true, spd);
+      sendJson(200, "{\"ok\":true,\"speed_set\":true}");
+      return;
+    }
+    if (action == "speed_up" || action == "speed_down") {
+      int delta = (action == "speed_up") ? 5 : -5;
+      int next = (int)slaveExtractorCurrentSpeed + delta;
+      slaveExtractorSetMotor(true, clampPct(next, slaveExtractorSpeedMin));
+      sendJson(200, "{\"ok\":true,\"speed_step\":true}");
+      return;
+    }
+    if (action == "light_on" || action == "light_off" || action == "light") {
+      bool on = (action == "light_on") ? true : (action == "light_off") ? false : (bool)(doc["on"] | !slaveLightOn);
+      uint8_t bri = clampPct((int)(doc["brightness"] | (int)slaveLightDefaultBrightness), slaveLightDefaultBrightness);
+      slaveSetLight(on, bri);
+      sendJson(200, "{\"ok\":true,\"light\":true}");
+      return;
+    }
+  }
+
+  sendJsonError(400, "unsupported action");
+}
+
+static void handleApiSlaveConfigProxy() {
+  JsonDocument doc;
+  if (!parseJsonBody(doc)) {
+    sendJsonError(400, "bad json");
+    return;
+  }
+  String targetIp = doc["target_ip"] | "";
+  targetIp.trim();
+  if (targetIp.length() == 0) {
+    sendJsonError(400, "target_ip required");
+    return;
+  }
+  String op = doc["op"] | "get";
+  op.trim();
+  op.toLowerCase();
+  String pairToken = doc["pair_token"] | "";
+  pairToken.trim();
+  if (pairToken.length() < 16) {
+    sendJsonError(400, "pair_token required");
+    return;
+  }
+  HTTPClient http;
+  String url = "http://" + targetIp + "/api/config";
+  if (!http.begin(url)) {
+    sendJsonError(502, "slave config begin failed");
+    return;
+  }
+  http.setTimeout(6000);
+  http.addHeader("X-LB-Pair-Token", pairToken);
+  int code = 0;
+  if (op == "set") {
+    String payload = "{}";
+    if (!doc["config"].isNull()) serializeJson(doc["config"], payload);
+    http.addHeader("Content-Type", "application/json");
+    code = http.POST(payload);
+  } else {
+    code = http.GET();
+  }
+  String resp = http.getString();
+  http.end();
+  if (code < 200 || code >= 300) {
+    String err = "{\"ok\":false,\"status\":";
+    err += String(code);
+    err += ",\"error\":\"slave config request failed\"}";
+    sendJson(502, err);
+    return;
+  }
+  String body = "{\"ok\":true,\"config\":";
+  body += resp.length() ? resp : "{}";
+  body += "}";
+  sendJson(200, body);
+}
+
+static void handleApiSlavePair() {
+  IPAddress rip = server.client().remoteIP();
+  if (!ipIsLocalLan(rip)) {
+    sendJsonError(403, "local network only");
+    return;
+  }
+
+  JsonDocument doc;
+  if (!parseJsonBody(doc)) {
+    sendJsonError(400, "bad json");
+    return;
+  }
+
+  String targetIp = doc["target_ip"] | "";
+  targetIp.trim();
+  if (targetIp.length() > 0) {
+    HTTPClient http;
+    String url = "http://" + targetIp + "/api/slave/pair";
+    if (!http.begin(url)) {
+      sendJsonError(502, "slave pair begin failed");
+      return;
+    }
+    http.setTimeout(6000);
+    http.addHeader("Content-Type", "application/json");
+    int code = http.POST("{\"role\":\"master\"}");
+    String resp = http.getString();
+    http.end();
+    if (code < 200 || code >= 300) {
+      String err = "{\"ok\":false,\"status\":";
+      err += String(code);
+      err += ",\"error\":\"slave pair failed\"}";
+      sendJson(502, err);
+      return;
+    }
+    if (resp.length() > 0) sendJson(200, resp);
+    else sendJsonError(502, "slave pair empty response");
+    return;
+  }
+
+  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater") {
+    sendJsonError(409, "not in slave mode");
+    return;
+  }
+
+  String token = randomTokenHex();
+  saveSlavePairToken(token);
+  String body = "{\"ok\":true,\"pair_token\":\"";
+  body += jsonEscape(token);
+  body += F("\",\"device_mode\":\"");
+  body += jsonEscape(deviceInstallMode);
+  body += F("\"}");
+  extractorCmdLogPushf("[slave] paired with master ip=%s", rip.toString().c_str());
+  sendJson(200, body);
 }
 
 static void handleApiAuthRemember() {
@@ -6817,7 +7509,7 @@ static void handleApiFwEnterRecovery() {
 }
 
 static void setupWeb() {
-  const char *kHeaderKeys[] = {"Cookie", "User-Agent", "X-LB-Confirm-Pass", "X-LB-Confirm-Pass-Enc"};
+  const char *kHeaderKeys[] = {"Cookie", "User-Agent", "X-LB-Confirm-Pass", "X-LB-Confirm-Pass-Enc", "X-LB-Pair-Token"};
   server.collectHeaders(kHeaderKeys, sizeof(kHeaderKeys) / sizeof(kHeaderKeys[0]));
   auto denyRecoveryUi = []() {
     server.sendHeader("Cache-Control", "no-store");
@@ -6936,6 +7628,9 @@ static void setupWeb() {
   server.on("/api/extractor/cmdlog", HTTP_GET, []() { if (!webAuthGuard()) return; handleApiExtractorCmdLog(); });
   server.on("/api/extractor/power", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorPower(); });
   server.on("/api/extractor/speed", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorSpeed(); });
+  server.on("/api/slave/pair", HTTP_POST, []() { handleApiSlavePair(); });
+  server.on("/api/slave/command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveCommand(); });
+  server.on("/api/slave/config", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveConfigProxy(); });
 
   server.on("/api/reboot", HTTP_POST, []() {
     if (!webAuthGuard()) return;
