@@ -532,6 +532,11 @@ static void extractorCmdLogPushf(const char *fmt, ...) {
   extractorCmdLogPush(msg);
 }
 
+static String prefsGetStringDefault(Preferences &p, const char *key, const char *fallback) {
+  if (!key || !p.isKey(key)) return String(fallback ? fallback : "");
+  return p.getString(key, fallback ? fallback : "");
+}
+
 static inline uint8_t perfDelta(uint8_t a, uint8_t b) { return (a >= b) ? (a - b) : (b - a); }
 
 static void uiPerfMaybeLog(uint32_t nowMs) {
@@ -3006,11 +3011,11 @@ static void startMdnsForSta() {
 
 static void loadConfig() {
   prefs.begin(kPrefsNs, true);
-  wifiSsid = prefs.getString("wifi_ssid", "");
-  wifiPass = prefs.getString("wifi_pass", "");
-  bleNamePrefix = prefs.getString("ble_pref", "TES02_");
-  bleLockedAddr = prefs.getString("ble_addr", "");
-  bleLockedName = prefs.getString("ble_name", "");
+  wifiSsid = prefsGetStringDefault(prefs, "wifi_ssid", "");
+  wifiPass = prefsGetStringDefault(prefs, "wifi_pass", "");
+  bleNamePrefix = prefsGetStringDefault(prefs, "ble_pref", "TES02_");
+  bleLockedAddr = prefsGetStringDefault(prefs, "ble_addr", "");
+  bleLockedName = prefsGetStringDefault(prefs, "ble_name", "");
   bleBound = prefs.getBool("ble_bound", false);
   uint8_t legacySpeed = clampSpeedInt((int)prefs.getUChar("last_speed", 30));
   gSourceLastSpeed[SRC_H1] = clampSpeedInt((int)prefs.getUChar(extractorSourceNvsKey(SRC_H1), legacySpeed));
@@ -3050,25 +3055,25 @@ static void loadConfig() {
   gSourceLastBrightness[SRC_HA2] = (uint8_t)prefs.getUChar(extractorSourceBrightnessLastNvsKey(SRC_HA2), 60);
   gSourceLastBrightness[SRC_HA3] = (uint8_t)prefs.getUChar(extractorSourceBrightnessLastNvsKey(SRC_HA3), 60);
   wifiAutoOffMin = (uint16_t)prefs.getUShort("wifi_autooff", 0);
-  deviceInstallMode = normalizeDeviceInstallMode(prefs.getString("dev_mode", "station"));
+  deviceInstallMode = normalizeDeviceInstallMode(prefsGetStringDefault(prefs, "dev_mode", "station"));
   slaveWifiEnabled = prefs.getBool("sl_wifi_en", true);
   slaveBleEnabled = prefs.getBool("sl_ble_en", true);
-  slavePairToken = prefs.getString("sl_pair_tok", "");
+  slavePairToken = prefsGetStringDefault(prefs, "sl_pair_tok", "");
   if (!slaveWifiEnabled && !slaveBleEnabled) {
     slaveWifiEnabled = true;
     slaveBleEnabled = false;
   }
   slaveGpioPin = normalizeSlaveGpioPin((int)prefs.getChar("sl_gpio", 4));
-  slaveGpioMode = normalizeSlaveGpioMode(prefs.getString("sl_gpiomode", "active_high"));
+  slaveGpioMode = normalizeSlaveGpioMode(prefsGetStringDefault(prefs, "sl_gpiomode", "active_high"));
   slaveGpioThreshold = normalizeSlaveGpioThreshold((int)prefs.getUShort("sl_gpiothr", 1800));
   slaveExtractorGpioPower = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_pwr", 4));
   slaveExtractorGpioSpeedUp = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spup", 5));
   slaveExtractorGpioSpeedDown = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spdn", 6));
   slaveExtractorGpioApply = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_apply", 7));
-  slaveExtractorGpioMode = normalizeSlaveExtractorGpioMode(prefs.getString("sl_ex_mode", "contact_pulse"));
+  slaveExtractorGpioMode = normalizeSlaveExtractorGpioMode(prefsGetStringDefault(prefs, "sl_ex_mode", "contact_pulse"));
   slaveExtractorGpioPulseMs = normalizeSlaveExtractorPulseMs((int)prefs.getUShort("sl_ex_pms", 180));
-  slaveExtractorControlType = normalizeSlaveExtractorControlType(prefs.getString("sl_ex_ctrl", "buttons"));
-  slaveExtractorActiveLevel = normalizeActiveLevel(prefs.getString("sl_ex_act", "low"), "low");
+  slaveExtractorControlType = normalizeSlaveExtractorControlType(prefsGetStringDefault(prefs, "sl_ex_ctrl", "buttons"));
+  slaveExtractorActiveLevel = normalizeActiveLevel(prefsGetStringDefault(prefs, "sl_ex_act", "low"), "low");
   slaveExtractorGpioEnable = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_en", 8));
   slaveExtractorGpioSpeed = normalizeSlaveGpioPin((int)prefs.getChar("sl_ex_spd", 9));
   slaveExtractorPwmFreq = (uint16_t)min(50000, max(10, (int)prefs.getUShort("sl_ex_pwmhz", 25000)));
@@ -3078,16 +3083,16 @@ static void loadConfig() {
   if (slaveExtractorSpeedMin > slaveExtractorSpeedMax) slaveExtractorSpeedMin = slaveExtractorSpeedMax;
   slaveExtractorBoostMs = (uint16_t)min(10000, max(0, (int)prefs.getUShort("sl_ex_boost", 700)));
   slaveExtractorFailsafeSec = (uint16_t)min(3600, max(0, (int)prefs.getUShort("sl_ex_fail", 30)));
-  slaveExtractorAnalogRange = normalizeAnalogRange(prefs.getString("sl_ex_arng", "0_5"));
+  slaveExtractorAnalogRange = normalizeAnalogRange(prefsGetStringDefault(prefs, "sl_ex_arng", "0_5"));
   slaveLightGpio = normalizeSlaveGpioPin((int)prefs.getChar("sl_l_gpio", -1));
-  slaveLightMode = normalizeSlaveLightMode(prefs.getString("sl_l_mode", "disabled"));
-  slaveLightActiveLevel = normalizeActiveLevel(prefs.getString("sl_l_act", "high"), "high");
+  slaveLightMode = normalizeSlaveLightMode(prefsGetStringDefault(prefs, "sl_l_mode", "disabled"));
+  slaveLightActiveLevel = normalizeActiveLevel(prefsGetStringDefault(prefs, "sl_l_act", "high"), "high");
   slaveLightDefaultBrightness = clampPct((int)prefs.getUChar("sl_l_bri", 60), 60);
   h312Enabled = prefs.getBool("h312_en", false);
   h312Mode = (H312TransportMode)prefs.getUChar("h312_mode", (uint8_t)H312_MODE_WIFI);
-  h312Ip = prefs.getString("h312_ip", "");
-  h312BleAddr = prefs.getString("h312_baddr", "");
-  h312BleName = prefs.getString("h312_bname", "");
+  h312Ip = prefsGetStringDefault(prefs, "h312_ip", "");
+  h312BleAddr = prefsGetStringDefault(prefs, "h312_baddr", "");
+  h312BleName = prefsGetStringDefault(prefs, "h312_bname", "");
   h312Port = (uint16_t)prefs.getUShort("h312_port", 6666);
   h312TempOn = (int16_t)prefs.getShort("h312_ton", 140);
   h312TempOff = (int16_t)prefs.getShort("h312_toff", 90);
@@ -3107,14 +3112,14 @@ static void loadConfig() {
   t420dH2Gpio = kT420dHandle2GpioFixed;
   tzConfigured = prefs.getBool("tz2_set", false);
   tzOffsetMin = clampTzOffsetMin((int)prefs.getShort("tz2_off_min", 0));
-  if (prefs.isKey("tz2_name")) tzName = normalizeTzName(prefs.getString("tz2_name", "UTC"));
+  if (prefs.isKey("tz2_name")) tzName = normalizeTzName(prefsGetStringDefault(prefs, "tz2_name", "UTC"));
   else tzName = "UTC";
   autoStopEnabled = prefs.getBool("auto_stop_en", false);
   autoStopMinute = (uint16_t)prefs.getUShort("auto_stop_min", 0);
-  gWebAuthUser = prefs.getString("web_user", kWebAuthUserDefault);
+  gWebAuthUser = prefsGetStringDefault(prefs, "web_user", kWebAuthUserDefault);
   gWebAuthUser.trim();
   if (!isValidWebUser(gWebAuthUser)) gWebAuthUser = kWebAuthUserDefault;
-  gWebAuthPass = prefs.getString("web_pass", "");
+  gWebAuthPass = prefsGetStringDefault(prefs, "web_pass", "");
   prefs.end();
 
   bool authChanged = false;
@@ -3645,7 +3650,7 @@ static void saveT420dLogicConfig(bool enabled, uint32_t h1OnMs, uint32_t h2OnMs,
 
 static int readStableGpioLevel(int8_t gpio, uint16_t sampleMs, uint16_t stepMs) {
   if (gpio < 0) return -1;
-  pinMode((uint8_t)gpio, INPUT);
+  pinMode((uint8_t)gpio, INPUT_PULLDOWN);
   uint16_t hi = 0;
   uint16_t lo = 0;
   uint16_t leftMs = sampleMs;
@@ -3663,7 +3668,7 @@ static int readStableGpioLevel(int8_t gpio, uint16_t sampleMs, uint16_t stepMs) 
 
 static int readHandleGpioLevelNow(int8_t gpio) {
   if (gpio < 0) return -1;
-  pinMode((uint8_t)gpio, INPUT);
+  pinMode((uint8_t)gpio, INPUT_PULLDOWN);
   return digitalRead((uint8_t)gpio);
 }
 
@@ -7661,7 +7666,9 @@ void setup() {
   initDeviceIdentity();
 
   bootHealthCheckInit();
+  LB_SERIAL_PRINTLN("[boot] health ok");
   loadConfig();
+  LB_SERIAL_PRINTLN("[boot] config loaded");
   bool skipDualHandleRecovery = consumeSkipDualHandleRecoveryOnce();
   if (skipDualHandleRecovery) {
     extractorCmdLogPush("[recovery] skip dual-handle trigger once");
@@ -7672,25 +7679,33 @@ void setup() {
     if (requestRecoveryBootNow(gBootForceRecoveryReason.c_str())) return;
   }
   gH312Driver.begin();
+  LB_SERIAL_PRINTLN("[boot] h312 driver begin");
   gH312Driver.setLogger(h312DriverLogCb, nullptr);
   h312ApplyDriverConfig();
+  LB_SERIAL_PRINTLN("[boot] h312 config applied");
 
   if (!LittleFS.begin(true)) {
     LB_SERIAL_PRINTLN("LittleFS: mount failed");
   }
+  LB_SERIAL_PRINTLN("[boot] littlefs ready");
 
   NimBLEDevice::init("");
+  LB_SERIAL_PRINTLN("[boot] nimble init");
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
   gTes02Driver.begin();
+  LB_SERIAL_PRINTLN("[boot] tes02 driver begin");
   gTes02Driver.setLogger(bleDriverLogCb, nullptr);
   gTes02Driver.setEnsureConnected(bleEnsureConnectedCallback, nullptr);
   bleApplyDriverConfig();
   bleSetConnectSource("boot");
   bleSyncRuntimeFromDriver();
+  LB_SERIAL_PRINTLN("[boot] ble config applied");
 
   // Early-boot failsafe: AP is always available while STA/services are starting.
   wifiEnsureFailsafeAp("early_boot", true);
+  LB_SERIAL_PRINTLN("[boot] failsafe ap requested");
   setupWeb();
+  LB_SERIAL_PRINTLN("[boot] web ready");
 
   bool ok = false;
   if (!wifiSsid.isEmpty()) {
