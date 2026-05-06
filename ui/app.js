@@ -2207,6 +2207,7 @@
           });
           if (r && r.ok) appendDeviceLog(`slave_command ok type=${device.type} action=${action}`);
           else appendDeviceLog(`slave_command fail type=${device.type} action=${action} err=${(r && r.error) ? r.error : "unknown"}`);
+          return r;
         }
         function remoteSlaveUrl(device, path) {
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
@@ -7851,8 +7852,18 @@
           pendingTarget = null;
           pendingSource = null;
         }
-        async function sendPower(on, reason, sourceKey) {
-          append(`${reason}: sending extractor ${on ? "ON" : "OFF"}...`);
+        function fumeSlaveTargets() {
+          return getAddedEsp32Devices().filter((d) => {
+            if (d.type !== "esp32_fume_extractor") return false;
+            const target = normalizeSlaveTargetAddress(loadStr(slaveCfgKey(d, "ip"), ""));
+            const token = loadStr(slaveCfgKey(d, "token"), "").trim();
+            return !!target && token.length >= 16;
+          });
+        }
+        function aixunExtractorEnabled() {
+          return !!(btnES02 && btnES02.classList.contains("active"));
+        }
+        async function sendAixunExtractorPower(on, reason, sourceKey) {
           const apiSource = mapSourceKeyToApiSource(sourceKey);
           const powerBody = { on };
           if (apiSource) powerBody.source = apiSource;
@@ -7862,7 +7873,7 @@
             timeout_ms: 45000
           });
           if (r && r.ok) {
-            append(`${reason}: extractor ${on ? "ON" : "OFF"} ok`);
+            append(`${reason}: ES02 ${on ? "ON" : "OFF"} ok`);
             const meta = [
               `target=${(r && r.target != null) ? r.target : "?"}`,
               `src=${(r && r.connect_source) ? r.connect_source : "-"}`,
@@ -7870,46 +7881,86 @@
               `tx=${(r && r.tx) ? r.tx : "-"}`,
               `dt=${(r && r.duration_ms != null) ? r.duration_ms : "?"}ms`
             ].join(" ");
-            append(`${reason}: ${meta}`);
-            if (r && r.warn) append(`${reason}: warn: ${r.warn}`);
+            append(`${reason}: ES02 ${meta}`);
+            if (r && r.warn) append(`${reason}: ES02 warn: ${r.warn}`);
+            return true;
+          }
+          append(`${reason}: ES02 command failed: ${(r && r.error) ? r.error : "unknown"}`);
+          return false;
+        }
+        async function sendSlaveExtractorPower(device, on, reason) {
+          try {
+            const r = await sendSlaveCommand(device, on ? "power_on" : "power_off");
+            if (r && r.ok) {
+              append(`${reason}: ${device.label || "ESP32 fume"} ${on ? "ON" : "OFF"} ok`);
+              return true;
+            }
+            append(`${reason}: ${device.label || "ESP32 fume"} command failed: ${(r && r.error) ? r.error : "unknown"}`);
+          } catch (e) {
+            append(`${reason}: ${device.label || "ESP32 fume"} command failed: ${String((e && e.message) ? e.message : e)}`);
+          }
+          return false;
+        }
+        async function sendExtractorManualSpeedToTargets(speed, sourceKey, reason, useAixun, slaves) {
+          let ok = 0;
+          if (useAixun) {
+            const speedSource = mapSourceKeyToApiSource(sourceKey);
+            const speedBody = { speed };
+            if (speedSource) speedBody.source = speedSource;
+            const sr = await apiJson("/api/extractor/speed", {
+              method: "POST",
+              body: JSON.stringify(speedBody),
+              timeout_ms: 25000
+            });
+            if (sr && sr.ok) ok++;
+            else append(`${reason}: ES02 manual speed failed: ${(sr && sr.error) ? sr.error : "unknown"}`);
+          }
+          for (const d of slaves) {
+            try {
+              const sr = await sendSlaveCommand(d, "speed", { speed });
+              if (sr && sr.ok) ok++;
+              else append(`${reason}: ${d.label || "ESP32 fume"} manual speed failed: ${(sr && sr.error) ? sr.error : "unknown"}`);
+            } catch (e) {
+              append(`${reason}: ${d.label || "ESP32 fume"} manual speed failed: ${String((e && e.message) ? e.message : e)}`);
+            }
+          }
+          return ok;
+        }
+        async function sendPower(on, reason, sourceKey) {
+          const useAixun = aixunExtractorEnabled();
+          const slaves = fumeSlaveTargets();
+          if (!useAixun && slaves.length === 0) {
+            append(`${reason}: no fume extractor target configured`);
+            return;
+          }
+          append(`${reason}: sending fume extractor ${on ? "ON" : "OFF"} to ${useAixun ? 1 : 0}+${slaves.length} target(s)...`);
+          let okCount = 0;
+          if (useAixun && await sendAixunExtractorPower(on, reason, sourceKey)) okCount++;
+          for (const d of slaves) {
+            if (await sendSlaveExtractorPower(d, on, reason)) okCount++;
+          }
+          if (okCount > 0) {
             if (on && getSpeedRestoreMode() === "manual") {
               const src = sourceKey || pickOnSource("manual");
               if (src) {
                 const manualSpeed = getManualSpeedForSource(src);
-                const speedSource = mapSourceKeyToApiSource(src);
-                const speedBody = { speed: manualSpeed };
-                if (speedSource) speedBody.source = speedSource;
-                const sr = await apiJson("/api/extractor/speed", {
-                  method: "POST",
-                  body: JSON.stringify(speedBody),
-                  timeout_ms: 25000
-                });
-                if (sr && sr.ok) append(`${reason}: manual speed ${manualSpeed}% applied (${src})`);
-                else append(`${reason}: manual speed apply failed (${src}): ${(sr && sr.error) ? sr.error : "unknown"}`);
+                const speedOk = await sendExtractorManualSpeedToTargets(manualSpeed, src, reason, useAixun, slaves);
+                if (speedOk > 0) append(`${reason}: manual speed ${manualSpeed}% applied (${src}) to ${speedOk} target(s)`);
               }
             }
-            setTimeout(async () => {
-              const st = await apiJson("/api/extractor/status", { method: "GET", timeout_ms: 25000 });
-              if (st && st.ok) {
-                append(`${reason}: status ble_ok=${st.ble_ok ? 1 : 0} speed=${st.speed} saved=${st.saved}`);
-              } else {
-                append(`${reason}: status read failed: ${(st && st.error) ? st.error : "unknown"}`);
-              }
-            }, 1200);
+            if (useAixun) {
+              setTimeout(async () => {
+                const st = await apiJson("/api/extractor/status", { method: "GET", timeout_ms: 25000 });
+                if (st && st.ok) {
+                  append(`${reason}: ES02 status ble_ok=${st.ble_ok ? 1 : 0} speed=${st.speed} saved=${st.saved}`);
+                } else {
+                  append(`${reason}: ES02 status read failed: ${(st && st.error) ? st.error : "unknown"}`);
+                }
+              }, 1200);
+            }
             return;
           }
-          const err = (r && r.error) ? r.error : "unknown";
-          append(`${reason}: extractor command failed: ${err}`);
-          if (r && typeof r === "object") {
-            const metaFail = [
-              `target=${(r.target != null) ? r.target : "?"}`,
-              `src=${r.connect_source || "-"}`,
-              `addr=${r.addr || "-"}`,
-              `tx=${r.tx || "-"}`,
-              `dt=${(r.duration_ms != null) ? r.duration_ms : "?"}ms`
-            ].join(" ");
-            append(`${reason}: ${metaFail}`);
-          }
+          append(`${reason}: all fume extractor targets failed`);
         }
         function schedulePower(on, delayMs, reason, sourceKey) {
           clearPending();
