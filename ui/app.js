@@ -2581,10 +2581,6 @@
             bleWrap.appendChild(bleInput);
             tile.appendChild(bleWrap);
 
-            if (d.type === "esp32_fume_extractor") {
-              appendFumeExtractorCommandControls(tile, d);
-            }
-
             const actions = document.createElement("div");
             actions.className = "btnRow";
             const scanBtn = document.createElement("button");
