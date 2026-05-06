@@ -6629,6 +6629,21 @@ static void handleApiConfigSet() {
   sendJson(200, "{\"ok\":true}");
 }
 
+static String normalizeProxyTargetHost(const String &raw) {
+  String s = raw;
+  s.trim();
+  if (s.startsWith("http://")) s = s.substring(7);
+  else if (s.startsWith("https://")) s = s.substring(8);
+  int slash = s.indexOf('/');
+  if (slash >= 0) s = s.substring(0, slash);
+  int q = s.indexOf('?');
+  if (q >= 0) s = s.substring(0, q);
+  int hash = s.indexOf('#');
+  if (hash >= 0) s = s.substring(0, hash);
+  s.trim();
+  return s;
+}
+
 static void handleApiSlaveCommand() {
   JsonDocument doc;
   if (!parseJsonBody(doc)) {
@@ -6642,8 +6657,7 @@ static void handleApiSlaveCommand() {
     sendJsonError(400, "action required");
     return;
   }
-  String targetIp = doc["target_ip"] | "";
-  targetIp.trim();
+  String targetIp = normalizeProxyTargetHost(doc["target_ip"] | "");
   if (targetIp.length() > 0) {
     String pairToken = doc["pair_token"] | "";
     pairToken.trim();
@@ -6757,8 +6771,7 @@ static void handleApiSlaveConfigProxy() {
     sendJsonError(400, "bad json");
     return;
   }
-  String targetIp = doc["target_ip"] | "";
-  targetIp.trim();
+  String targetIp = normalizeProxyTargetHost(doc["target_ip"] | "");
   if (targetIp.length() == 0) {
     sendJsonError(400, "target_ip required");
     return;
@@ -6817,8 +6830,7 @@ static void handleApiSlavePair() {
     return;
   }
 
-  String targetIp = doc["target_ip"] | "";
-  targetIp.trim();
+  String targetIp = normalizeProxyTargetHost(doc["target_ip"] | "");
   if (targetIp.length() > 0) {
     HTTPClient http;
     String url = "http://" + targetIp + "/api/slave/pair";

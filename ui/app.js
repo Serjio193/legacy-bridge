@@ -2142,6 +2142,19 @@
           const id = String((device && device.id) || (device && device.type) || "slave").replace(/[^a-z0-9_]+/gi, "_");
           return `alb_${id}_${suffix}`;
         }
+        function normalizeSlaveTargetAddress(raw) {
+          let s = String(raw || "").trim();
+          if (!s) return "";
+          try {
+            if (/^https?:\/\//i.test(s)) {
+              const u = new URL(s);
+              s = u.host || u.hostname || s;
+            }
+          } catch (_) {}
+          s = s.replace(/^https?:\/\//i, "");
+          s = s.split("/")[0].split("?")[0].split("#")[0].trim();
+          return s;
+        }
         function setSlaveMode(device, mode, root) {
           const next = String(mode || "").toLowerCase() === "ble" ? "ble" : "wifi";
           save(slaveCfgKey(device, "mode"), next);
@@ -2173,8 +2186,9 @@
         }
         async function sendSlaveCommand(device, action, payload) {
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          const target = normalizeSlaveTargetAddress(ip);
           const pairToken = loadStr(slaveCfgKey(device, "token"), "").trim();
-          if (!ip) {
+          if (!target) {
             appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_ip`);
             return;
           }
@@ -2182,7 +2196,7 @@
             appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_pair_token`);
             return;
           }
-          const body = Object.assign({ target_ip: ip, pair_token: pairToken, action }, payload || {});
+          const body = Object.assign({ target_ip: target, pair_token: pairToken, action }, payload || {});
           const r = await apiJson("/api/slave/command", {
             method: "POST",
             body: JSON.stringify(body),
@@ -2193,18 +2207,20 @@
         }
         function remoteSlaveUrl(device, path) {
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
-          if (!ip) return "";
-          return `http://${ip}${path}`;
+          const target = normalizeSlaveTargetAddress(ip);
+          if (!target) return "";
+          return `http://${target}${path}`;
         }
         async function remoteSlaveFetch(device, path, opts) {
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
+          const target = normalizeSlaveTargetAddress(ip);
           const pairToken = loadStr(slaveCfgKey(device, "token"), "").trim();
-          if (!ip) throw new Error("slave IP is not set");
+          if (!target) throw new Error("slave address is not set");
           if (pairToken.length < 16) throw new Error("slave pair token is not set");
           const init = Object.assign({}, opts || {});
           const method = String(init.method || "GET").toUpperCase();
           const body = {
-            target_ip: ip,
+            target_ip: target,
             pair_token: pairToken,
             op: method === "POST" ? "set" : "get"
           };
@@ -2251,7 +2267,8 @@
         }
         async function openRemoteSlaveSettings(device) {
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
-          if (!ip) {
+          const target = normalizeSlaveTargetAddress(ip);
+          if (!target) {
             appendDeviceLog(`slave_settings skipped type=${device.type} no_ip`);
             return;
           }
@@ -2265,7 +2282,7 @@
           title.textContent = `${device.label || "Slave"} settings`;
           const text = document.createElement("div");
           text.className = "fwUpdateMenuText";
-          text.textContent = `Remote config: ${ip}`;
+          text.textContent = `Remote config: ${target}`;
           const grid = document.createElement("div");
           grid.className = "slaveActionGrid authGrid";
           const hint = document.createElement("div");
@@ -2449,9 +2466,14 @@
             const ipInput = document.createElement("input");
             ipInput.type = "text";
             ipInput.value = loadStr(slaveCfgKey(d, "ip"), "");
-            ipInput.placeholder = "192.168.1.122";
-            ipInput.addEventListener("change", () => save(slaveCfgKey(d, "ip"), ipInput.value.trim()));
-            ipInput.addEventListener("blur", () => save(slaveCfgKey(d, "ip"), ipInput.value.trim()));
+            ipInput.placeholder = "lb-bridge-b18a4.local";
+            const saveIpInput = () => {
+              const next = normalizeSlaveTargetAddress(ipInput.value);
+              ipInput.value = next;
+              save(slaveCfgKey(d, "ip"), next);
+            };
+            ipInput.addEventListener("change", saveIpInput);
+            ipInput.addEventListener("blur", saveIpInput);
             ipWrap.appendChild(ipLabel);
             ipWrap.appendChild(ipInput);
             tile.appendChild(ipWrap);
@@ -2496,14 +2518,15 @@
             bindBtn.textContent = tr("btn_bind_slave", "Bind Slave");
             bindBtn.addEventListener("click", async () => {
               const ip = loadStr(slaveCfgKey(d, "ip"), "").trim();
-              if (!ip) {
+              const target = normalizeSlaveTargetAddress(ip);
+              if (!target) {
                 appendDeviceLog(`slave_bind skipped type=${d.type} no_ip`);
                 return;
               }
               try {
                 const r = await apiJson("/api/slave/pair", {
                   method: "POST",
-                  body: JSON.stringify({ target_ip: ip }),
+                  body: JSON.stringify({ target_ip: target }),
                   timeout_ms: 9000
                 });
                 if (!r || !r.ok || !r.pair_token) throw new Error((r && r.error) ? r.error : "pair failed");
