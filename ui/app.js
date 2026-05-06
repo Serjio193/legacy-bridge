@@ -2412,6 +2412,25 @@
           tile.appendChild(wrap);
           tile.appendChild(hint);
         }
+        function slaveExpectedDeviceMode(device) {
+          const type = String((device && device.type) || "");
+          if (type === "esp32_fume_extractor") return "fume_extractor";
+          if (type === "esp32_hot_air") return "hot_air";
+          if (type === "esp32_preheater") return "preheater";
+          return "";
+        }
+        function normalizeSlaveDeviceMode(raw) {
+          const s = String(raw || "").trim().toLowerCase();
+          if (s === "fume" || s === "extractor") return "fume_extractor";
+          if (s === "hotair" || s === "fen") return "hot_air";
+          if (s === "preheat") return "preheater";
+          return s;
+        }
+        function slaveModeMatchesExpected(item, expectedMode) {
+          const mode = normalizeSlaveDeviceMode((item && item.mode) || "");
+          if (!expectedMode) return true;
+          return mode === expectedMode;
+        }
         function slaveScanItemLabel(item) {
           const host = String((item && item.host) || "").trim();
           const ip = String((item && item.ip) || "").trim();
@@ -2424,7 +2443,7 @@
           if (fw) parts.push(fw);
           return parts.join("  ");
         }
-        function chooseSlaveScanResult(items, onPick) {
+        function chooseSlaveScanResult(items, onPick, summaryText) {
           const overlay = document.createElement("div");
           overlay.className = "fwUpdateMenuModal";
           const box = document.createElement("div");
@@ -2435,9 +2454,9 @@
           title.textContent = tr("btn_scan_slaves", "Scan Slaves");
           const text = document.createElement("div");
           text.className = "fwUpdateMenuText";
-          text.textContent = items.length
+          text.textContent = summaryText || (items.length
             ? "Select found Legacy Bridge module."
-            : "No Legacy Bridge modules found in local network.";
+            : "No matching Legacy Bridge modules found in local network.");
           const list = document.createElement("div");
           list.className = "slaveActionGrid";
           items.forEach((item) => {
@@ -2571,13 +2590,16 @@
               scanBtn.disabled = true;
               scanBtn.textContent = "Scanning...";
               try {
+                const expectedMode = slaveExpectedDeviceMode(d);
                 const r = await apiJson("/api/slave/scan", {
                   method: "POST",
-                  body: JSON.stringify({ timeout_ms: 2800, max_results: 16 }),
+                  body: JSON.stringify({ timeout_ms: 2800, max_results: 16, expected_mode: expectedMode }),
                   timeout_ms: 7000
                 });
-                const items = Array.isArray(r && r.items) ? r.items : [];
-                appendDeviceLog(`slave_scan type=${d.type} found=${items.length}`);
+                const allItems = Array.isArray(r && r.items) ? r.items : [];
+                const items = allItems.filter((item) => slaveModeMatchesExpected(item, expectedMode));
+                const skipped = allItems.length - items.length;
+                appendDeviceLog(`slave_scan type=${d.type} found=${items.length} skipped=${skipped}`);
                 const pick = (item) => {
                   const target = normalizeSlaveTargetAddress((item && (item.host || item.ip)) || "");
                   if (!target) return;
@@ -2586,7 +2608,12 @@
                   appendDeviceLog(`slave_selected type=${d.type} target=${target}`);
                 };
                 if (items.length === 1) pick(items[0]);
-                else chooseSlaveScanResult(items, pick);
+                else {
+                  const summary = items.length
+                    ? `Select ${expectedMode || "slave"} module. Skipped incompatible devices: ${skipped}.`
+                    : `No ${expectedMode || "matching"} slave found. Incompatible devices found: ${skipped}.`;
+                  chooseSlaveScanResult(items, pick, summary);
+                }
               } catch (e) {
                 appendDeviceLog(`slave_scan fail type=${d.type} err=${String((e && e.message) ? e.message : e)}`);
               } finally {
@@ -2606,12 +2633,17 @@
                 return;
               }
               try {
+                const expectedMode = slaveExpectedDeviceMode(d);
                 const r = await apiJson("/api/slave/pair", {
                   method: "POST",
                   body: JSON.stringify({ target_ip: target }),
                   timeout_ms: 9000
                 });
                 if (!r || !r.ok || !r.pair_token) throw new Error((r && r.error) ? r.error : "pair failed");
+                const actualMode = normalizeSlaveDeviceMode(r.device_mode || "");
+                if (expectedMode && actualMode && actualMode !== expectedMode) {
+                  throw new Error(`wrong slave mode: expected ${expectedMode}, got ${actualMode}`);
+                }
                 save(slaveCfgKey(d, "token"), String(r.pair_token).trim());
                 state.textContent = tr("v_paired", "PAIRED");
                 state.className = "pill good";
