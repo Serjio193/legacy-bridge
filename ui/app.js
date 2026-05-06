@@ -2412,6 +2412,61 @@
           tile.appendChild(wrap);
           tile.appendChild(hint);
         }
+        function slaveScanItemLabel(item) {
+          const host = String((item && item.host) || "").trim();
+          const ip = String((item && item.ip) || "").trim();
+          const mode = String((item && item.mode) || "").trim();
+          const fw = String((item && item.fw) || "").trim();
+          const parts = [];
+          if (host) parts.push(host);
+          if (ip) parts.push(ip);
+          if (mode) parts.push(mode);
+          if (fw) parts.push(fw);
+          return parts.join("  ");
+        }
+        function chooseSlaveScanResult(items, onPick) {
+          const overlay = document.createElement("div");
+          overlay.className = "fwUpdateMenuModal";
+          const box = document.createElement("div");
+          box.className = "fwUpdateMenuBox";
+          box.style.width = "min(620px, 94vw)";
+          const title = document.createElement("div");
+          title.className = "fwUpdateMenuTitle";
+          title.textContent = tr("btn_scan_slaves", "Scan Slaves");
+          const text = document.createElement("div");
+          text.className = "fwUpdateMenuText";
+          text.textContent = items.length
+            ? "Select found Legacy Bridge module."
+            : "No Legacy Bridge modules found in local network.";
+          const list = document.createElement("div");
+          list.className = "slaveActionGrid";
+          items.forEach((item) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "primary";
+            btn.textContent = slaveScanItemLabel(item) || "Legacy Bridge";
+            btn.addEventListener("click", () => {
+              overlay.remove();
+              onPick(item);
+            });
+            list.appendChild(btn);
+          });
+          const actions = document.createElement("div");
+          actions.className = "btnRow";
+          actions.style.justifyContent = "center";
+          const closeBtn = document.createElement("button");
+          closeBtn.type = "button";
+          closeBtn.textContent = tr("btn_close", "Close");
+          closeBtn.addEventListener("click", () => overlay.remove());
+          actions.appendChild(closeBtn);
+          box.appendChild(title);
+          box.appendChild(text);
+          box.appendChild(list);
+          box.appendChild(actions);
+          overlay.appendChild(box);
+          overlay.addEventListener("click", (ev) => { if (ev.target === overlay) overlay.remove(); });
+          document.body.appendChild(overlay);
+        }
         function renderSlaveDeviceList() {
           if (!slaveDeviceList) return;
           const devices = getAddedEsp32Devices();
@@ -2511,7 +2566,34 @@
             const scanBtn = document.createElement("button");
             scanBtn.type = "button";
             scanBtn.textContent = tr("btn_scan_slaves", "Scan Slaves");
-            scanBtn.addEventListener("click", () => appendDeviceLog(`slave_scan type=${d.type}`));
+            scanBtn.addEventListener("click", async () => {
+              const prevText = scanBtn.textContent;
+              scanBtn.disabled = true;
+              scanBtn.textContent = "Scanning...";
+              try {
+                const r = await apiJson("/api/slave/scan", {
+                  method: "POST",
+                  body: JSON.stringify({ timeout_ms: 2800, max_results: 16 }),
+                  timeout_ms: 7000
+                });
+                const items = Array.isArray(r && r.items) ? r.items : [];
+                appendDeviceLog(`slave_scan type=${d.type} found=${items.length}`);
+                const pick = (item) => {
+                  const target = normalizeSlaveTargetAddress((item && (item.host || item.ip)) || "");
+                  if (!target) return;
+                  ipInput.value = target;
+                  save(slaveCfgKey(d, "ip"), target);
+                  appendDeviceLog(`slave_selected type=${d.type} target=${target}`);
+                };
+                if (items.length === 1) pick(items[0]);
+                else chooseSlaveScanResult(items, pick);
+              } catch (e) {
+                appendDeviceLog(`slave_scan fail type=${d.type} err=${String((e && e.message) ? e.message : e)}`);
+              } finally {
+                scanBtn.disabled = false;
+                scanBtn.textContent = prevText;
+              }
+            });
             const bindBtn = document.createElement("button");
             bindBtn.type = "button";
             bindBtn.className = "primary";

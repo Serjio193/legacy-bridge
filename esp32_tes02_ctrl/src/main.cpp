@@ -2998,6 +2998,7 @@ static void startMdnsForSta() {
     {"fw", kFwVersion},
     {"profile", kFwProfile},
     {"model", "legacy-bridge"},
+    {"mode", deviceInstallMode.c_str()},
   };
   err = mdns_service_add(NULL, "_http", "_tcp", 80, txt, sizeof(txt) / sizeof(txt[0]));
   if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
@@ -3007,6 +3008,11 @@ static void startMdnsForSta() {
 
   gMdnsStarted = true;
   LB_SERIAL_PRINTF("mDNS URL: http://%s.local\n", gStaHostname.c_str());
+}
+
+static void updateMdnsTxtMode() {
+  if (!gMdnsStarted) return;
+  mdns_service_txt_item_set("_http", "_tcp", "mode", deviceInstallMode.c_str());
 }
 
 static void loadConfig() {
@@ -3308,6 +3314,7 @@ static void saveDeviceInstallMode(const String &mode) {
   prefs.putString("dev_mode", next);
   prefs.end();
   deviceInstallMode = next;
+  updateMdnsTxtMode();
   extractorCmdLogPushf("[mode] device install mode=%s", deviceInstallMode.c_str());
 }
 
@@ -6644,6 +6651,113 @@ static String normalizeProxyTargetHost(const String &raw) {
   return s;
 }
 
+static String normalizeMdnsHostName(const String &raw) {
+  String s = raw;
+  s.trim();
+  s.toLowerCase();
+  while (s.endsWith(".")) s = s.substring(0, s.length() - 1);
+  if (s.endsWith(".local")) s = s.substring(0, s.length() - 6);
+  return s;
+}
+
+static String mdnsResultTxt(mdns_result_t *r, const char *key) {
+  if (!r || !key) return "";
+  for (size_t i = 0; i < r->txt_count; i++) {
+    const char *k = r->txt[i].key;
+    const char *v = r->txt[i].value;
+    if (k && strcmp(k, key) == 0 && v) return String(v);
+  }
+  return "";
+}
+
+static String mdnsResultIpv4(mdns_result_t *r) {
+  if (!r) return "";
+  for (mdns_ip_addr_t *a = r->addr; a; a = a->next) {
+    if (a->addr.type != ESP_IPADDR_TYPE_V4) continue;
+    char buf[24];
+    snprintf(buf, sizeof(buf), IPSTR, IP2STR(&a->addr.u_addr.ip4));
+    return String(buf);
+  }
+  return "";
+}
+
+static void handleApiSlaveScan() {
+  if (WiFi.status() != WL_CONNECTED) {
+    sendJsonError(409, "wifi sta not connected");
+    return;
+  }
+  startMdnsForSta();
+
+  uint32_t timeoutMs = 2500;
+  size_t maxResults = 16;
+  if (server.hasArg("plain") && server.arg("plain").length() > 0) {
+    JsonDocument doc;
+    if (parseJsonBody(doc)) {
+      timeoutMs = constrain((uint32_t)(doc["timeout_ms"] | 2500), (uint32_t)500, (uint32_t)6000);
+      maxResults = constrain((int)(doc["max_results"] | 16), 1, 32);
+    }
+  }
+
+  uint32_t t0 = millis();
+  mdns_result_t *results = nullptr;
+  esp_err_t err = mdns_query_ptr("_http", "_tcp", timeoutMs, maxResults, &results);
+  if (err != ESP_OK) {
+    sendJsonError(500, String("mdns query failed: ") + String((int)err));
+    return;
+  }
+
+  String selfHost = normalizeMdnsHostName(gStaHostname);
+  String body;
+  body.reserve(900);
+  body += F("{\"ok\":true,\"ms\":");
+  body += String((uint32_t)(millis() - t0));
+  body += F(",\"items\":[");
+
+  bool first = true;
+  uint16_t count = 0;
+  for (mdns_result_t *r = results; r; r = r->next) {
+    String host = r->hostname ? String(r->hostname) : "";
+    String normalizedHost = normalizeMdnsHostName(host);
+    if (normalizedHost.length() == 0) continue;
+    if (normalizedHost == selfHost) continue;
+
+    String model = mdnsResultTxt(r, "model");
+    String id = mdnsResultTxt(r, "id");
+    bool looksLikeBridge = normalizedHost.startsWith("lb-bridge-") || model == "legacy-bridge" || id.startsWith("lb-");
+    if (!looksLikeBridge) continue;
+
+    String hostLocal = normalizedHost + ".local";
+    String ip = mdnsResultIpv4(r);
+    String mode = mdnsResultTxt(r, "mode");
+    String fw = mdnsResultTxt(r, "fw");
+    String instance = r->instance_name ? String(r->instance_name) : "";
+    uint16_t port = r->port ? r->port : 80;
+
+    if (!first) body += ",";
+    first = false;
+    count++;
+    body += F("{\"host\":\"");
+    body += jsonEscape(hostLocal);
+    body += F("\",\"ip\":\"");
+    body += jsonEscape(ip);
+    body += F("\",\"port\":");
+    body += String((uint32_t)port);
+    body += F(",\"mode\":\"");
+    body += jsonEscape(mode);
+    body += F("\",\"fw\":\"");
+    body += jsonEscape(fw);
+    body += F("\",\"instance\":\"");
+    body += jsonEscape(instance);
+    body += F("\"}");
+  }
+  if (results) mdns_query_results_free(results);
+
+  body += F("],\"count\":");
+  body += String((uint32_t)count);
+  body += F("}");
+  sendJson(200, body);
+}
+
 static void handleApiSlaveCommand() {
   JsonDocument doc;
   if (!parseJsonBody(doc)) {
@@ -7645,6 +7759,7 @@ static void setupWeb() {
   server.on("/api/extractor/cmdlog", HTTP_GET, []() { if (!webAuthGuard()) return; handleApiExtractorCmdLog(); });
   server.on("/api/extractor/power", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorPower(); });
   server.on("/api/extractor/speed", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorSpeed(); });
+  server.on("/api/slave/scan", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveScan(); });
   server.on("/api/slave/pair", HTTP_POST, []() { handleApiSlavePair(); });
   server.on("/api/slave/command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveCommand(); });
   server.on("/api/slave/config", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveConfigProxy(); });
