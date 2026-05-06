@@ -652,6 +652,7 @@ static String normalizeDeviceInstallMode(const String &raw) {
   if (s == "hot_air" || s == "hotair" || s == "fen") return "hot_air";
   if (s == "fume_extractor" || s == "extractor" || s == "fume") return "fume_extractor";
   if (s == "preheater" || s == "preheat") return "preheater";
+  if (s == "custom" || s == "custom_module" || s == "user") return "custom";
   return "station";
 }
 
@@ -6816,7 +6817,8 @@ static void handleApiSlaveCommand() {
     else sendJson(200, "{\"ok\":true,\"proxied\":true}");
     return;
   }
-  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater") {
+  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater" &&
+      deviceInstallMode != "custom") {
     sendJsonError(409, "not in slave mode");
     return;
   }
@@ -6969,7 +6971,8 @@ static void handleApiSlavePair() {
     return;
   }
 
-  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater") {
+  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater" &&
+      deviceInstallMode != "custom") {
     sendJsonError(409, "not in slave mode");
     return;
   }

@@ -289,6 +289,7 @@
           mode_hot_air: "Hot air station",
           mode_fume_extractor: "Fume extractor",
           mode_preheater: "Preheater for PCB rework",
+          mode_custom: "Custom module",
           mode_cancel: "Cancel",
           mode_save: "Save Mode",
           btn_add_device: "Add equipment",
@@ -720,6 +721,7 @@
           mode_hot_air: "Фен",
           mode_fume_extractor: "Дымоуловитель",
           mode_preheater: "Прехиттер для ремонта плат",
+          mode_custom: "Кастомный модуль",
           mode_cancel: "Отмена",
           mode_save: "Сохранить режим",
           btn_add_device: "Добавить оборудование",
@@ -1151,6 +1153,7 @@
           mode_hot_air: "Фен",
           mode_fume_extractor: "Димовідсмоктувач",
           mode_preheater: "Прехітер для ремонту плат",
+          mode_custom: "Кастомний модуль",
           mode_cancel: "Скасувати",
           mode_save: "Зберегти режим",
           btn_add_device: "Додати обладнання",
@@ -2417,6 +2420,7 @@
           if (type === "esp32_fume_extractor") return "fume_extractor";
           if (type === "esp32_hot_air") return "hot_air";
           if (type === "esp32_preheater") return "preheater";
+          if (type === "esp32_custom") return "custom";
           return "";
         }
         function normalizeSlaveDeviceMode(raw) {
@@ -2424,6 +2428,7 @@
           if (s === "fume" || s === "extractor") return "fume_extractor";
           if (s === "hotair" || s === "fen") return "hot_air";
           if (s === "preheat") return "preheater";
+          if (s === "custom_module" || s === "user") return "custom";
           return s;
         }
         function slaveModeMatchesExpected(item, expectedMode) {
@@ -6747,6 +6752,7 @@
         if (m === "hot_air" || m === "hotair" || m === "fen") return "hot_air";
         if (m === "fume_extractor" || m === "extractor" || m === "fume") return "fume_extractor";
         if (m === "preheater" || m === "preheat") return "preheater";
+        if (m === "custom" || m === "custom_module" || m === "user") return "custom";
         return "station";
       }
       function isSlaveDeviceMode(mode) {
@@ -6765,12 +6771,13 @@
         if (currentMode === "hot_air") return tr("add_device_esp32_hot_air", "Hot air");
         if (currentMode === "fume_extractor") return tr("add_device_esp32_fume", "Fume extractor");
         if (currentMode === "preheater") return tr("add_device_esp32_preheater", "Preheater");
+        if (currentMode === "custom") return tr("add_device_esp32_custom", "Custom");
         return "LB Master";
       }
       function isLegacyDefaultIdentityName(value) {
         const v = String(value || "").trim().toLowerCase();
         return !v || v === "lb master" || v === "lb hot air" || v === "lb fume extractor" || v === "lb preheater" ||
-          v === "lb hot_air" || v === "lb fume_extractor";
+          v === "lb custom" || v === "lb hot_air" || v === "lb fume_extractor";
       }
       function appendEventLog(line) {
         const logEl = document.getElementById("eventLog");
