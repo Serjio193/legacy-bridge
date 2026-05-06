@@ -2416,6 +2416,109 @@
           tile.appendChild(wrap);
           tile.appendChild(hint);
         }
+        function parseSlaveHm(s) {
+          const m = String(s || "").trim().match(/^(\d{1,2}):(\d{1,2})$/);
+          if (!m) return 0;
+          const hh = Math.max(0, Math.min(23, parseInt(m[1], 10) || 0));
+          const mm = Math.max(0, Math.min(59, parseInt(m[2], 10) || 0));
+          return hh * 60 + mm;
+        }
+        function fmtSlaveHm(minute) {
+          const m = Math.max(0, Math.min(1439, parseInt(String(minute || 0), 10) || 0));
+          const hh = String(Math.floor(m / 60)).padStart(2, "0");
+          const mm = String(m % 60).padStart(2, "0");
+          return `${hh}:${mm}`;
+        }
+        function appendSlaveAutoStopControls(tile, device) {
+          const section = document.createElement("div");
+          section.className = "slaveAutoStopBlock";
+          const divider = document.createElement("div");
+          divider.className = "cardDivider";
+          divider.setAttribute("role", "separator");
+          divider.setAttribute("aria-hidden", "true");
+
+          const title = document.createElement("div");
+          title.className = "label hierarchy-l3";
+          title.textContent = tr("label_auto_stop", "Automatic End Of Work");
+
+          const grid = document.createElement("div");
+          grid.className = "grid2";
+          grid.style.marginTop = "8px";
+          const left = document.createElement("div");
+          const enableLabel = document.createElement("div");
+          enableLabel.className = "label hierarchy-l3";
+          enableLabel.textContent = tr("label_auto_stop_enable", "Auto Stop");
+          const pills = document.createElement("div");
+          pills.className = "modelPills";
+          const onBtn = document.createElement("button");
+          onBtn.type = "button";
+          onBtn.className = "modelBtn";
+          onBtn.textContent = tr("opt_on", "ON");
+          const offBtn = document.createElement("button");
+          offBtn.type = "button";
+          offBtn.className = "modelBtn active";
+          offBtn.textContent = tr("opt_off", "OFF");
+          pills.appendChild(onBtn);
+          pills.appendChild(offBtn);
+          left.appendChild(enableLabel);
+          left.appendChild(pills);
+
+          const right = document.createElement("div");
+          const timeLabel = document.createElement("div");
+          timeLabel.className = "label hierarchy-l3";
+          timeLabel.textContent = tr("label_auto_stop_time", "Time (HH:MM)");
+          const timeInput = document.createElement("input");
+          timeInput.type = "time";
+          timeInput.step = "60";
+          timeInput.value = "00:00";
+          right.appendChild(timeLabel);
+          right.appendChild(timeInput);
+
+          grid.appendChild(left);
+          grid.appendChild(right);
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = tr("hint_auto_stop", "At this local time LB turns extractor and light off.");
+
+          function setEnabled(on) {
+            setTogglePressed(onBtn, !!on);
+            setTogglePressed(offBtn, !on);
+            timeInput.disabled = !on;
+          }
+          async function saveRemote(reason) {
+            try {
+              await remoteSlaveFetch(device, "/api/config", {
+                method: "POST",
+                body: JSON.stringify({
+                  auto_stop_enabled: isTogglePressed(onBtn),
+                  auto_stop_minute: parseSlaveHm(timeInput.value)
+                })
+              });
+              hint.classList.remove("err");
+              hint.textContent = `${tr("label_auto_stop", "Automatic End Of Work")}: saved`;
+              appendDeviceLog(`slave_auto_stop saved type=${device.type} reason=${reason}`);
+            } catch (e) {
+              hint.classList.add("err");
+              hint.textContent = `Auto stop save failed: ${String((e && e.message) ? e.message : e)}`;
+              appendDeviceLog(`slave_auto_stop fail type=${device.type} err=${String((e && e.message) ? e.message : e)}`);
+            }
+          }
+          onBtn.addEventListener("click", () => { setEnabled(true); saveRemote("on").catch(() => {}); });
+          offBtn.addEventListener("click", () => { setEnabled(false); saveRemote("off").catch(() => {}); });
+          timeInput.addEventListener("change", () => saveRemote("time").catch(() => {}));
+
+          setEnabled(false);
+          remoteSlaveFetch(device, "/api/config", { method: "GET" }).then((cfg) => {
+            setEnabled(!!cfg.auto_stop_enabled);
+            timeInput.value = fmtSlaveHm(cfg.auto_stop_minute);
+          }).catch(() => {});
+
+          section.appendChild(divider);
+          section.appendChild(title);
+          section.appendChild(grid);
+          section.appendChild(hint);
+          tile.appendChild(section);
+        }
         function slaveExpectedDeviceMode(device) {
           const type = String((device && device.type) || "");
           if (type === "esp32_fume_extractor") return "fume_extractor";
@@ -2565,6 +2668,10 @@
               ? tr("pair_token_saved", "Pair token saved in master.")
               : tr("pair_token_need_bind", "Press Bind Slave to create token on slave.");
             tile.appendChild(tokenHint);
+
+            if (d.type === "esp32_fume_extractor") {
+              appendSlaveAutoStopControls(tile, d);
+            }
 
             const bleWrap = document.createElement("div");
             bleWrap.setAttribute("data-slave-ble-wrap", "1");

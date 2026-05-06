@@ -4165,6 +4165,19 @@ static void autoStopLoop() {
   if (autoStopLastYmd == ymd) return;
   autoStopLastYmd = ymd;
 
+  if (deviceInstallMode == "fume_extractor") {
+    if (!slaveExtractorMotorOn && !slaveLightOn) {
+      extractorCmdLogPushf("[slave] auto-stop no-op hhmm=%02u:%02u", (unsigned)(autoStopMinute / 60),
+                           (unsigned)(autoStopMinute % 60));
+      return;
+    }
+    slaveExtractorSetMotor(false, 0);
+    slaveSetLight(false, 0);
+    extractorCmdLogPushf("[slave] auto-stop off hhmm=%02u:%02u", (unsigned)(autoStopMinute / 60),
+                         (unsigned)(autoStopMinute % 60));
+    return;
+  }
+
   if (!gH312ExtractorOn && !gExtractorSessionActive) {
     extractorCmdLogPushf("auto-stop no-op hhmm=%02u:%02u", (unsigned)(autoStopMinute / 60), (unsigned)(autoStopMinute % 60));
     return;
