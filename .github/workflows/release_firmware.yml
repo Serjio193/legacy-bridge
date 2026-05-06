@@ -126,6 +126,9 @@ jobs:
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack.sha256.txt" "$out/update.lbpack.sha256.txt" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/bootloader.bin" "$out/bootloader.bin" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/partitions.bin" "$out/partitions.bin" -Force
+          $bootApp0 = Join-Path $env:USERPROFILE ".platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin"
+          if (!(Test-Path $bootApp0)) { throw "boot_app0.bin not found: $bootApp0" }
+          Copy-Item $bootApp0 "$out/boot_app0.bin" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin" "$out/firmware.bin" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.sig" "$out/firmware.sig" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin.sha256.txt" "$out/firmware.bin.sha256.txt" -Force
@@ -200,6 +203,7 @@ jobs:
             release_upload/update.lbpack.sha256.txt
             release_upload/bootloader.bin
             release_upload/partitions.bin
+            release_upload/boot_app0.bin
             release_upload/firmware.bin
             release_upload/firmware.sig
             release_upload/firmware.bin.sha256.txt

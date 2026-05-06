@@ -9,6 +9,7 @@ API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
 REQUIRED = [
     "bootloader.bin",
     "partitions.bin",
+    "boot_app0.bin",
     "firmware.bin",
     "littlefs.bin",
     "recovery.bin",

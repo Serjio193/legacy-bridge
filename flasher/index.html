@@ -63,10 +63,11 @@
   <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
   <script>
     const INDEX_URL = "./releases/index.json";
-    const REQUIRED = ["bootloader.bin", "partitions.bin", "firmware.bin", "littlefs.bin", "recovery.bin"];
+    const REQUIRED = ["bootloader.bin", "partitions.bin", "boot_app0.bin", "firmware.bin", "littlefs.bin", "recovery.bin"];
     const OFFSETS = {
       "bootloader.bin": 0x0,
       "partitions.bin": 0x8000,
+      "boot_app0.bin": 0xe000,
       "firmware.bin": 0x10000,
       "littlefs.bin": 0x238000,
       "recovery.bin": 0x300000
