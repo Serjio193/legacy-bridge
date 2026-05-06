@@ -111,10 +111,29 @@ jobs:
         run: |
           pio run -d esp32_tes02_ctrl -e esp32c3_recovery
 
+      - name: Build full factory image
+        run: |
+          $esptool = Join-Path $env:USERPROFILE ".platformio/packages/tool-esptoolpy/esptool.py"
+          $bootApp0 = Join-Path $env:USERPROFILE ".platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin"
+          if (!(Test-Path $esptool)) { throw "esptool.py not found: $esptool" }
+          if (!(Test-Path $bootApp0)) { throw "boot_app0.bin not found: $bootApp0" }
+          python $esptool --chip esp32c3 merge_bin `
+            --flash_mode dio `
+            --flash_freq 80m `
+            --flash_size 4MB `
+            -o "esp32_tes02_ctrl/.pio/build/esp32c3/factory.bin" `
+            0x0000 "esp32_tes02_ctrl/.pio/build/esp32c3/bootloader.bin" `
+            0x8000 "esp32_tes02_ctrl/.pio/build/esp32c3/partitions.bin" `
+            0xe000 $bootApp0 `
+            0x10000 "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin" `
+            0x238000 "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin" `
+            0x300000 "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
+
       - name: Compute checksums
         working-directory: esp32_tes02_ctrl\.pio\build\esp32c3
         run: |
           certutil -hashfile update.lbpack SHA256 > update.lbpack.sha256.txt
+          certutil -hashfile factory.bin SHA256 > factory.bin.sha256.txt
           certutil -hashfile firmware.bin SHA256 > firmware.bin.sha256.txt
           certutil -hashfile littlefs.bin SHA256 > littlefs.bin.sha256.txt
 
@@ -124,6 +143,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $out | Out-Null
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack" "$out/update.lbpack" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/update.lbpack.sha256.txt" "$out/update.lbpack.sha256.txt" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/factory.bin" "$out/factory.bin" -Force
+          Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/factory.bin.sha256.txt" "$out/factory.bin.sha256.txt" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/bootloader.bin" "$out/bootloader.bin" -Force
           Copy-Item "esp32_tes02_ctrl/.pio/build/esp32c3/partitions.bin" "$out/partitions.bin" -Force
           $bootApp0 = Join-Path $env:USERPROFILE ".platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin"
@@ -201,6 +222,8 @@ jobs:
           files: |
             release_upload/update.lbpack
             release_upload/update.lbpack.sha256.txt
+            release_upload/factory.bin
+            release_upload/factory.bin.sha256.txt
             release_upload/bootloader.bin
             release_upload/partitions.bin
             release_upload/boot_app0.bin
