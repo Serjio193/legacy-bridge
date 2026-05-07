@@ -3825,9 +3825,27 @@ static int readStableGpioLevel(int8_t gpio, uint16_t sampleMs, uint16_t stepMs) 
   return (hi >= lo) ? HIGH : LOW;
 }
 
+static int readStableHandleGpioLevel(int8_t gpio, uint16_t sampleMs, uint16_t stepMs) {
+  if (gpio < 0) return -1;
+  pinMode((uint8_t)gpio, INPUT);
+  uint16_t hi = 0;
+  uint16_t lo = 0;
+  uint16_t leftMs = sampleMs;
+  while (leftMs > 0) {
+    int v = digitalRead((uint8_t)gpio);
+    if (v == HIGH) hi++;
+    else lo++;
+    uint16_t d = (leftMs < stepMs) ? leftMs : stepMs;
+    delay(d);
+    leftMs -= d;
+  }
+  if (hi == 0 && lo == 0) return -1;
+  return (hi >= lo) ? HIGH : LOW;
+}
+
 static int readHandleGpioLevelNow(int8_t gpio) {
   if (gpio < 0) return -1;
-  pinMode((uint8_t)gpio, INPUT_PULLDOWN);
+  pinMode((uint8_t)gpio, INPUT);
   return digitalRead((uint8_t)gpio);
 }
 
@@ -5114,8 +5132,8 @@ static void handleApiStatus() {
   int32_t staRssi = staConnected ? WiFi.RSSI() : -127;
   const int h1LevelRaw = readHandleGpioLevelNow(t420dH1Gpio);
   const int h2LevelRaw = readHandleGpioLevelNow(t420dH2Gpio);
-  const int h1Level = readStableGpioLevel(t420dH1Gpio, kHandleStatusSampleMs, kHandleStatusSampleStepMs);
-  const int h2Level = readStableGpioLevel(t420dH2Gpio, kHandleStatusSampleMs, kHandleStatusSampleStepMs);
+  const int h1Level = readStableHandleGpioLevel(t420dH1Gpio, kHandleStatusSampleMs, kHandleStatusSampleStepMs);
+  const int h2Level = readStableHandleGpioLevel(t420dH2Gpio, kHandleStatusSampleMs, kHandleStatusSampleStepMs);
   const bool h1Raised = isHandleRaisedFromLevel(t420dH1Gpio, h1Level);
   const bool h2Raised = isHandleRaisedFromLevel(t420dH2Gpio, h2Level);
   const int h1Mv = readHandleGpioMilliVoltsNow(t420dH1Gpio);
