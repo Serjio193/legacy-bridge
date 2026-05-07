@@ -217,6 +217,7 @@ static tes02::Tes02Driver gTes02Driver;
 static NimBLEServer *gSlaveBleServer = nullptr;
 static NimBLECharacteristic *gSlaveBleStatusChar = nullptr;
 static bool gSlaveBleAdvertising = false;
+static uint32_t gSlaveBleLastRefreshMs = 0;
 static NimBLEClient *gH312BleClient = nullptr;
 static NimBLERemoteCharacteristic *gH312BleCharBb02 = nullptr;
 static NimBLERemoteCharacteristic *gH312BleCharFf01 = nullptr;
@@ -3618,13 +3619,24 @@ static SlaveBleCommandCallbacks gSlaveBleCommandCallbacks;
 
 static String slaveBleAdvertisedName() {
   String name = "LB-";
-  if (deviceInstallMode == "fume_extractor") name += "FUME-";
-  else if (deviceInstallMode == "hot_air") name += "HOT-";
-  else if (deviceInstallMode == "preheater") name += "PRE-";
-  else if (deviceInstallMode == "custom") name += "CUSTOM-";
-  else name += "MODULE-";
+  if (deviceInstallMode == "fume_extractor") name += "FUME";
+  else if (deviceInstallMode == "hot_air") name += "HOT";
+  else if (deviceInstallMode == "preheater") name += "PRE";
+  else if (deviceInstallMode == "custom") name += "CUS";
+  else name += "MOD";
+  name += "-";
   name += gMacSuffixUpper;
   return name;
+}
+
+static String slaveBleModeFromName(const String &name) {
+  String up = name;
+  up.toUpperCase();
+  if (up.indexOf("LB-FUME") >= 0) return "fume_extractor";
+  if (up.indexOf("LB-HOT") >= 0) return "hot_air";
+  if (up.indexOf("LB-PRE") >= 0) return "preheater";
+  if (up.indexOf("LB-CUS") >= 0) return "custom";
+  return "";
 }
 
 static void refreshSlaveBleServer() {
@@ -3633,6 +3645,7 @@ static void refreshSlaveBleServer() {
   if (!shouldAdvertise) {
     if (gSlaveBleAdvertising && adv) adv->stop();
     gSlaveBleAdvertising = false;
+    gSlaveBleLastRefreshMs = (uint32_t)millis();
     return;
   }
   if (!gSlaveBleServer) {
@@ -3649,12 +3662,25 @@ static void refreshSlaveBleServer() {
   if (adv) {
     adv->stop();
     adv->reset();
-    adv->setName(std::string(slaveBleAdvertisedName().c_str()));
-    adv->addServiceUUID(kLbSlaveBleServiceUuid);
-    adv->setServiceData(NimBLEUUID(kLbSlaveBleServiceUuid), std::string(deviceInstallMode.c_str()));
+    NimBLEAdvertisementData advData;
+    advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
+    advData.setCompleteServices(NimBLEUUID(kLbSlaveBleServiceUuid));
+    adv->setAdvertisementData(advData);
+    NimBLEAdvertisementData scanData;
+    scanData.setName(std::string(slaveBleAdvertisedName().c_str()));
+    adv->setScanResponseData(scanData);
+    adv->setScanResponse(true);
     adv->start();
     gSlaveBleAdvertising = true;
+    gSlaveBleLastRefreshMs = (uint32_t)millis();
   }
+}
+
+static void slaveBleLoop(uint32_t nowMs) {
+  if (!slaveBleEnabled || !isSlaveInstallMode()) return;
+  if (gSlaveBleLastRefreshMs != 0 && (uint32_t)(nowMs - gSlaveBleLastRefreshMs) < 15000UL) return;
+  NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
+  if (!gSlaveBleAdvertising || !adv || !adv->isAdvertising()) refreshSlaveBleServer();
 }
 
 static void saveSourceSpeed(ExtractorSource src, uint8_t spd) {
@@ -7047,12 +7073,13 @@ static void handleApiSlaveBleScan() {
   for (int i = 0; i < res.getCount(); i++) {
     NimBLEAdvertisedDevice dev = res.getDevice((uint32_t)i);
     if (!dev.isAdvertisingService(svcUuid)) continue;
+    String addr = String(dev.getAddress().toString().c_str());
+    String name = String(dev.getName().c_str());
     String mode = String(dev.getServiceData(svcUuid).c_str());
     mode.trim();
     mode.toLowerCase();
+    if (mode.length() == 0) mode = slaveBleModeFromName(name);
     if (expectedMode.length() > 0 && mode.length() > 0 && mode != expectedMode) continue;
-    String addr = String(dev.getAddress().toString().c_str());
-    String name = String(dev.getName().c_str());
     if (!first) body += ",";
     first = false;
     count++;
@@ -8220,6 +8247,8 @@ void loop() {
   secUs = (uint32_t)micros();
   uartDiagTick();
   gPerfAccDiagUs += (uint32_t)micros() - secUs;
+
+  slaveBleLoop(nowMs);
 
   secUs = (uint32_t)micros();
   server.handleClient();
