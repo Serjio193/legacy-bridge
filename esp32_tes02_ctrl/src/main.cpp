@@ -3600,12 +3600,27 @@ class SlaveBleCommandCallbacks : public NimBLECharacteristicCallbacks {
     if (raw.empty() || deserializeJson(doc, raw.data(), raw.size())) {
       out = "{\"ok\":false,\"error\":\"bad json\"}";
     } else {
+      String action = doc["action"] | "";
+      action.trim();
+      action.toLowerCase();
+      if (action == "pair") {
+        if (!isSlaveInstallMode()) {
+          out = "{\"ok\":false,\"error\":\"not in slave mode\"}";
+        } else {
+          String nextToken = randomTokenHex();
+          saveSlavePairToken(nextToken);
+          out = "{\"ok\":true,\"pair_token\":\"" + jsonEscape(nextToken) + "\",\"device_mode\":\"" +
+                jsonEscape(deviceInstallMode) + "\"}";
+          extractorCmdLogPush("[slave] paired with master over ble");
+        }
+      } else {
       String token = doc["token"] | "";
       token.trim();
       if (slavePairToken.length() < 16 || token != slavePairToken) {
         out = "{\"ok\":false,\"error\":\"pair token invalid\"}";
       } else {
         out = runLocalSlaveCommand(String((const char *)(doc["action"] | "")), doc);
+      }
       }
     }
     if (gSlaveBleStatusChar) {
@@ -7184,6 +7199,61 @@ static void handleApiSlaveBleCommand() {
   sendJson(jsonResponseIsOk(out) ? 200 : 502, out);
 }
 
+static void handleApiSlaveBlePair() {
+  JsonDocument doc;
+  if (!parseJsonBody(doc)) {
+    sendJsonError(400, "bad json");
+    return;
+  }
+  String addrText = doc["ble_addr"] | "";
+  addrText.trim();
+  if (addrText.length() == 0) {
+    sendJsonError(400, "ble_addr required");
+    return;
+  }
+
+  NimBLEClient *client = NimBLEDevice::createClient();
+  if (!client) {
+    sendJsonError(503, "ble client unavailable");
+    return;
+  }
+  client->setConnectTimeout(5);
+  uint8_t usedType = 0;
+  int preferredType = doc["addr_type"].isNull() ? -1 : (int)(doc["addr_type"] | -1);
+  bool connected = h312BleConnectWithTypeFallback(client, addrText, (int8_t)preferredType, &usedType);
+  if (!connected) {
+    NimBLEDevice::deleteClient(client);
+    sendJsonError(504, "ble connect failed");
+    return;
+  }
+
+  String out = "{\"ok\":false,\"error\":\"ble service missing\"}";
+  NimBLERemoteService *svc = client->getService(kLbSlaveBleServiceUuid);
+  if (svc) {
+    NimBLERemoteCharacteristic *cmd = svc->getCharacteristic(kLbSlaveBleCommandUuid);
+    NimBLERemoteCharacteristic *status = svc->getCharacteristic(kLbSlaveBleStatusUuid);
+    if (cmd && cmd->canWrite()) {
+      bool wrote = cmd->writeValue("{\"action\":\"pair\"}", true);
+      if (wrote) {
+        delay(120);
+        if (status && status->canRead()) {
+          std::string raw = (std::string)status->readValue();
+          out = raw.empty() ? "{\"ok\":false,\"error\":\"empty pair response\"}" : String(raw.c_str());
+        } else {
+          out = "{\"ok\":false,\"error\":\"ble status characteristic missing\"}";
+        }
+      } else {
+        out = "{\"ok\":false,\"error\":\"ble write failed\"}";
+      }
+    } else {
+      out = "{\"ok\":false,\"error\":\"ble command characteristic missing\"}";
+    }
+  }
+  client->disconnect();
+  NimBLEDevice::deleteClient(client);
+  sendJson(jsonResponseIsOk(out) ? 200 : 502, out);
+}
+
 static void handleApiSlaveConfigProxy() {
   JsonDocument doc;
   if (!parseJsonBody(doc)) {
@@ -8068,6 +8138,7 @@ static void setupWeb() {
   server.on("/api/slave/scan", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveScan(); });
   server.on("/api/slave/ble_scan", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveBleScan(); });
   server.on("/api/slave/pair", HTTP_POST, []() { handleApiSlavePair(); });
+  server.on("/api/slave/ble_pair", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveBlePair(); });
   server.on("/api/slave/command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveCommand(); });
   server.on("/api/slave/ble_command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveBleCommand(); });
   server.on("/api/slave/config", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveConfigProxy(); });

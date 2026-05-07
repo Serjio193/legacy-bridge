@@ -2761,18 +2761,27 @@
             bindBtn.className = "primary";
             bindBtn.textContent = tr("btn_bind_slave", "Bind Slave");
             bindBtn.addEventListener("click", async () => {
-              const ip = loadStr(slaveCfgKey(d, "ip"), "").trim();
-              const target = normalizeSlaveTargetAddress(ip);
-              if (!target) {
-                appendDeviceLog(`slave_bind skipped type=${d.type} no_ip`);
+              const bindMode = loadStr(slaveCfgKey(d, "mode"), "wifi") === "ble" ? "ble" : "wifi";
+              const target = normalizeSlaveTargetAddress(loadStr(slaveCfgKey(d, "ip"), ""));
+              const bleAddr = loadStr(slaveCfgKey(d, "ble"), "").trim();
+              const bleAddrType = parseInt(loadStr(slaveCfgKey(d, "ble_type"), "-1"), 10);
+              if (bindMode === "wifi" && !target) {
+                appendDeviceLog(`slave_bind skipped type=${d.type} mode=wifi no_ip`);
+                return;
+              }
+              if (bindMode === "ble" && !bleAddr) {
+                appendDeviceLog(`slave_bind skipped type=${d.type} mode=ble no_ble_addr`);
                 return;
               }
               try {
                 const expectedMode = slaveExpectedDeviceMode(d);
-                const r = await apiJson("/api/slave/pair", {
+                const pairBody = bindMode === "ble"
+                  ? { ble_addr: bleAddr, addr_type: Number.isFinite(bleAddrType) ? bleAddrType : -1, expected_mode: expectedMode }
+                  : { target_ip: target };
+                const r = await apiJson(bindMode === "ble" ? "/api/slave/ble_pair" : "/api/slave/pair", {
                   method: "POST",
-                  body: JSON.stringify({ target_ip: target }),
-                  timeout_ms: 9000
+                  body: JSON.stringify(pairBody),
+                  timeout_ms: bindMode === "ble" ? 12000 : 9000
                 });
                 if (!r || !r.ok || !r.pair_token) throw new Error((r && r.error) ? r.error : "pair failed");
                 const actualMode = normalizeSlaveDeviceMode(r.device_mode || "");
@@ -2783,7 +2792,7 @@
                 state.textContent = tr("v_paired", "PAIRED");
                 state.className = "pill good";
                 tokenHint.textContent = tr("pair_token_saved", "Pair token saved in master.");
-                appendDeviceLog(`slave_bind ok type=${d.type} mode=${loadStr(slaveCfgKey(d, "mode"), "wifi")}`);
+                appendDeviceLog(`slave_bind ok type=${d.type} mode=${bindMode}`);
               } catch (e) {
                 appendDeviceLog(`slave_bind fail type=${d.type} err=${String((e && e.message) ? e.message : e)}`);
               }
