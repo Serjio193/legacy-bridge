@@ -1895,12 +1895,15 @@
               row.className = "handleLiftRow";
               const pill = document.createElement("span");
               pill.className = "pill warn";
+              pill.setAttribute("data-handle-lift-pill", source.key === "h2" ? "2" : "1");
               pill.textContent = `${source.label}: ${tr("v_idle", "Idle")}`;
               const cal = document.createElement("button");
               cal.type = "button";
               cal.className = "pillBtn gray";
               cal.textContent = tr("btn_calibrate", "Calibrate");
-              cal.addEventListener("click", () => appendDeviceLog(`calibrate source=${source.key}`));
+              cal.addEventListener("click", () => {
+                runHandleCalibration(source.key === "h2" ? 2 : 1).catch(() => {});
+              });
               row.appendChild(pill);
               row.appendChild(cal);
               card.appendChild(row);
@@ -2924,12 +2927,13 @@
           }
         }
         function updateHandleLiftPills(status) {
-          if (!h1LiftPill && !h2LiftPill) return;
           const ok = !!(status && status.ok);
           const h1 = ok ? toRaised(status.h1_raised) : false;
           const h2 = ok ? toRaised(status.h2_raised) : false;
           setLiftPill(h1LiftPill, h1, 1);
           setLiftPill(h2LiftPill, h2, 2);
+          document.querySelectorAll("[data-handle-lift-pill='1']").forEach((el) => setLiftPill(el, h1, 1));
+          document.querySelectorAll("[data-handle-lift-pill='2']").forEach((el) => setLiftPill(el, h2, 2));
         }
         async function refreshHandleLiftPills() {
           if (handleLiftInFlight) return;
