@@ -97,6 +97,9 @@ static const uint16_t kBleBootPulseOnMs = 1000;
 static const uint32_t kBleBootPulseScanMs = 9000;
 static const uint32_t kClockNtpRetryMs = 120000;
 static const uint32_t kClockNtpResyncMs = 6UL * 60UL * 60UL * 1000UL;
+static const char *kLbSlaveBleServiceUuid = "7f2a0001-8d9b-4f3d-9d5a-6c7a19b00001";
+static const char *kLbSlaveBleCommandUuid = "7f2a0002-8d9b-4f3d-9d5a-6c7a19b00001";
+static const char *kLbSlaveBleStatusUuid = "7f2a0003-8d9b-4f3d-9d5a-6c7a19b00001";
 
 static Preferences prefs;
 static WebServer server(80);
@@ -211,6 +214,9 @@ static bool gReqAuthedByPairToken = false;
 static String gReqTokenHash;
 static h312::H312Driver gH312Driver;
 static tes02::Tes02Driver gTes02Driver;
+static NimBLEServer *gSlaveBleServer = nullptr;
+static NimBLECharacteristic *gSlaveBleStatusChar = nullptr;
+static bool gSlaveBleAdvertising = false;
 static NimBLEClient *gH312BleClient = nullptr;
 static NimBLERemoteCharacteristic *gH312BleCharBb02 = nullptr;
 static NimBLERemoteCharacteristic *gH312BleCharFf01 = nullptr;
@@ -3506,6 +3512,151 @@ static void slaveSetLight(bool on, uint8_t brightnessPct) {
   }
 }
 
+static bool isSlaveInstallMode() {
+  return deviceInstallMode == "fume_extractor" || deviceInstallMode == "hot_air" ||
+         deviceInstallMode == "preheater" || deviceInstallMode == "custom";
+}
+
+static String runLocalSlaveCommand(const String &actionIn, JsonDocument &doc) {
+  String action = actionIn;
+  action.trim();
+  action.toLowerCase();
+  if (action.length() == 0) return "{\"ok\":false,\"error\":\"action required\"}";
+  if (!isSlaveInstallMode()) return "{\"ok\":false,\"error\":\"not in slave mode\"}";
+
+  if (deviceInstallMode == "fume_extractor") {
+    if (slaveExtractorControlType == "buttons") {
+      int8_t gpio = slaveExtractorButtonGpioForAction(action);
+      if (gpio < 0) return "{\"ok\":false,\"error\":\"unsupported button action\"}";
+      if (slaveExtractorGpioMode == "contact_hold") {
+        slaveWriteDigitalActive(gpio, slaveExtractorActiveLevel, true);
+      } else if (slaveExtractorGpioMode == "active_low") {
+        slaveWriteDigitalActive(gpio, "low", true);
+      } else if (slaveExtractorGpioMode == "active_high") {
+        slaveWriteDigitalActive(gpio, "high", true);
+      } else {
+        slavePulseGpio(gpio, slaveExtractorActiveLevel, slaveExtractorGpioPulseMs);
+      }
+      return "{\"ok\":true,\"mode\":\"buttons\"}";
+    }
+
+    if (action == "power_on" || action == "on") {
+      uint8_t spd = (uint8_t)(doc["speed"] | (int)max((uint8_t)slaveExtractorSpeedMin, slaveExtractorCurrentSpeed));
+      slaveExtractorSetMotor(true, spd);
+      if (slaveLightMode == "follow_motor") slaveSetLight(true, slaveLightDefaultBrightness);
+      return "{\"ok\":true,\"motor\":true}";
+    }
+    if (action == "power_off" || action == "off") {
+      slaveExtractorSetMotor(false, 0);
+      if (slaveLightMode == "follow_motor") slaveSetLight(false, 0);
+      return "{\"ok\":true,\"motor\":false}";
+    }
+    if (action == "speed") {
+      uint8_t spd = clampPct((int)(doc["speed"] | (int)slaveExtractorCurrentSpeed), slaveExtractorCurrentSpeed);
+      slaveExtractorSetMotor(true, spd);
+      return "{\"ok\":true,\"speed_set\":true}";
+    }
+    if (action == "speed_up" || action == "speed_down") {
+      int delta = (action == "speed_up") ? 5 : -5;
+      int next = (int)slaveExtractorCurrentSpeed + delta;
+      slaveExtractorSetMotor(true, clampPct(next, slaveExtractorSpeedMin));
+      return "{\"ok\":true,\"speed_step\":true}";
+    }
+    if (action == "light_on" || action == "light_off" || action == "light") {
+      bool on = (action == "light_on") ? true : (action == "light_off") ? false : (bool)(doc["on"] | !slaveLightOn);
+      uint8_t bri = clampPct((int)(doc["brightness"] | (int)slaveLightDefaultBrightness), slaveLightDefaultBrightness);
+      slaveSetLight(on, bri);
+      return "{\"ok\":true,\"light\":true}";
+    }
+  }
+
+  return "{\"ok\":false,\"error\":\"unsupported action\"}";
+}
+
+static bool jsonResponseIsOk(const String &body) {
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, body);
+  if (err) return false;
+  return (bool)(doc["ok"] | false);
+}
+
+class SlaveBleCommandCallbacks : public NimBLECharacteristicCallbacks {
+ public:
+  void onWrite(NimBLECharacteristic *pCharacteristic) override {
+    handleWrite(pCharacteristic);
+  }
+
+  void onWrite(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc) override {
+    (void)desc;
+    handleWrite(pCharacteristic);
+  }
+
+ private:
+  void handleWrite(NimBLECharacteristic *pCharacteristic) {
+    std::string raw = pCharacteristic ? (std::string)pCharacteristic->getValue() : std::string();
+    JsonDocument doc;
+    String out;
+    if (raw.empty() || deserializeJson(doc, raw.data(), raw.size())) {
+      out = "{\"ok\":false,\"error\":\"bad json\"}";
+    } else {
+      String token = doc["token"] | "";
+      token.trim();
+      if (slavePairToken.length() < 16 || token != slavePairToken) {
+        out = "{\"ok\":false,\"error\":\"pair token invalid\"}";
+      } else {
+        out = runLocalSlaveCommand(String((const char *)(doc["action"] | "")), doc);
+      }
+    }
+    if (gSlaveBleStatusChar) {
+      std::string s(out.c_str(), out.length());
+      gSlaveBleStatusChar->setValue((const uint8_t *)s.data(), s.size());
+    }
+  }
+};
+
+static SlaveBleCommandCallbacks gSlaveBleCommandCallbacks;
+
+static String slaveBleAdvertisedName() {
+  String name = "LB-";
+  if (deviceInstallMode == "fume_extractor") name += "FUME-";
+  else if (deviceInstallMode == "hot_air") name += "HOT-";
+  else if (deviceInstallMode == "preheater") name += "PRE-";
+  else if (deviceInstallMode == "custom") name += "CUSTOM-";
+  else name += "MODULE-";
+  name += gMacSuffixUpper;
+  return name;
+}
+
+static void refreshSlaveBleServer() {
+  bool shouldAdvertise = slaveBleEnabled && isSlaveInstallMode();
+  NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
+  if (!shouldAdvertise) {
+    if (gSlaveBleAdvertising && adv) adv->stop();
+    gSlaveBleAdvertising = false;
+    return;
+  }
+  if (!gSlaveBleServer) {
+    gSlaveBleServer = NimBLEDevice::createServer();
+    NimBLEService *svc = gSlaveBleServer->createService(kLbSlaveBleServiceUuid);
+    NimBLECharacteristic *cmd = svc->createCharacteristic(
+        kLbSlaveBleCommandUuid, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR, 256);
+    gSlaveBleStatusChar = svc->createCharacteristic(
+        kLbSlaveBleStatusUuid, NIMBLE_PROPERTY::READ, 256);
+    cmd->setCallbacks(&gSlaveBleCommandCallbacks);
+    gSlaveBleStatusChar->setValue((const uint8_t *)"{\"ok\":true,\"idle\":true}", 23);
+    svc->start();
+  }
+  if (adv) {
+    adv->stop();
+    adv->reset();
+    adv->setName(std::string(slaveBleAdvertisedName().c_str()));
+    adv->addServiceUUID(kLbSlaveBleServiceUuid);
+    adv->setServiceData(NimBLEUUID(kLbSlaveBleServiceUuid), std::string(deviceInstallMode.c_str()));
+    adv->start();
+    gSlaveBleAdvertising = true;
+  }
+}
+
 static void saveSourceSpeed(ExtractorSource src, uint8_t spd) {
   uint8_t idx = (uint8_t)src;
   if (idx >= (uint8_t)SRC_COUNT) return;
@@ -6647,6 +6798,7 @@ static void handleApiConfigSet() {
     }
     saveAutoStopConfig(en, (uint16_t)mod);
   }
+  refreshSlaveBleServer();
   sendJson(200, "{\"ok\":true}");
 }
 
@@ -6830,68 +6982,161 @@ static void handleApiSlaveCommand() {
     else sendJson(200, "{\"ok\":true,\"proxied\":true}");
     return;
   }
-  if (deviceInstallMode != "fume_extractor" && deviceInstallMode != "hot_air" && deviceInstallMode != "preheater" &&
-      deviceInstallMode != "custom") {
-    sendJsonError(409, "not in slave mode");
+  String out = runLocalSlaveCommand(action, doc);
+  sendJson(jsonResponseIsOk(out) ? 200 : 400, out);
+}
+
+static void handleApiSlaveBleScan() {
+  uint32_t timeoutMs = 3500;
+  size_t maxResults = 16;
+  String expectedMode = "";
+  if (server.hasArg("plain") && server.arg("plain").length() > 0) {
+    JsonDocument doc;
+    if (parseJsonBody(doc)) {
+      timeoutMs = constrain((uint32_t)(doc["timeout_ms"] | 3500), (uint32_t)800, (uint32_t)8000);
+      maxResults = constrain((int)(doc["max_results"] | 16), 1, 32);
+      expectedMode = String((const char *)(doc["expected_mode"] | ""));
+      expectedMode.trim();
+      expectedMode.toLowerCase();
+    }
+  }
+
+  NimBLEScan *scan = NimBLEDevice::getScan();
+  if (!scan) {
+    sendJsonError(500, "ble scan unavailable");
+    return;
+  }
+  scan->setActiveScan(true);
+  scan->setInterval(45);
+  scan->setWindow(15);
+  scan->setDuplicateFilter(true);
+  scan->setMaxResults((uint8_t)maxResults);
+
+  uint32_t durSec = (timeoutMs + 999) / 1000;
+  if (durSec < 1) durSec = 1;
+  if (durSec > 8) durSec = 8;
+
+  uint32_t t0 = millis();
+  NimBLEUUID svcUuid(kLbSlaveBleServiceUuid);
+  NimBLEScanResults res = scan->start(durSec, false);
+  String body;
+  body.reserve(900);
+  body += F("{\"ok\":true,\"ms\":");
+  body += String((uint32_t)(millis() - t0));
+  body += F(",\"items\":[");
+  bool first = true;
+  uint16_t count = 0;
+  for (int i = 0; i < res.getCount(); i++) {
+    NimBLEAdvertisedDevice dev = res.getDevice((uint32_t)i);
+    if (!dev.isAdvertisingService(svcUuid)) continue;
+    String mode = String(dev.getServiceData(svcUuid).c_str());
+    mode.trim();
+    mode.toLowerCase();
+    if (expectedMode.length() > 0 && mode.length() > 0 && mode != expectedMode) continue;
+    String addr = String(dev.getAddress().toString().c_str());
+    String name = String(dev.getName().c_str());
+    if (!first) body += ",";
+    first = false;
+    count++;
+    body += F("{\"addr\":\"");
+    body += jsonEscape(addr);
+    body += F("\",\"name\":\"");
+    body += jsonEscape(name);
+    body += F("\",\"mode\":\"");
+    body += jsonEscape(mode);
+    body += F("\",\"rssi\":");
+    body += String(dev.getRSSI());
+    body += F(",\"addr_type\":");
+    body += String((int)dev.getAddressType());
+    body += F("}");
+  }
+  body += F("],\"count\":");
+  body += String((uint32_t)count);
+  body += F("}");
+  sendJson(200, body);
+}
+
+static void handleApiSlaveBleCommand() {
+  JsonDocument doc;
+  if (!parseJsonBody(doc)) {
+    sendJsonError(400, "bad json");
+    return;
+  }
+  String addrText = doc["ble_addr"] | "";
+  addrText.trim();
+  String pairToken = doc["pair_token"] | "";
+  pairToken.trim();
+  String action = doc["action"] | "";
+  action.trim();
+  action.toLowerCase();
+  if (addrText.length() == 0) {
+    sendJsonError(400, "ble_addr required");
+    return;
+  }
+  if (pairToken.length() < 16) {
+    sendJsonError(400, "pair_token required");
+    return;
+  }
+  if (action.length() == 0) {
+    sendJsonError(400, "action required");
     return;
   }
 
-  if (deviceInstallMode == "fume_extractor") {
-    if (slaveExtractorControlType == "buttons") {
-      int8_t gpio = slaveExtractorButtonGpioForAction(action);
-      if (gpio < 0) {
-        sendJsonError(400, "unsupported button action");
-        return;
-      }
-      if (slaveExtractorGpioMode == "contact_hold") {
-        slaveWriteDigitalActive(gpio, slaveExtractorActiveLevel, true);
-      } else if (slaveExtractorGpioMode == "active_low") {
-        slaveWriteDigitalActive(gpio, "low", true);
-      } else if (slaveExtractorGpioMode == "active_high") {
-        slaveWriteDigitalActive(gpio, "high", true);
-      } else {
-        slavePulseGpio(gpio, slaveExtractorActiveLevel, slaveExtractorGpioPulseMs);
-      }
-      sendJson(200, "{\"ok\":true,\"mode\":\"buttons\"}");
-      return;
-    }
+  String payload = "{\"token\":\"" + jsonEscape(pairToken) + "\",\"action\":\"" + jsonEscape(action) + "\"";
+  if (!doc["speed"].isNull()) {
+    payload += ",\"speed\":";
+    payload += String((int)(doc["speed"] | 0));
+  }
+  if (!doc["on"].isNull()) {
+    payload += ",\"on\":";
+    payload += ((bool)doc["on"]) ? "true" : "false";
+  }
+  if (!doc["brightness"].isNull()) {
+    payload += ",\"brightness\":";
+    payload += String((int)(doc["brightness"] | 0));
+  }
+  payload += "}";
 
-    if (action == "power_on" || action == "on") {
-      uint8_t spd = (uint8_t)(doc["speed"] | (int)max((uint8_t)slaveExtractorSpeedMin, slaveExtractorCurrentSpeed));
-      slaveExtractorSetMotor(true, spd);
-      if (slaveLightMode == "follow_motor") slaveSetLight(true, slaveLightDefaultBrightness);
-      sendJson(200, "{\"ok\":true,\"motor\":true}");
-      return;
-    }
-    if (action == "power_off" || action == "off") {
-      slaveExtractorSetMotor(false, 0);
-      if (slaveLightMode == "follow_motor") slaveSetLight(false, 0);
-      sendJson(200, "{\"ok\":true,\"motor\":false}");
-      return;
-    }
-    if (action == "speed") {
-      uint8_t spd = clampPct((int)(doc["speed"] | (int)slaveExtractorCurrentSpeed), slaveExtractorCurrentSpeed);
-      slaveExtractorSetMotor(true, spd);
-      sendJson(200, "{\"ok\":true,\"speed_set\":true}");
-      return;
-    }
-    if (action == "speed_up" || action == "speed_down") {
-      int delta = (action == "speed_up") ? 5 : -5;
-      int next = (int)slaveExtractorCurrentSpeed + delta;
-      slaveExtractorSetMotor(true, clampPct(next, slaveExtractorSpeedMin));
-      sendJson(200, "{\"ok\":true,\"speed_step\":true}");
-      return;
-    }
-    if (action == "light_on" || action == "light_off" || action == "light") {
-      bool on = (action == "light_on") ? true : (action == "light_off") ? false : (bool)(doc["on"] | !slaveLightOn);
-      uint8_t bri = clampPct((int)(doc["brightness"] | (int)slaveLightDefaultBrightness), slaveLightDefaultBrightness);
-      slaveSetLight(on, bri);
-      sendJson(200, "{\"ok\":true,\"light\":true}");
-      return;
-    }
+  NimBLEClient *client = NimBLEDevice::createClient();
+  if (!client) {
+    sendJsonError(503, "ble client unavailable");
+    return;
+  }
+  client->setConnectTimeout(5);
+  uint8_t usedType = 0;
+  int preferredType = doc["addr_type"].isNull() ? -1 : (int)(doc["addr_type"] | -1);
+  bool connected = h312BleConnectWithTypeFallback(client, addrText, (int8_t)preferredType, &usedType);
+  if (!connected) {
+    NimBLEDevice::deleteClient(client);
+    sendJsonError(504, "ble connect failed");
+    return;
   }
 
-  sendJsonError(400, "unsupported action");
+  String out = "{\"ok\":false,\"error\":\"ble service missing\"}";
+  NimBLERemoteService *svc = client->getService(kLbSlaveBleServiceUuid);
+  if (svc) {
+    NimBLERemoteCharacteristic *cmd = svc->getCharacteristic(kLbSlaveBleCommandUuid);
+    NimBLERemoteCharacteristic *status = svc->getCharacteristic(kLbSlaveBleStatusUuid);
+    if (cmd && cmd->canWrite()) {
+      bool wrote = cmd->writeValue(payload.c_str(), true);
+      if (wrote) {
+        delay(80);
+        if (status && status->canRead()) {
+          std::string raw = (std::string)status->readValue();
+          out = raw.empty() ? "{\"ok\":true,\"ble\":true}" : String(raw.c_str());
+        } else {
+          out = "{\"ok\":true,\"ble\":true}";
+        }
+      } else {
+        out = "{\"ok\":false,\"error\":\"ble write failed\"}";
+      }
+    } else {
+      out = "{\"ok\":false,\"error\":\"ble command characteristic missing\"}";
+    }
+  }
+  client->disconnect();
+  NimBLEDevice::deleteClient(client);
+  sendJson(jsonResponseIsOk(out) ? 200 : 502, out);
 }
 
 static void handleApiSlaveConfigProxy() {
@@ -7776,8 +8021,10 @@ static void setupWeb() {
   server.on("/api/extractor/power", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorPower(); });
   server.on("/api/extractor/speed", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiExtractorSpeed(); });
   server.on("/api/slave/scan", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveScan(); });
+  server.on("/api/slave/ble_scan", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveBleScan(); });
   server.on("/api/slave/pair", HTTP_POST, []() { handleApiSlavePair(); });
   server.on("/api/slave/command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveCommand(); });
+  server.on("/api/slave/ble_command", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveBleCommand(); });
   server.on("/api/slave/config", HTTP_POST, []() { if (!webAuthGuard()) return; handleApiSlaveConfigProxy(); });
 
   server.on("/api/reboot", HTTP_POST, []() {
@@ -7835,6 +8082,7 @@ void setup() {
   NimBLEDevice::init("");
   LB_SERIAL_PRINTLN("[boot] nimble init");
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+  refreshSlaveBleServer();
   gTes02Driver.begin();
   LB_SERIAL_PRINTLN("[boot] tes02 driver begin");
   gTes02Driver.setLogger(bleDriverLogCb, nullptr);

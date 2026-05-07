@@ -2191,25 +2191,34 @@
           return btn;
         }
         async function sendSlaveCommand(device, action, payload) {
+          const mode = loadStr(slaveCfgKey(device, "mode"), "wifi") === "ble" ? "ble" : "wifi";
           const ip = loadStr(slaveCfgKey(device, "ip"), "").trim();
           const target = normalizeSlaveTargetAddress(ip);
+          const bleAddr = loadStr(slaveCfgKey(device, "ble"), "").trim();
+          const bleAddrType = parseInt(loadStr(slaveCfgKey(device, "ble_type"), "-1"), 10);
           const pairToken = loadStr(slaveCfgKey(device, "token"), "").trim();
-          if (!target) {
+          if (mode === "wifi" && !target) {
             appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_ip`);
+            return;
+          }
+          if (mode === "ble" && !bleAddr) {
+            appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_ble_addr`);
             return;
           }
           if (pairToken.length < 16) {
             appendDeviceLog(`slave_command skipped type=${device.type} action=${action} no_pair_token`);
             return;
           }
-          const body = Object.assign({ target_ip: target, pair_token: pairToken, action }, payload || {});
-          const r = await apiJson("/api/slave/command", {
+          const body = Object.assign(mode === "ble"
+            ? { ble_addr: bleAddr, addr_type: Number.isFinite(bleAddrType) ? bleAddrType : -1, pair_token: pairToken, action }
+            : { target_ip: target, pair_token: pairToken, action }, payload || {});
+          const r = await apiJson(mode === "ble" ? "/api/slave/ble_command" : "/api/slave/command", {
             method: "POST",
             body: JSON.stringify(body),
-            timeout_ms: 7000
+            timeout_ms: mode === "ble" ? 10000 : 7000
           });
-          if (r && r.ok) appendDeviceLog(`slave_command ok type=${device.type} action=${action}`);
-          else appendDeviceLog(`slave_command fail type=${device.type} action=${action} err=${(r && r.error) ? r.error : "unknown"}`);
+          if (r && r.ok) appendDeviceLog(`slave_command ok type=${device.type} action=${action} mode=${mode}`);
+          else appendDeviceLog(`slave_command fail type=${device.type} action=${action} mode=${mode} err=${(r && r.error) ? r.error : "unknown"}`);
           return r;
         }
         function remoteSlaveUrl(device, path) {
@@ -2546,11 +2555,15 @@
         function slaveScanItemLabel(item) {
           const host = String((item && item.host) || "").trim();
           const ip = String((item && item.ip) || "").trim();
+          const addr = String((item && item.addr) || "").trim();
           const mode = String((item && item.mode) || "").trim();
           const fw = String((item && item.fw) || "").trim();
+          const name = String((item && item.name) || "").trim();
           const parts = [];
+          if (name) parts.push(name);
           if (host) parts.push(host);
           if (ip) parts.push(ip);
+          if (addr) parts.push(addr);
           if (mode) parts.push(mode);
           if (fw) parts.push(fw);
           return parts.join("  ");
@@ -2703,16 +2716,26 @@
               scanBtn.textContent = "Scanning...";
               try {
                 const expectedMode = slaveExpectedDeviceMode(d);
-                const r = await apiJson("/api/slave/scan", {
+                const scanMode = loadStr(slaveCfgKey(d, "mode"), "wifi") === "ble" ? "ble" : "wifi";
+                const r = await apiJson(scanMode === "ble" ? "/api/slave/ble_scan" : "/api/slave/scan", {
                   method: "POST",
                   body: JSON.stringify({ timeout_ms: 2800, max_results: 16, expected_mode: expectedMode }),
-                  timeout_ms: 7000
+                  timeout_ms: scanMode === "ble" ? 10000 : 7000
                 });
                 const allItems = Array.isArray(r && r.items) ? r.items : [];
                 const items = allItems.filter((item) => slaveModeMatchesExpected(item, expectedMode));
                 const skipped = allItems.length - items.length;
-                appendDeviceLog(`slave_scan type=${d.type} found=${items.length} skipped=${skipped}`);
+                appendDeviceLog(`slave_scan type=${d.type} mode=${scanMode} found=${items.length} skipped=${skipped}`);
                 const pick = (item) => {
+                  if (scanMode === "ble") {
+                    const addr = String((item && item.addr) || "").trim();
+                    if (!addr) return;
+                    bleInput.value = addr;
+                    save(slaveCfgKey(d, "ble"), addr);
+                    if (item && item.addr_type != null) save(slaveCfgKey(d, "ble_type"), String(item.addr_type));
+                    appendDeviceLog(`slave_selected type=${d.type} ble=${addr}`);
+                    return;
+                  }
                   const target = normalizeSlaveTargetAddress((item && (item.host || item.ip)) || "");
                   if (!target) return;
                   ipInput.value = target;
@@ -7966,9 +7989,11 @@
         function fumeSlaveTargets() {
           return getAddedEsp32Devices().filter((d) => {
             if (d.type !== "esp32_fume_extractor") return false;
+            const mode = loadStr(slaveCfgKey(d, "mode"), "wifi") === "ble" ? "ble" : "wifi";
             const target = normalizeSlaveTargetAddress(loadStr(slaveCfgKey(d, "ip"), ""));
+            const bleAddr = loadStr(slaveCfgKey(d, "ble"), "").trim();
             const token = loadStr(slaveCfgKey(d, "token"), "").trim();
-            return !!target && token.length >= 16;
+            return token.length >= 16 && (mode === "ble" ? !!bleAddr : !!target);
           });
         }
         function aixunExtractorEnabled() {
