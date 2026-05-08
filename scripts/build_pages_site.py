@@ -6,8 +6,8 @@ import urllib.error
 import urllib.request
 
 REPO = "Serjio193/legacy-bridge"
-API = f"https://api.github.com/repos/{REPO}/releases?per_page=100"
 PINNED_FACTORY_TAG = "v110"
+API = f"https://api.github.com/repos/{REPO}/releases/tags/{PINNED_FACTORY_TAG}"
 REQUIRED = [
     "update.lbpack",
     "factory.bin",
@@ -83,14 +83,7 @@ def main() -> None:
 
     req = urllib.request.Request(API, headers=headers, method="GET")
     with urllib.request.urlopen(req, timeout=60) as resp:
-        rels = json.loads(resp.read().decode("utf-8"))
-
-    tags = {str(r.get("tag_name") or "").strip() for r in rels}
-    if PINNED_FACTORY_TAG and PINNED_FACTORY_TAG not in tags:
-        pinned_api = f"https://api.github.com/repos/{REPO}/releases/tags/{PINNED_FACTORY_TAG}"
-        req = urllib.request.Request(pinned_api, headers=headers, method="GET")
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            rels.append(json.loads(resp.read().decode("utf-8")))
+        rels = [json.loads(resp.read().decode("utf-8"))]
 
     out_index = []
     rel_root = os.path.join(SITE, "releases")
@@ -148,13 +141,6 @@ def main() -> None:
             }
         )
 
-    def ver_key(item):
-        t = str(item.get("tag_name", ""))
-        if t.lower().startswith("v") and t[1:].isdigit():
-            return int(t[1:])
-        return -1
-
-    out_index.sort(key=ver_key, reverse=True)
     with open(os.path.join(rel_root, "index.json"), "w", encoding="utf-8") as f:
         json.dump(out_index, f, ensure_ascii=False, indent=2)
 

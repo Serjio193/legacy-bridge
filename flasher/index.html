@@ -21,8 +21,7 @@
     h1 { margin: 0 0 8px; font-size: 24px; }
     p { margin: 8px 0; color: var(--muted); }
     .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
-    select, button { background: #0f1622; color: var(--text); border: 1px solid #314055; border-radius: 10px; padding: 10px 12px; }
-    button { cursor: pointer; }
+    button { background: #0f1622; color: var(--text); border: 1px solid #314055; border-radius: 10px; padding: 10px 12px; cursor: pointer; }
     .status { margin-top: 12px; font-size: 14px; color: var(--muted); }
     .status.ok { color: var(--ok); }
     .status.warn { color: var(--warn); }
@@ -36,7 +35,7 @@
     .parts th, .parts td { padding: 7px 8px; border-bottom: 1px solid #263449; text-align: left; vertical-align: top; }
     .parts th { color: var(--muted); font-weight: 600; }
     .parts td:nth-child(2), .parts td:nth-child(3) { white-space: nowrap; }
-    .logbox { margin: 0; min-height: 180px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; color: #cfe3ff; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .logbox { margin: 0; min-height: 160px; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-word; color: #cfe3ff; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .hint { font-size: 13px; color: var(--muted); }
     .smallbtn { padding: 7px 10px; font-size: 13px; }
     a { color: var(--accent); }
@@ -46,22 +45,19 @@
   <div class="wrap">
     <div class="card">
       <h1>Legacy Bridge USB Flasher</h1>
-      <p>Безопасная первичная прошивка ESP32-C3 по USB прямо из браузера (Chrome/Edge, HTTPS).</p>
-      <p>USB flasher ставит полный образ прошивки: bootloader, partitions, System, LittleFS и Recovery.</p>
-      <p><b>Базовая USB-прошивка зафиксирована на v110.</b> Новые версии ставьте уже через Recovery/OTA пакетом <span class="mono">update.lbpack</span>.</p>
+      <p>Эта страница прошивает только зафиксированную базовую USB-прошивку <b>v110</b> для ESP32-C3.</p>
+      <p>Новые версии ставьте уже через Recovery/OTA пакетом <span class="mono">update.lbpack</span>. Другие factory-версии сюда больше не добавляются.</p>
       <p>Для первичной прошивки выбирайте полное стирание, чтобы старые NVS/OTA-data не мешали старту.</p>
 
       <div class="row">
-        <label for="rel">Версия:</label>
-        <select id="rel" style="min-width:220px"></select>
-        <button id="reload">Обновить список</button>
+        <span class="mono">Version: v110 USB base</span>
       </div>
 
       <div class="row">
         <esp-web-install-button id="installBtn" disabled></esp-web-install-button>
       </div>
 
-      <div id="status" class="status">Загрузка списка релизов...</div>
+      <div id="status" class="status">Подготовка manifest...</div>
 
       <div class="diag">
         <div class="panel">
@@ -96,33 +92,31 @@
         <p><b>Как прошивать:</b></p>
         <p>1. Подключите ESP32-C3 по USB.</p>
         <p>2. При необходимости войдите в boot mode: удерживайте <span class="mono">BOOT</span>, нажмите <span class="mono">RESET</span>, отпустите <span class="mono">BOOT</span>.</p>
-        <p>3. Выберите версию и нажмите кнопку установки. Согласитесь на erase, если браузер спросит.</p>
+        <p>3. Нажмите кнопку установки. Согласитесь на erase, если браузер спросит.</p>
         <p>4. Дайте браузеру доступ к serial-порту устройства.</p>
-        <p>5. После перезагрузки устройство должно стартовать в рабочей прошивке выбранной версии.</p>
+        <p>5. После перезагрузки устройство должно стартовать в рабочей прошивке v110.</p>
       </div>
     </div>
   </div>
 
   <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
   <script>
-    const INDEX_URL = "./releases/index.json";
-    const REQUIRED = ["factory.bin"];
-    const OFFSETS = {
-      "factory.bin": 0x0
+    const RELEASE = {
+      tag: "v110",
+      version: "110",
+      published: "2026-05-08T11:37:41Z",
+      factoryPath: "./releases/v110/factory-4194304-b43a5ae5be32.bin.jpg",
+      sha256: "B43A5AE5BE320B5F86178E72A3D27D50F0E8D903E27305CE17F588240DCA4D53",
+      size: 4194304
     };
-    const MIN_FACTORY_SIZE = 4000000;
-    const MAX_FACTORY_SIZE = 4194304;
 
-    const relSel = document.getElementById("rel");
-    const statusEl = document.getElementById("status");
-    const btnReload = document.getElementById("reload");
     const installBtn = document.getElementById("installBtn");
+    const statusEl = document.getElementById("status");
     const manifestMeta = document.getElementById("manifestMeta");
     const partsBody = document.getElementById("partsBody");
     const logBox = document.getElementById("logBox");
     const btnCopyManifest = document.getElementById("copyManifest");
     const btnClearLog = document.getElementById("clearLog");
-    let releases = [];
     let manifestUrl = "";
     let currentManifest = null;
 
@@ -144,193 +138,88 @@
       console.log("[LB flasher]", msg, data === undefined ? "" : data);
     }
 
-    function fmtHex(v) {
-      const n = Number(v || 0);
-      return "0x" + n.toString(16).toUpperCase().padStart(6, "0");
-    }
-
-    function fmtBytes(v) {
-      const n = Number(v || 0);
-      if (!Number.isFinite(n) || n <= 0) return "неизвестно";
-      if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(2)} MiB (${n} B)`;
-      if (n >= 1024) return `${(n / 1024).toFixed(1)} KiB (${n} B)`;
-      return `${n} B`;
-    }
-
-    async function fetchAssetSize(url) {
-      try {
-        const r = await fetch(url, { method: "HEAD", cache: "no-store" });
-        if (!r.ok) throw new Error(`HEAD ${r.status}`);
-        const len = Number(r.headers.get("content-length") || 0);
-        log("Размер asset получен через HEAD", { url, bytes: len });
-        return len || 0;
-      } catch (e) {
-        log("HEAD размера asset не сработал", String((e && e.message) || e));
-        return 0;
-      }
-    }
-
-    async function renderManifestDetails(rel, manifest) {
-      const parts = (((manifest || {}).builds || [])[0] || {}).parts || [];
-      manifestMeta.textContent = `Release: ${rel.tag_name || "-"} | Manifest: ${manifest.name} | Версия: ${manifest.version} | Parts: ${parts.length}`;
-      partsBody.innerHTML = "";
-      let ok = true;
-      for (const p of parts) {
-        const tr = document.createElement("tr");
-        const fileName = String((p.path || "").split("/").pop() || p.path || "");
-        const size = await fetchAssetSize(p.path);
-        const cleanName = fileName.split("?")[0];
-        const isFactory = cleanName.startsWith("factory");
-        const badFactorySize = isFactory && size > 0 && (size < MIN_FACTORY_SIZE || size > MAX_FACTORY_SIZE);
-        if (badFactorySize) ok = false;
-        const sizeError = size > MAX_FACTORY_SIZE ? " | ОШИБКА: образ больше 4MB" : " | ОШИБКА: образ обрезан";
-        tr.innerHTML =
-          `<td class="mono">${fileName}</td>` +
-          `<td class="mono">${fmtHex(p.offset)}</td>` +
-          `<td style="${badFactorySize ? `color:var(--bad)` : ""}">${fmtBytes(size)}${badFactorySize ? sizeError : ""}</td>` +
-          `<td class="mono"><a href="${p.path}" target="_blank" rel="noopener">${p.path}</a></td>`;
-        partsBody.appendChild(tr);
-      }
-      log("Manifest parts отображены", parts.map((p) => ({ path: p.path, offset: fmtHex(p.offset) })));
-      return ok;
-    }
-
     function setStatus(text, cls) {
       statusEl.className = "status" + (cls ? " " + cls : "");
       statusEl.textContent = text;
       log(`Статус: ${text}`);
     }
 
-    function pickAssetsMap(rel) {
-      // Supports both GitHub API shape (assets array) and static index shape (assets object map)
-      if (rel && rel.assets && !Array.isArray(rel.assets) && typeof rel.assets === "object") {
-        const out = {};
-        Object.keys(rel.assets).forEach((k) => {
-          out[String(k)] = String(rel.assets[k] || "").trim();
-        });
-        return out;
-      }
-      const map = {};
-      const assets = Array.isArray(rel && rel.assets) ? rel.assets : [];
-      assets.forEach((a) => {
-        const n = String((a && a.name) || "").trim();
-        if (n) map[n] = String(a.browser_download_url || "").trim();
-      });
-      return map;
+    function fmtBytes(v) {
+      const n = Number(v || 0);
+      if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(2)} MiB (${n} B)`;
+      return `${n} B`;
     }
 
-    function supportsBareFlash(rel) {
-      const map = pickAssetsMap(rel);
-      return REQUIRED.every((name) => !!map[name]);
+    async function fetchAssetSize(url) {
+      const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+      if (!r.ok) throw new Error(`HEAD ${r.status}`);
+      return Number(r.headers.get("content-length") || 0);
     }
 
-    function assetUrlWithCacheBust(rawUrl, rel) {
-      const u = new URL(rawUrl, window.location.href);
-      u.searchParams.set("lb_tag", String(rel.tag_name || "unknown"));
-      u.searchParams.set("lb_published", String(rel.published_at || Date.now()));
+    function buildManifest() {
+      const u = new URL(RELEASE.factoryPath, window.location.href);
+      u.searchParams.set("lb_tag", RELEASE.tag);
+      u.searchParams.set("lb_published", RELEASE.published);
       u.searchParams.set("lb_full", "1");
-      return u.href;
-    }
-
-    function buildManifest(rel) {
-      const map = pickAssetsMap(rel);
-      const parts = REQUIRED.map((name) => ({
-        path: assetUrlWithCacheBust(map[name], rel),
-        offset: OFFSETS[name]
-      }));
       return {
-        name: "Legacy Bridge Full Firmware",
-        version: String(rel.tag_name || "").replace(/^v/i, ""),
+        name: "Legacy Bridge v110 USB Factory",
+        version: RELEASE.version,
         new_install_prompt_erase: true,
-        builds: [{ chipFamily: "ESP32-C3", parts }]
+        builds: [{
+          chipFamily: "ESP32-C3",
+          parts: [{ path: u.href, offset: 0 }]
+        }]
       };
     }
 
-    async function setManifest(rel) {
-      if (manifestUrl) URL.revokeObjectURL(manifestUrl);
+    async function prepare() {
       installBtn.disabled = true;
-      const manifest = buildManifest(rel);
-      currentManifest = manifest;
-      const manifestJson = JSON.stringify(manifest, null, 2);
-      const blob = new Blob([manifestJson], { type: "application/json" });
-      manifestUrl = URL.createObjectURL(blob);
-      installBtn.manifest = manifestUrl;
-      log("Manifest создан", manifest);
-      log(`Manifest blob URL: ${manifestUrl}`);
-      const sizeOk = await renderManifestDetails(rel, manifest);
-      if (!sizeOk) {
-        installBtn.disabled = true;
-        setStatus("ОШИБКА: factory-образ должен быть ровно в пределах 4MB flash. Прошивка заблокирована.", "warn");
-        log("Прошивка заблокирована: неправильный размер factory-образа", { minBytes: MIN_FACTORY_SIZE, maxBytes: MAX_FACTORY_SIZE });
+      currentManifest = buildManifest();
+      const part = currentManifest.builds[0].parts[0];
+      manifestMeta.textContent = `Release: ${RELEASE.tag} | SHA256: ${RELEASE.sha256}`;
+      partsBody.innerHTML = "";
+
+      let size = 0;
+      try {
+        size = await fetchAssetSize(part.path);
+        log("Размер factory получен через HEAD", { bytes: size });
+      } catch (e) {
+        setStatus(`Ошибка проверки factory: ${String((e && e.message) || e)}`, "warn");
         return;
       }
-      installBtn.disabled = false;
-      log("Проверка размера пройдена, кнопка прошивки включена");
-    }
 
-    function refreshSelect() {
-      relSel.innerHTML = "";
-      releases.forEach((r, idx) => {
-        const opt = document.createElement("option");
-        opt.value = String(idx);
-        const pre = r.prerelease ? " [pre]" : "";
-        const pinned = r.pinned_factory ? " [USB base]" : "";
-        opt.textContent = `${r.tag_name}${pinned}${pre}`;
-        relSel.appendChild(opt);
-      });
-    }
+      const ok = size === RELEASE.size;
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        `<td class="mono">${part.path.split("/").pop()}</td>` +
+        `<td class="mono">0x000000</td>` +
+        `<td style="${ok ? "" : "color:var(--bad)"}">${fmtBytes(size)}${ok ? "" : " | ОШИБКА: размер не v110"}</td>` +
+        `<td class="mono"><a href="${part.path}" target="_blank" rel="noopener">${part.path}</a></td>`;
+      partsBody.appendChild(tr);
 
-    async function loadReleases() {
-      setStatus("Загрузка релизов...", "");
-      installBtn.disabled = true;
-      try {
-        log(`Загрузка index: ${new URL(INDEX_URL, window.location.href).href}`);
-        const r = await fetch(INDEX_URL, { cache: "no-store" });
-        if (!r.ok) throw new Error(`Index ${r.status}`);
-        const arr = await r.json();
-        log("Index загружен", { total: Array.isArray(arr) ? arr.length : 0 });
-        releases = (Array.isArray(arr) ? arr : []).filter((x) => supportsBareFlash(x));
-        log("Релизы с нужными asset", releases.map((x) => x.tag_name));
-        refreshSelect();
-        if (!releases.length) {
-          setStatus("Нет доступных версий для полной USB-прошивки (проверьте workflow Deploy USB Flasher Page).", "warn");
-          return;
-        }
-        const pinnedIdx = releases.findIndex((x) => x && x.pinned_factory);
-        const selectedIdx = pinnedIdx >= 0 ? pinnedIdx : 0;
-        relSel.value = String(selectedIdx);
-        await setManifest(releases[selectedIdx]);
-        setStatus(`Готово: ${releases[selectedIdx].tag_name}${releases[selectedIdx].pinned_factory ? " (USB base)" : ""}`, "ok");
-      } catch (e) {
-        setStatus(`Ошибка загрузки релизов: ${String((e && e.message) || e)}`, "warn");
+      if (!ok) {
+        setStatus("ОШИБКА: factory должен быть ровно 4194304 B. Прошивка заблокирована.", "warn");
+        return;
       }
+
+      const blob = new Blob([JSON.stringify(currentManifest, null, 2)], { type: "application/json" });
+      if (manifestUrl) URL.revokeObjectURL(manifestUrl);
+      manifestUrl = URL.createObjectURL(blob);
+      installBtn.manifest = manifestUrl;
+      installBtn.disabled = false;
+      log("Manifest создан", currentManifest);
+      setStatus("Готово: v110 USB base", "ok");
     }
 
-    relSel.addEventListener("change", async () => {
-      const idx = Number.parseInt(relSel.value, 10);
-      const rel = releases[idx];
-      if (!rel) return;
-      log("Выбран release", { tag: rel.tag_name, assets: pickAssetsMap(rel) });
-      await setManifest(rel);
-      setStatus(`Выбрано: ${rel.tag_name}`, "ok");
-    });
-
-    btnReload.addEventListener("click", () => {
-      log("Нажато: Обновить список");
-      loadReleases();
-    });
     btnClearLog.addEventListener("click", () => {
       logBox.textContent = "";
       log("Лог очищен");
     });
+
     btnCopyManifest.addEventListener("click", async () => {
-      if (!currentManifest) {
-        log("Копирование manifest невозможно: manifest не создан");
-        return;
-      }
-      const text = JSON.stringify(currentManifest, null, 2);
+      if (!currentManifest) return;
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(JSON.stringify(currentManifest, null, 2));
         log("Manifest скопирован в буфер");
       } catch (e) {
         log("Не удалось скопировать manifest", String((e && e.message) || e));
@@ -359,8 +248,8 @@
       log("Unhandled promise rejection", String(e.reason || ""));
     });
 
-    log("Страница flasher загружена");
-    loadReleases();
+    log("Страница flasher v110 загружена");
+    prepare();
   </script>
 </body>
 </html>

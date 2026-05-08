@@ -10,6 +10,12 @@ on:
   push:
     branches:
       - "main"
+    paths-ignore:
+      - "flasher/**"
+      - "scripts/build_pages_site.py"
+      - ".github/workflows/pages_flasher.yml"
+      - ".github/workflows/release_firmware.yml"
+      - "README.md"
 
 permissions:
   contents: write
