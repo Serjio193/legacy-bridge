@@ -178,7 +178,7 @@
         const fileName = String((p.path || "").split("/").pop() || p.path || "");
         const size = await fetchAssetSize(p.path);
         const cleanName = fileName.split("?")[0];
-        const tooSmallFactory = cleanName.startsWith("factory") && cleanName.endsWith(".bin") && size > 0 && size < MIN_FACTORY_SIZE;
+        const tooSmallFactory = cleanName.startsWith("factory") && size > 0 && size < MIN_FACTORY_SIZE;
         if (tooSmallFactory) ok = false;
         tr.innerHTML =
           `<td class="mono">${fileName}</td>` +
@@ -256,8 +256,8 @@
       const sizeOk = await renderManifestDetails(rel, manifest);
       if (!sizeOk) {
         installBtn.disabled = true;
-        setStatus("ОШИБКА: factory.bin меньше 4MB. Прошивка заблокирована, чтобы не залить обрезанный образ.", "warn");
-        log("Прошивка заблокирована: factory.bin меньше минимального размера", { minBytes: MIN_FACTORY_SIZE });
+        setStatus("ОШИБКА: factory-образ меньше 4MB. Прошивка заблокирована, чтобы не залить обрезанный образ.", "warn");
+        log("Прошивка заблокирована: factory-образ меньше минимального размера", { minBytes: MIN_FACTORY_SIZE });
         return;
       }
       installBtn.disabled = false;

@@ -117,7 +117,10 @@ def main() -> None:
             if fname == "factory.bin":
                 size = os.path.getsize(dst)
                 digest = sha256_file(dst)[:12]
-                out_name = f"factory-{size}-{digest}.bin"
+                # GitHub Pages gzip-compresses .bin for browser clients, which makes
+                # esp-web-tools flash the compressed stream. Use an image extension so
+                # Pages serves the raw bytes without Content-Encoding.
+                out_name = f"factory-{size}-{digest}.bin.jpg"
                 out_path = os.path.join(tag_dir, out_name)
                 os.replace(dst, out_path)
             local_assets[fname] = f"./releases/{tag}/{out_name}"
