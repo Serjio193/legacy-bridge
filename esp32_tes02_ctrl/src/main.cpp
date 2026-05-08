@@ -46,6 +46,10 @@ extern "C" {
 #define LB_SERIAL_LOG 0
 #endif
 
+#ifndef LB_SLAVE_BLE_LINK
+#define LB_SLAVE_BLE_LINK 0
+#endif
+
 #if LB_SERIAL_LOG
 #define LB_SERIAL_BEGIN(...) Serial.begin(__VA_ARGS__)
 #define LB_SERIAL_PRINT(...) Serial.print(__VA_ARGS__)
@@ -72,6 +76,7 @@ static const char *kFwVersion = LB_FW_VERSION;
 
 static const char *kFwProfile = LB_FW_PROFILE;
 static const bool kFwHardenedBuild = (LB_HARDENED_BUILD != 0);
+static const bool kSlaveBleLinkEnabled = (LB_SLAVE_BLE_LINK != 0);
 
 static const char *kFwOnlineDefaultUrl = "";
 static const uint32_t kFwOnlineConnectTimeoutMs = 12000;
@@ -3655,6 +3660,7 @@ static String slaveBleModeFromName(const String &name) {
 }
 
 static void refreshSlaveBleServer() {
+  if (!kSlaveBleLinkEnabled) return;
   bool shouldAdvertise = slaveBleEnabled && isSlaveInstallMode();
   NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
   if (!shouldAdvertise) {
@@ -3692,6 +3698,7 @@ static void refreshSlaveBleServer() {
 }
 
 static void slaveBleLoop(uint32_t nowMs) {
+  if (!kSlaveBleLinkEnabled) return;
   if (!slaveBleEnabled || !isSlaveInstallMode()) return;
   if (gSlaveBleLastRefreshMs != 0 && (uint32_t)(nowMs - gSlaveBleLastRefreshMs) < 15000UL) return;
   NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
@@ -7046,6 +7053,10 @@ static void handleApiSlaveCommand() {
 }
 
 static void handleApiSlaveBleScan() {
+  if (!kSlaveBleLinkEnabled) {
+    sendJsonError(409, "ble slave link disabled");
+    return;
+  }
   uint32_t timeoutMs = 3500;
   size_t maxResults = 16;
   String expectedMode = "";
@@ -7117,6 +7128,10 @@ static void handleApiSlaveBleScan() {
 }
 
 static void handleApiSlaveBleCommand() {
+  if (!kSlaveBleLinkEnabled) {
+    sendJsonError(409, "ble slave link disabled");
+    return;
+  }
   JsonDocument doc;
   if (!parseJsonBody(doc)) {
     sendJsonError(400, "bad json");
@@ -7200,6 +7215,10 @@ static void handleApiSlaveBleCommand() {
 }
 
 static void handleApiSlaveBlePair() {
+  if (!kSlaveBleLinkEnabled) {
+    sendJsonError(409, "ble slave link disabled");
+    return;
+  }
   JsonDocument doc;
   if (!parseJsonBody(doc)) {
     sendJsonError(400, "bad json");
