@@ -7,9 +7,20 @@ import urllib.request
 REPO = "Serjio193/legacy-bridge"
 API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
 REQUIRED = [
-    "factory.bin",
     "update.lbpack",
+    "bootloader.bin",
+    "partitions.bin",
+    "recovery.bin",
 ]
+OPTIONAL = [
+    "factory.bin",
+]
+GENERATED = {
+    # Flash erased-like data so stale NVS/OTA selection from previous installs cannot
+    # force boot into an old/broken OTA slot after the recovery-only USB install.
+    "blank_nvs.bin": 0x5000,
+    "blank_otadata.bin": 0x2000,
+}
 SITE = "_site"
 DEMO_DIR = os.path.join(SITE, "demo")
 
@@ -89,13 +100,20 @@ def main() -> None:
         tag_dir = os.path.join(rel_root, tag)
         os.makedirs(tag_dir, exist_ok=True)
         local_assets = {}
-        for fname in REQUIRED:
+        for fname in REQUIRED + OPTIONAL:
+            if fname in OPTIONAL and not assets.get(fname):
+                continue
             url = assets[fname]
             dst = os.path.join(tag_dir, fname)
             try:
                 urllib.request.urlretrieve(url, dst)
             except (urllib.error.URLError, TimeoutError) as e:
                 raise RuntimeError(f"Failed to mirror {tag}/{fname}: {e}") from e
+            local_assets[fname] = f"./releases/{tag}/{fname}"
+        for fname, size in GENERATED.items():
+            dst = os.path.join(tag_dir, fname)
+            with open(dst, "wb") as f:
+                f.write(b"\xff" * size)
             local_assets[fname] = f"./releases/{tag}/{fname}"
 
         out_index.append(
