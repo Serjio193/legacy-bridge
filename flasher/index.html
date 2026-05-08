@@ -109,6 +109,7 @@
     const OFFSETS = {
       "factory.bin": 0x0
     };
+    const MIN_FACTORY_SIZE = 4000000;
 
     const relSel = document.getElementById("rel");
     const statusEl = document.getElementById("status");
@@ -171,18 +172,23 @@
       const parts = (((manifest || {}).builds || [])[0] || {}).parts || [];
       manifestMeta.textContent = `Release: ${rel.tag_name || "-"} | Manifest: ${manifest.name} | Версия: ${manifest.version} | Parts: ${parts.length}`;
       partsBody.innerHTML = "";
+      let ok = true;
       for (const p of parts) {
         const tr = document.createElement("tr");
         const fileName = String((p.path || "").split("/").pop() || p.path || "");
         const size = await fetchAssetSize(p.path);
+        const cleanName = fileName.split("?")[0];
+        const tooSmallFactory = cleanName === "factory.bin" && size > 0 && size < MIN_FACTORY_SIZE;
+        if (tooSmallFactory) ok = false;
         tr.innerHTML =
           `<td class="mono">${fileName}</td>` +
           `<td class="mono">${fmtHex(p.offset)}</td>` +
-          `<td>${fmtBytes(size)}</td>` +
+          `<td style="${tooSmallFactory ? `color:var(--bad)` : ""}">${fmtBytes(size)}${tooSmallFactory ? " | ОШИБКА: образ обрезан" : ""}</td>` +
           `<td class="mono"><a href="${p.path}" target="_blank" rel="noopener">${p.path}</a></td>`;
         partsBody.appendChild(tr);
       }
       log("Manifest parts отображены", parts.map((p) => ({ path: p.path, offset: fmtHex(p.offset) })));
+      return ok;
     }
 
     function setStatus(text, cls) {
@@ -214,10 +220,18 @@
       return REQUIRED.every((name) => !!map[name]);
     }
 
+    function assetUrlWithCacheBust(rawUrl, rel) {
+      const u = new URL(rawUrl, window.location.href);
+      u.searchParams.set("lb_tag", String(rel.tag_name || "unknown"));
+      u.searchParams.set("lb_published", String(rel.published_at || Date.now()));
+      u.searchParams.set("lb_full", "1");
+      return u.href;
+    }
+
     function buildManifest(rel) {
       const map = pickAssetsMap(rel);
       const parts = REQUIRED.map((name) => ({
-        path: new URL(map[name], window.location.href).href,
+        path: assetUrlWithCacheBust(map[name], rel),
         offset: OFFSETS[name]
       }));
       return {
@@ -228,18 +242,26 @@
       };
     }
 
-    function setManifest(rel) {
+    async function setManifest(rel) {
       if (manifestUrl) URL.revokeObjectURL(manifestUrl);
+      installBtn.disabled = true;
       const manifest = buildManifest(rel);
       currentManifest = manifest;
       const manifestJson = JSON.stringify(manifest, null, 2);
       const blob = new Blob([manifestJson], { type: "application/json" });
       manifestUrl = URL.createObjectURL(blob);
       installBtn.manifest = manifestUrl;
-      installBtn.disabled = false;
       log("Manifest создан", manifest);
       log(`Manifest blob URL: ${manifestUrl}`);
-      renderManifestDetails(rel, manifest);
+      const sizeOk = await renderManifestDetails(rel, manifest);
+      if (!sizeOk) {
+        installBtn.disabled = true;
+        setStatus("ОШИБКА: factory.bin меньше 4MB. Прошивка заблокирована, чтобы не залить обрезанный образ.", "warn");
+        log("Прошивка заблокирована: factory.bin меньше минимального размера", { minBytes: MIN_FACTORY_SIZE });
+        return;
+      }
+      installBtn.disabled = false;
+      log("Проверка размера пройдена, кнопка прошивки включена");
     }
 
     function refreshSelect() {
@@ -270,19 +292,19 @@
           return;
         }
         relSel.value = "0";
-        setManifest(releases[0]);
+        await setManifest(releases[0]);
         setStatus(`Готово: ${releases[0].tag_name}`, "ok");
       } catch (e) {
         setStatus(`Ошибка загрузки релизов: ${String((e && e.message) || e)}`, "warn");
       }
     }
 
-    relSel.addEventListener("change", () => {
+    relSel.addEventListener("change", async () => {
       const idx = Number.parseInt(relSel.value, 10);
       const rel = releases[idx];
       if (!rel) return;
       log("Выбран release", { tag: rel.tag_name, assets: pickAssetsMap(rel) });
-      setManifest(rel);
+      await setManifest(rel);
       setStatus(`Выбрано: ${rel.tag_name}`, "ok");
     });
 
