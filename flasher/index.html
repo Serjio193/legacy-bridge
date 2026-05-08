@@ -13,6 +13,7 @@
       --accent: #39c0ff;
       --warn: #ffcc66;
       --ok: #5de3a2;
+      --bad: #ff7a7a;
     }
     body { margin: 0; background: radial-gradient(1200px 600px at 20% -20%, #223047, var(--bg)); color: var(--text); font: 16px/1.45 Segoe UI, system-ui, sans-serif; }
     .wrap { max-width: 860px; margin: 28px auto; padding: 0 16px; }
@@ -28,6 +29,16 @@
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .steps { margin-top: 16px; background: #111924; border: 1px solid #2a384d; border-radius: 10px; padding: 12px; }
     .steps b { color: var(--accent); }
+    .diag { margin-top: 16px; display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .panel { background: #0d141f; border: 1px solid #2a384d; border-radius: 10px; padding: 12px; }
+    .panel h2 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+    .parts { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .parts th, .parts td { padding: 7px 8px; border-bottom: 1px solid #263449; text-align: left; vertical-align: top; }
+    .parts th { color: var(--muted); font-weight: 600; }
+    .parts td:nth-child(2), .parts td:nth-child(3) { white-space: nowrap; }
+    .logbox { margin: 0; min-height: 180px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; color: #cfe3ff; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .hint { font-size: 13px; color: var(--muted); }
+    .smallbtn { padding: 7px 10px; font-size: 13px; }
     a { color: var(--accent); }
   </style>
 </head>
@@ -50,6 +61,35 @@
       </div>
 
       <div id="status" class="status">Загрузка списка релизов...</div>
+
+      <div class="diag">
+        <div class="panel">
+          <div class="row" style="margin-top:0">
+            <h2 style="flex:1">Что будет прошито</h2>
+            <button id="copyManifest" class="smallbtn" type="button">Копировать manifest</button>
+            <button id="clearLog" class="smallbtn" type="button">Очистить лог</button>
+          </div>
+          <div id="manifestMeta" class="hint">Manifest ещё не создан.</div>
+          <table class="parts">
+            <thead>
+              <tr>
+                <th>Файл</th>
+                <th>Offset</th>
+                <th>Размер</th>
+                <th>URL</th>
+              </tr>
+            </thead>
+            <tbody id="partsBody">
+              <tr><td colspan="4" class="hint">Нет данных.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Лог прошивальщика</h2>
+          <pre id="logBox" class="logbox"></pre>
+        </div>
+      </div>
 
       <div class="steps">
         <p><b>Как прошивать:</b></p>
@@ -74,12 +114,81 @@
     const statusEl = document.getElementById("status");
     const btnReload = document.getElementById("reload");
     const installBtn = document.getElementById("installBtn");
+    const manifestMeta = document.getElementById("manifestMeta");
+    const partsBody = document.getElementById("partsBody");
+    const logBox = document.getElementById("logBox");
+    const btnCopyManifest = document.getElementById("copyManifest");
+    const btnClearLog = document.getElementById("clearLog");
     let releases = [];
     let manifestUrl = "";
+    let currentManifest = null;
+
+    function ts() {
+      return new Date().toLocaleTimeString("ru-RU", { hour12: false });
+    }
+
+    function log(msg, data) {
+      let line = `[${ts()}] ${msg}`;
+      if (data !== undefined) {
+        try {
+          line += " " + (typeof data === "string" ? data : JSON.stringify(data));
+        } catch (_) {
+          line += " " + String(data);
+        }
+      }
+      logBox.textContent += line + "\n";
+      logBox.scrollTop = logBox.scrollHeight;
+      console.log("[LB flasher]", msg, data === undefined ? "" : data);
+    }
+
+    function fmtHex(v) {
+      const n = Number(v || 0);
+      return "0x" + n.toString(16).toUpperCase().padStart(6, "0");
+    }
+
+    function fmtBytes(v) {
+      const n = Number(v || 0);
+      if (!Number.isFinite(n) || n <= 0) return "неизвестно";
+      if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(2)} MiB (${n} B)`;
+      if (n >= 1024) return `${(n / 1024).toFixed(1)} KiB (${n} B)`;
+      return `${n} B`;
+    }
+
+    async function fetchAssetSize(url) {
+      try {
+        const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+        if (!r.ok) throw new Error(`HEAD ${r.status}`);
+        const len = Number(r.headers.get("content-length") || 0);
+        log("Размер asset получен через HEAD", { url, bytes: len });
+        return len || 0;
+      } catch (e) {
+        log("HEAD размера asset не сработал", String((e && e.message) || e));
+        return 0;
+      }
+    }
+
+    async function renderManifestDetails(rel, manifest) {
+      const parts = (((manifest || {}).builds || [])[0] || {}).parts || [];
+      manifestMeta.textContent = `Release: ${rel.tag_name || "-"} | Manifest: ${manifest.name} | Версия: ${manifest.version} | Parts: ${parts.length}`;
+      partsBody.innerHTML = "";
+      for (const p of parts) {
+        const tr = document.createElement("tr");
+        const fileName = String((p.path || "").split("/").pop() || p.path || "");
+        const size = await fetchAssetSize(p.path);
+        tr.innerHTML =
+          `<td class="mono">${fileName}</td>` +
+          `<td class="mono">${fmtHex(p.offset)}</td>` +
+          `<td>${fmtBytes(size)}</td>` +
+          `<td class="mono"><a href="${p.path}" target="_blank" rel="noopener">${p.path}</a></td>`;
+        partsBody.appendChild(tr);
+      }
+      log("Manifest parts отображены", parts.map((p) => ({ path: p.path, offset: fmtHex(p.offset) })));
+    }
 
     function setStatus(text, cls) {
       statusEl.className = "status" + (cls ? " " + cls : "");
       statusEl.textContent = text;
+      log(`Статус: ${text}`);
     }
 
     function pickAssetsMap(rel) {
@@ -122,10 +231,15 @@
     function setManifest(rel) {
       if (manifestUrl) URL.revokeObjectURL(manifestUrl);
       const manifest = buildManifest(rel);
-      const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+      currentManifest = manifest;
+      const manifestJson = JSON.stringify(manifest, null, 2);
+      const blob = new Blob([manifestJson], { type: "application/json" });
       manifestUrl = URL.createObjectURL(blob);
       installBtn.manifest = manifestUrl;
       installBtn.disabled = false;
+      log("Manifest создан", manifest);
+      log(`Manifest blob URL: ${manifestUrl}`);
+      renderManifestDetails(rel, manifest);
     }
 
     function refreshSelect() {
@@ -143,10 +257,13 @@
       setStatus("Загрузка релизов...", "");
       installBtn.disabled = true;
       try {
+        log(`Загрузка index: ${new URL(INDEX_URL, window.location.href).href}`);
         const r = await fetch(INDEX_URL, { cache: "no-store" });
         if (!r.ok) throw new Error(`Index ${r.status}`);
         const arr = await r.json();
+        log("Index загружен", { total: Array.isArray(arr) ? arr.length : 0 });
         releases = (Array.isArray(arr) ? arr : []).filter((x) => supportsBareFlash(x));
+        log("Релизы с нужными asset", releases.map((x) => x.tag_name));
         refreshSelect();
         if (!releases.length) {
           setStatus("Нет доступных версий для полной USB-прошивки (проверьте workflow Deploy USB Flasher Page).", "warn");
@@ -164,11 +281,56 @@
       const idx = Number.parseInt(relSel.value, 10);
       const rel = releases[idx];
       if (!rel) return;
+      log("Выбран release", { tag: rel.tag_name, assets: pickAssetsMap(rel) });
       setManifest(rel);
       setStatus(`Выбрано: ${rel.tag_name}`, "ok");
     });
 
-    btnReload.addEventListener("click", () => loadReleases());
+    btnReload.addEventListener("click", () => {
+      log("Нажато: Обновить список");
+      loadReleases();
+    });
+    btnClearLog.addEventListener("click", () => {
+      logBox.textContent = "";
+      log("Лог очищен");
+    });
+    btnCopyManifest.addEventListener("click", async () => {
+      if (!currentManifest) {
+        log("Копирование manifest невозможно: manifest не создан");
+        return;
+      }
+      const text = JSON.stringify(currentManifest, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        log("Manifest скопирован в буфер");
+      } catch (e) {
+        log("Не удалось скопировать manifest", String((e && e.message) || e));
+      }
+    });
+
+    [
+      "click",
+      "state-changed",
+      "install-start",
+      "install-finished",
+      "install-error",
+      "error",
+      "disconnect",
+      "manifest-loaded"
+    ].forEach((ev) => {
+      installBtn.addEventListener(ev, (e) => {
+        log(`Событие install-button: ${ev}`, e && e.detail ? e.detail : "");
+      });
+    });
+
+    window.addEventListener("error", (e) => {
+      log("Ошибка страницы", { message: e.message, source: e.filename, line: e.lineno, col: e.colno });
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      log("Unhandled promise rejection", String(e.reason || ""));
+    });
+
+    log("Страница flasher загружена");
     loadReleases();
   </script>
 </body>

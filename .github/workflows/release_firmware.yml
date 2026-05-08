@@ -192,7 +192,7 @@ jobs:
             }
           }
           $notes.Add("")
-          $notes.Add("Обновление: используйте update.lbpack через Recovery/OTA. USB flasher ставит безопасный Recovery installer для первичной прошивки.")
+          $notes.Add("Обновление: используйте update.lbpack через Recovery/OTA. USB flasher ставит полный factory-образ для первичной прошивки.")
           Set-Content -Path "release_upload/release_notes.md" -Value $notes -Encoding UTF8
 
       - name: Prune old firmware releases (keep 4 before publish)
