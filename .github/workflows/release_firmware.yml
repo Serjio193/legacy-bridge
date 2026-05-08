@@ -111,6 +111,22 @@ jobs:
         run: |
           pio run -d esp32_tes02_ctrl -e esp32c3_recovery
 
+      - name: Validate recovery image size
+        run: |
+          $recovery = "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
+          $maxRecovery = 0x100000
+          $flashSize = 0x400000
+          $recoveryOffset = 0x300000
+          $size = (Get-Item $recovery).Length
+          Write-Host "Recovery size: $size bytes / max $maxRecovery"
+          if ($size -gt $maxRecovery) {
+            throw "recovery.bin is too large for recovery partition: $size > $maxRecovery"
+          }
+          $end = $recoveryOffset + $size
+          if ($end -gt $flashSize) {
+            throw "factory image would exceed 4MB flash: end=$end > $flashSize"
+          }
+
       - name: Build full factory image
         run: |
           $esptool = Join-Path $env:USERPROFILE ".platformio/packages/tool-esptoolpy/esptool.py"
@@ -128,6 +144,29 @@ jobs:
             0x10000 "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin" `
             0x238000 "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin" `
             0x300000 "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
+
+          $factory = "esp32_tes02_ctrl/.pio/build/esp32c3/factory.bin"
+          $flashSize = 0x400000
+          $len = (Get-Item $factory).Length
+          if ($len -gt $flashSize) {
+            throw "factory.bin exceeds 4MB flash: $len > $flashSize"
+          }
+          if ($len -lt $flashSize) {
+            $fs = [System.IO.File]::Open($factory, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write)
+            try {
+              $chunk = New-Object byte[] 4096
+              [Array]::Fill[byte]($chunk, 0xff)
+              $remaining = $flashSize - $len
+              while ($remaining -gt 0) {
+                $take = [Math]::Min($chunk.Length, $remaining)
+                $fs.Write($chunk, 0, $take)
+                $remaining -= $take
+              }
+            } finally {
+              $fs.Dispose()
+            }
+            Write-Host "factory.bin padded from $len to $flashSize bytes"
+          }
 
       - name: Compute checksums
         working-directory: esp32_tes02_ctrl\.pio\build\esp32c3
