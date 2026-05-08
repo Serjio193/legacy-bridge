@@ -36,8 +36,8 @@
     <div class="card">
       <h1>Legacy Bridge USB Flasher</h1>
       <p>Безопасная первичная прошивка ESP32-C3 по USB прямо из браузера (Chrome/Edge, HTTPS).</p>
-      <p>USB flasher ставит базовый Recovery-образ, очищает NVS/OTA-data и не пишет рабочий System напрямую.</p>
-      <p>После первого запуска откройте Recovery и установите актуальный <span class="mono">update.lbpack</span> онлайн.</p>
+      <p>USB flasher ставит полный образ прошивки: bootloader, partitions, System, LittleFS и Recovery.</p>
+      <p>Для первичной прошивки выбирайте полное стирание, чтобы старые NVS/OTA-data не мешали старту.</p>
 
       <div class="row">
         <label for="rel">Версия:</label>
@@ -57,7 +57,7 @@
         <p>2. При необходимости войдите в boot mode: удерживайте <span class="mono">BOOT</span>, нажмите <span class="mono">RESET</span>, отпустите <span class="mono">BOOT</span>.</p>
         <p>3. Выберите версию и нажмите кнопку установки. Согласитесь на erase, если браузер спросит.</p>
         <p>4. Дайте браузеру доступ к serial-порту устройства.</p>
-        <p>5. После перезагрузки подключитесь к Recovery/AP устройства и нажмите онлайн-обновление до последней версии.</p>
+        <p>5. После перезагрузки устройство должно стартовать в рабочей прошивке выбранной версии.</p>
       </div>
     </div>
   </div>
@@ -65,13 +65,9 @@
   <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
   <script>
     const INDEX_URL = "./releases/index.json";
-    const REQUIRED = ["bootloader.bin", "partitions.bin", "blank_nvs.bin", "blank_otadata.bin", "recovery.bin"];
+    const REQUIRED = ["factory.bin"];
     const OFFSETS = {
-      "bootloader.bin": 0x0,
-      "partitions.bin": 0x8000,
-      "blank_nvs.bin": 0x9000,
-      "blank_otadata.bin": 0xe000,
-      "recovery.bin": 0x300000
+      "factory.bin": 0x0
     };
 
     const relSel = document.getElementById("rel");
@@ -116,7 +112,7 @@
         offset: OFFSETS[name]
       }));
       return {
-        name: "Legacy Bridge Recovery Installer",
+        name: "Legacy Bridge Full Firmware",
         version: String(rel.tag_name || "").replace(/^v/i, ""),
         new_install_prompt_erase: true,
         builds: [{ chipFamily: "ESP32-C3", parts }]
@@ -153,7 +149,7 @@
         releases = (Array.isArray(arr) ? arr : []).filter((x) => supportsBareFlash(x));
         refreshSelect();
         if (!releases.length) {
-          setStatus("Нет доступных версий для Recovery installer (проверьте workflow Deploy USB Flasher Page).", "warn");
+          setStatus("Нет доступных версий для полной USB-прошивки (проверьте workflow Deploy USB Flasher Page).", "warn");
           return;
         }
         relSel.value = "0";

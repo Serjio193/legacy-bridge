@@ -8,19 +8,14 @@ REPO = "Serjio193/legacy-bridge"
 API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
 REQUIRED = [
     "update.lbpack",
+    "factory.bin",
+]
+OPTIONAL = [
     "bootloader.bin",
     "partitions.bin",
     "recovery.bin",
 ]
-OPTIONAL = [
-    "factory.bin",
-]
-GENERATED = {
-    # Flash erased-like data so stale NVS/OTA selection from previous installs cannot
-    # force boot into an old/broken OTA slot after the recovery-only USB install.
-    "blank_nvs.bin": 0x5000,
-    "blank_otadata.bin": 0x2000,
-}
+GENERATED = {}
 SITE = "_site"
 DEMO_DIR = os.path.join(SITE, "demo")
 
