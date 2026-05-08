@@ -178,7 +178,7 @@
         const fileName = String((p.path || "").split("/").pop() || p.path || "");
         const size = await fetchAssetSize(p.path);
         const cleanName = fileName.split("?")[0];
-        const tooSmallFactory = cleanName === "factory.bin" && size > 0 && size < MIN_FACTORY_SIZE;
+        const tooSmallFactory = cleanName.startsWith("factory") && cleanName.endsWith(".bin") && size > 0 && size < MIN_FACTORY_SIZE;
         if (tooSmallFactory) ok = false;
         tr.innerHTML =
           `<td class="mono">${fileName}</td>` +

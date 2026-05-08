@@ -1,5 +1,6 @@
 import json
 import os
+import hashlib
 import shutil
 import urllib.error
 import urllib.request
@@ -54,6 +55,14 @@ def inject_demo_overlay(index_path: str) -> None:
         f.write(html)
 
 
+def sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def main() -> None:
     if os.path.isdir(SITE):
         shutil.rmtree(SITE)
@@ -104,7 +113,14 @@ def main() -> None:
                 urllib.request.urlretrieve(url, dst)
             except (urllib.error.URLError, TimeoutError) as e:
                 raise RuntimeError(f"Failed to mirror {tag}/{fname}: {e}") from e
-            local_assets[fname] = f"./releases/{tag}/{fname}"
+            out_name = fname
+            if fname == "factory.bin":
+                size = os.path.getsize(dst)
+                digest = sha256_file(dst)[:12]
+                out_name = f"factory-{size}-{digest}.bin"
+                out_path = os.path.join(tag_dir, out_name)
+                os.replace(dst, out_path)
+            local_assets[fname] = f"./releases/{tag}/{out_name}"
         for fname, size in GENERATED.items():
             dst = os.path.join(tag_dir, fname)
             with open(dst, "wb") as f:
