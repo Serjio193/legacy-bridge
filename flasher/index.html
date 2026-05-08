@@ -48,6 +48,7 @@
       <h1>Legacy Bridge USB Flasher</h1>
       <p>Безопасная первичная прошивка ESP32-C3 по USB прямо из браузера (Chrome/Edge, HTTPS).</p>
       <p>USB flasher ставит полный образ прошивки: bootloader, partitions, System, LittleFS и Recovery.</p>
+      <p><b>Базовая USB-прошивка зафиксирована на v110.</b> Новые версии ставьте уже через Recovery/OTA пакетом <span class="mono">update.lbpack</span>.</p>
       <p>Для первичной прошивки выбирайте полное стирание, чтобы старые NVS/OTA-data не мешали старту.</p>
 
       <div class="row">
@@ -110,6 +111,7 @@
       "factory.bin": 0x0
     };
     const MIN_FACTORY_SIZE = 4000000;
+    const MAX_FACTORY_SIZE = 4194304;
 
     const relSel = document.getElementById("rel");
     const statusEl = document.getElementById("status");
@@ -178,12 +180,14 @@
         const fileName = String((p.path || "").split("/").pop() || p.path || "");
         const size = await fetchAssetSize(p.path);
         const cleanName = fileName.split("?")[0];
-        const tooSmallFactory = cleanName.startsWith("factory") && size > 0 && size < MIN_FACTORY_SIZE;
-        if (tooSmallFactory) ok = false;
+        const isFactory = cleanName.startsWith("factory");
+        const badFactorySize = isFactory && size > 0 && (size < MIN_FACTORY_SIZE || size > MAX_FACTORY_SIZE);
+        if (badFactorySize) ok = false;
+        const sizeError = size > MAX_FACTORY_SIZE ? " | ОШИБКА: образ больше 4MB" : " | ОШИБКА: образ обрезан";
         tr.innerHTML =
           `<td class="mono">${fileName}</td>` +
           `<td class="mono">${fmtHex(p.offset)}</td>` +
-          `<td style="${tooSmallFactory ? `color:var(--bad)` : ""}">${fmtBytes(size)}${tooSmallFactory ? " | ОШИБКА: образ обрезан" : ""}</td>` +
+          `<td style="${badFactorySize ? `color:var(--bad)` : ""}">${fmtBytes(size)}${badFactorySize ? sizeError : ""}</td>` +
           `<td class="mono"><a href="${p.path}" target="_blank" rel="noopener">${p.path}</a></td>`;
         partsBody.appendChild(tr);
       }
@@ -256,8 +260,8 @@
       const sizeOk = await renderManifestDetails(rel, manifest);
       if (!sizeOk) {
         installBtn.disabled = true;
-        setStatus("ОШИБКА: factory-образ меньше 4MB. Прошивка заблокирована, чтобы не залить обрезанный образ.", "warn");
-        log("Прошивка заблокирована: factory-образ меньше минимального размера", { minBytes: MIN_FACTORY_SIZE });
+        setStatus("ОШИБКА: factory-образ должен быть ровно в пределах 4MB flash. Прошивка заблокирована.", "warn");
+        log("Прошивка заблокирована: неправильный размер factory-образа", { minBytes: MIN_FACTORY_SIZE, maxBytes: MAX_FACTORY_SIZE });
         return;
       }
       installBtn.disabled = false;
@@ -270,7 +274,8 @@
         const opt = document.createElement("option");
         opt.value = String(idx);
         const pre = r.prerelease ? " [pre]" : "";
-        opt.textContent = `${r.tag_name}${pre}`;
+        const pinned = r.pinned_factory ? " [USB base]" : "";
+        opt.textContent = `${r.tag_name}${pinned}${pre}`;
         relSel.appendChild(opt);
       });
     }
@@ -291,9 +296,11 @@
           setStatus("Нет доступных версий для полной USB-прошивки (проверьте workflow Deploy USB Flasher Page).", "warn");
           return;
         }
-        relSel.value = "0";
-        await setManifest(releases[0]);
-        setStatus(`Готово: ${releases[0].tag_name}`, "ok");
+        const pinnedIdx = releases.findIndex((x) => x && x.pinned_factory);
+        const selectedIdx = pinnedIdx >= 0 ? pinnedIdx : 0;
+        relSel.value = String(selectedIdx);
+        await setManifest(releases[selectedIdx]);
+        setStatus(`Готово: ${releases[selectedIdx].tag_name}${releases[selectedIdx].pinned_factory ? " (USB base)" : ""}`, "ok");
       } catch (e) {
         setStatus(`Ошибка загрузки релизов: ${String((e && e.message) || e)}`, "warn");
       }

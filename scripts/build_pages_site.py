@@ -6,7 +6,8 @@ import urllib.error
 import urllib.request
 
 REPO = "Serjio193/legacy-bridge"
-API = f"https://api.github.com/repos/{REPO}/releases?per_page=30"
+API = f"https://api.github.com/repos/{REPO}/releases?per_page=100"
+PINNED_FACTORY_TAG = "v110"
 REQUIRED = [
     "update.lbpack",
     "factory.bin",
@@ -84,6 +85,13 @@ def main() -> None:
     with urllib.request.urlopen(req, timeout=60) as resp:
         rels = json.loads(resp.read().decode("utf-8"))
 
+    tags = {str(r.get("tag_name") or "").strip() for r in rels}
+    if PINNED_FACTORY_TAG and PINNED_FACTORY_TAG not in tags:
+        pinned_api = f"https://api.github.com/repos/{REPO}/releases/tags/{PINNED_FACTORY_TAG}"
+        req = urllib.request.Request(pinned_api, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            rels.append(json.loads(resp.read().decode("utf-8")))
+
     out_index = []
     rel_root = os.path.join(SITE, "releases")
     os.makedirs(rel_root, exist_ok=True)
@@ -134,6 +142,7 @@ def main() -> None:
             {
                 "tag_name": tag,
                 "prerelease": bool(r.get("prerelease")),
+                "pinned_factory": tag == PINNED_FACTORY_TAG,
                 "published_at": r.get("published_at"),
                 "assets": local_assets,
             }

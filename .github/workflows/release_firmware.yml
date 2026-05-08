@@ -255,6 +255,7 @@ jobs:
               }
             );
 
+            const protectedTags = new Set(["v110"]);
             const fwReleases = releases
               .filter(r => !r.draft)
               .map(r => ({ r, n: parseVer(r.tag_name) }))
@@ -262,8 +263,11 @@ jobs:
               .sort((a, b) => b.n - a.n);
 
             const keep = 4;
-            const toDelete = fwReleases.slice(keep);
+            const toDelete = fwReleases
+              .filter(x => !protectedTags.has(String(x.r.tag_name || "")))
+              .slice(keep);
             core.info(`Firmware releases found: ${fwReleases.length}. Keep=${keep}, delete=${toDelete.length}`);
+            core.info(`Protected firmware releases: ${Array.from(protectedTags).join(", ")}`);
 
             for (const x of toDelete) {
               const rel = x.r;
