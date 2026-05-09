@@ -4079,12 +4079,59 @@
         if (src.includes("linux") || src.includes("x11")) return "linux";
         return "other";
       }
-      function getShortcutTargetUrl() {
+      let shortcutMdnsUrlCache = "";
+      function normalizeShortcutUrl(url) {
+        let target = String(url || "").trim();
+        if (!/^https?:\/\//i.test(target)) return "";
+        if (!target.endsWith("/")) target += "/";
+        return target;
+      }
+      function currentBrowserShortcutUrl() {
         let target = "";
         try { target = localStorage.getItem("alb_last_open_url") || ""; } catch (_) {}
         if (!/^https?:\/\//i.test(target)) target = `${window.location.origin}/`;
         if (!target.endsWith("/")) target += "/";
         return target;
+      }
+      function statusToMdnsShortcutUrl(status) {
+        const direct = normalizeShortcutUrl(status && status.mdns_url);
+        if (direct) return direct;
+        let host = String((status && status.mdns_host) || "").trim();
+        if (!host) return "";
+        host = host.replace(/^https?:\/\//i, "").replace(/\/.*$/g, "").replace(/\.$/, "");
+        if (!host) return "";
+        return `http://${host}/`;
+      }
+      function getShortcutTargetUrl() {
+        if (shortcutMdnsUrlCache) return shortcutMdnsUrlCache;
+        const browserUrl = currentBrowserShortcutUrl();
+        try {
+          const host = String(new URL(browserUrl).hostname || "").toLowerCase();
+          if (host.endsWith(".local")) return browserUrl;
+        } catch (_) {}
+        return browserUrl;
+      }
+      async function resolveShortcutTargetUrl(preferredUrl) {
+        const preferred = normalizeShortcutUrl(preferredUrl);
+        try {
+          const r = await fetch("/api/status", { cache: "no-store" });
+          if (r && r.ok) {
+            const mdnsUrl = statusToMdnsShortcutUrl(await r.json());
+            if (mdnsUrl) {
+              shortcutMdnsUrlCache = mdnsUrl;
+              try { localStorage.setItem("alb_last_open_url", mdnsUrl); } catch (_) {}
+              return mdnsUrl;
+            }
+          }
+        } catch (_) {}
+        if (shortcutMdnsUrlCache) return shortcutMdnsUrlCache;
+        if (preferred) {
+          try {
+            const host = String(new URL(preferred).hostname || "").toLowerCase();
+            if (host.endsWith(".local")) return preferred;
+          } catch (_) {}
+        }
+        return getShortcutTargetUrl();
       }
       function legacyCopyText(text) {
         try {
@@ -4321,8 +4368,8 @@
             ? tr("shortcut_offer_mobile_hint", "On Android/iOS use browser menu: Add to Home Screen.")
             : tr("shortcut_offer_other_hint", "Copy link and create a shortcut manually in your system.");
         }
-        function openModal(url, onlyIfFirst) {
-          activeUrl = scriptTargetUrl(url);
+        async function openModal(url, onlyIfFirst) {
+          activeUrl = scriptTargetUrl(await resolveShortcutTargetUrl(url));
           activeDoneKey = keyForUrl(activeUrl);
           if (onlyIfFirst) {
             try {
@@ -4393,7 +4440,7 @@
         };
       }
       async function downloadShortcutFromUi() {
-        const url = getShortcutTargetUrl();
+        const url = await resolveShortcutTargetUrl();
         const os = detectShortcutOs();
         const copied = await copyTextSmart(url);
         if (!copied) {
