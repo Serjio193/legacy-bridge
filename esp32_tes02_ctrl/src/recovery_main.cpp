@@ -11,7 +11,7 @@
 #include <WiFi.h>
 
 #ifndef LB_RECOVERY_ENABLE_URL_FLASH
-#define LB_RECOVERY_ENABLE_URL_FLASH 0
+#define LB_RECOVERY_ENABLE_URL_FLASH 1
 #endif
 
 #if LB_RECOVERY_ENABLE_URL_FLASH
@@ -1717,34 +1717,41 @@ static void handleRoot() {
   page += F("<div class='r'><button id='btnPack' class='primary'>Flash Package</button></div></div>");
   page += F("<div id='log' class='log'>[recovery] embedded ui ready</div>");
   page += F("</section></div>");
-  page += F("<div id='menu' class='menu'><div class='box'><div style='font-size:18px;font-weight:700'>Firmware Update</div><div class='m'>Online update отключён в recovery, чтобы образ помещался в 4MB flash. Используйте update.lbpack вручную.</div>"
-            "<div class='r' style='margin-top:12px;justify-content:center'><button id='btnPickPack' class='primary'>Choose update.lbpack</button><button id='btnCancel'>Cancel</button></div></div></div>");
+  page += F("<div id='menu' class='menu'><div class='box'><div style='font-size:18px;font-weight:700'>Firmware Update</div><div class='m'>Обновить онлайн до последнего release или загрузить update.lbpack вручную.</div>"
+            "<div class='r' style='margin-top:12px;justify-content:center'><button id='btnLatest' class='primary'>Online Latest</button><button id='btnPickPack'>Choose update.lbpack</button><button id='btnCancel'>Cancel</button></div></div></div>");
 
   page += F("<script>"
             "const q=(id)=>document.getElementById(id);"
-            "const el={ip:q('ip'),phase:q('phase'),detail:q('detail'),bar:q('bar'),parts:q('parts'),log:q('log'),menu:q('menu'),btnFw:q('btnFw'),btnPickPack:q('btnPickPack'),btnCancel:q('btnCancel'),btnBoot:q('btnBoot'),btnGit:q('btnGit'),btnReset:q('btnReset'),btnPack:q('btnPack'),file:q('file')};"
+            "const el={ip:q('ip'),phase:q('phase'),detail:q('detail'),bar:q('bar'),parts:q('parts'),log:q('log'),menu:q('menu'),btnFw:q('btnFw'),btnLatest:q('btnLatest'),btnPickPack:q('btnPickPack'),btnCancel:q('btnCancel'),btnBoot:q('btnBoot'),btnGit:q('btnGit'),btnReset:q('btnReset'),btnPack:q('btnPack'),file:q('file')};"
             "let busy=false;"
             "const repo='Serjio193/legacy-bridge';"
+            "const mirror='https://serjio193.github.io/legacy-bridge';"
             "function ts(){const d=new Date();const p=(n)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}"
             "function log(s){el.log.textContent+=`\\n[ui] ${ts()} ${s}`;el.log.scrollTop=el.log.scrollHeight;}"
             "function setPhase(name,pct,detail){el.phase.textContent=name||'';el.bar.style.width=`${Math.max(0,Math.min(100,Number(pct||0))).toFixed(1)}%`;el.detail.textContent=detail||`${Math.round(Number(pct||0))}%`;}"
             "function setParts(s){if(!el.parts)return;const on=(v)=>!!v;const item=(n,state)=>`<span class='pill ${state==='ok'?'ok':(state==='na'?'':'bad')}'>${n}: ${state==='ok'?'OK':(state==='na'?'N/A':'FAIL')}</span>`;const state=(present,valid)=>!on(present)?'na':(on(valid)?'ok':'bad');const systemState=state(s.ota_a_present,s.ota_a_valid);const html=[item('SYSTEM',systemState),item('RECOVERY',state(s.recovery_present,s.recovery_valid)),item('LITTLEFS',state(s.littlefs_present,s.littlefs_mounted))].join('');el.parts.innerHTML=html;}"
-            "function setBusy(v){busy=!!v;[el.btnFw,el.btnPickPack,el.btnCancel,el.btnBoot,el.btnGit,el.btnReset,el.btnPack].forEach(b=>{if(b)b.disabled=busy;});}"
+            "function setBusy(v){busy=!!v;[el.btnFw,el.btnLatest,el.btnPickPack,el.btnCancel,el.btnBoot,el.btnGit,el.btnReset,el.btnPack].forEach(b=>{if(b)b.disabled=busy;});}"
             "async function j(url,opts){const o=Object.assign({},opts||{});o.headers=Object.assign({'Content-Type':'application/json'},o.headers||{});try{const r=await fetch(url,o);const t=await r.text();try{return JSON.parse(t||'{}')}catch(_){return {ok:false,error:t||'bad json'}}}catch(e){return {ok:false,error:String(e&&e.message?e.message:e)}}}"
+            "function parseAuto(){try{const u=new URL(location.href);const p=String(u.searchParams.get('autopack')||'').trim();u.searchParams.delete('autopack');u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||''));return p;}catch(_){return '';}}"
+            "function toMirrorUrl(u){const s=String(u||'').trim();const m=s.match(/^https?:\\/\\/github\\.com\\/Serjio193\\/legacy-bridge\\/releases\\/download\\/([^\\/]+)\\/update\\.lbpack$/i);if(m&&m[1])return `${mirror}/releases/${encodeURIComponent(m[1])}/update.lbpack`;return s;}"
+            "function pickLbpackAsset(rel){const a=Array.isArray(rel&&rel.assets)?rel.assets:[];return a.find(x=>String((x&&x.name)||'').toLowerCase()==='update.lbpack')||a.find(x=>String((x&&x.name)||'').toLowerCase().endsWith('.lbpack'))||null;}"
+            "async function latestUrl(){try{const r=await fetch(`https://api.github.com/repos/${repo}/releases/latest`,{cache:'no-store'});if(r&&r.ok){const rel=await r.json();const a=pickLbpackAsset(rel);const u=String(a&&a.browser_download_url||'').trim();if(u)return toMirrorUrl(u);}}catch(_){} return toMirrorUrl(`https://github.com/${repo}/releases/latest/download/update.lbpack`);}"
             "function openMenu(){if(el.menu)el.menu.classList.add('show');}"
             "function closeMenu(){if(el.menu)el.menu.classList.remove('show');}"
             "function nextMainUrl(r){return String((r&&r.next_url)||'http://lb-bridge.local/');}"
+            "async function flashUrl(url,label){const raw=String(url||'').trim();if(!raw){log(`${label}: empty url`);return;}const u=toMirrorUrl(raw);setBusy(true);setPhase('Загрузка',4,'инициализация');if(u!==raw)log(`${label}: using mirror ${u}`);else log(`${label}: ${u}`);const r=await j('/api/recovery/flash/url',{method:'POST',body:JSON.stringify({url:u})});if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log(`${label}: ok, rebooting`);log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>{setBusy(false);},20000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'unknown'));log(`${label} FAIL: ${(r&&r.error)||'unknown'}`);}"
             "async function refresh(){const s=await j('/api/status',{method:'GET'});if(!s||!s.ok)return;el.ip.textContent=String(s.ip||'-');setParts(s);const st=String(s.pack_stage||'');const pa=!!s.pack_active;const rec=Number(s.pack_received||0),tot=Number(s.pack_total||0),fwW=Number(s.pack_fw_written||0),fwT=Number(s.pack_fw_total||0),fsW=Number(s.pack_fs_written||0),fsT=Number(s.pack_fs_total||0);"
             "if(pa){if(st==='hdr'||st==='fw_sig'||st==='fs_sig'){const p=tot>0?(3+(rec/tot)*42):8;setPhase('Загрузка',Math.max(3,Math.min(45,p)),tot>0?`${Math.round((rec/tot)*100)}%`:`${rec} bytes`);}else if(st==='fw_data'||st==='fs_data'){const allT=Math.max(1,fwT+fsT);const p=45+((fwW+fsW)/allT)*50;setPhase('Обновление',Math.max(45,Math.min(95,p)),`fw ${fwW}/${fwT} | fs ${fsW}/${fsT}`);}else if(st==='done'){setPhase('Перезагрузка',98,'подготовка');}}else if(!busy){const tgt=String(s.auto_exit_target||'').trim();const err=String(s.auto_exit_err||'').trim();const tr=Number(s.auto_exit_tries||0);const left=Number(s.auto_exit_next_try_ms||0);if(tgt){setPhase('Автовыход',12,`target ${tgt} | tries ${tr}`);}else if(err){setPhase('Ожидание',0,`${err}${left>0?` | retry ${Math.ceil(left/1000)}s`:''}`);}else{setPhase('Ожидание',0,'0%');}}"
             "}"
             "async function flashFile(){const f=el.file&&el.file.files&&el.file.files[0]?el.file.files[0]:null;if(!f){log('manual FAIL: choose update.lbpack');return;}setBusy(true);setPhase('Загрузка',2,'отправка файла');const x=new XMLHttpRequest();const fd=new FormData();fd.append('pack',f,f.name||'update.lbpack');x.upload.onprogress=(e)=>{if(e.lengthComputable){const p=Math.max(2,Math.min(40,(e.loaded/e.total)*40));setPhase('Загрузка',p,`${Math.round((e.loaded/e.total)*100)}%`);}};x.onload=()=>{let r={ok:false,error:'bad json'};try{r=JSON.parse(x.responseText||'{}')}catch(_){} if(r&&r.ok){setPhase('Перезагрузка',98,'переход в систему');log('manual OK: rebooting');log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},8000);setTimeout(()=>setBusy(false),20000);}else{setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'upload failed'));log(`manual FAIL: ${(r&&r.error)||'unknown'}`);}};x.onerror=()=>{setBusy(false);setPhase('Ошибка',0,'network error');log('manual FAIL: network error');};x.open('POST','/api/recovery/flash/allpack',true);x.send(fd);}"
             "el.btnFw.onclick=()=>openMenu(); el.btnCancel.onclick=()=>closeMenu(); el.menu.onclick=(e)=>{if(e.target===el.menu)closeMenu();};"
+            "el.btnLatest.onclick=async()=>{closeMenu();await flashUrl(await latestUrl(),'ONLINE UPDATE');};"
             "el.btnPickPack.onclick=()=>{closeMenu(); if(el.file) el.file.click();};"
             "el.btnBoot.onclick=async()=>{setBusy(true);setPhase('Перезагрузка',96,'запрос boot main');const r=await j('/api/recovery/boot_main',{method:'POST',body:'{}'});if(r&&r.ok){log(`open main: ${nextMainUrl(r)}`);setTimeout(()=>{setPhase('Вход в систему',100,'открытие главной страницы');location.href=nextMainUrl(r);},7000);setTimeout(()=>setBusy(false),18000);return;}setBusy(false);setPhase('Ошибка',0,String((r&&r.error)||'boot main failed'));};"
             "el.btnGit.onclick=()=>{const u=`https://github.com/${repo}/`;try{window.open(u,'_blank','noopener,noreferrer');}catch(_){location.href=u;}log(`open github: ${u}`);};"
             "el.btnReset.onclick=async()=>{if(!confirm('Reset main settings?'))return;const r=await j('/api/recovery/reset_settings',{method:'POST',body:'{}'});log(r&&r.ok?'reset OK':`reset FAIL: ${(r&&r.error)||'unknown'}`);};"
             "el.btnPack.onclick=()=>flashFile();"
-            "try{const u=new URL(location.href);if(u.searchParams.has('autopack')){log('auto update ignored: online recovery update disabled');u.searchParams.delete('autopack');u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||''));}}catch(_){}"
+            "const autoPack=parseAuto(); if(autoPack){(async()=>{let u=String(autoPack||'').trim();if(u.toLowerCase()==='latest'){log('auto update: latest package requested');u=await latestUrl();}log('auto update: package url detected');await flashUrl(u,'AUTO UPDATE');})();}"
             "refresh(); setInterval(refresh,1200);"
             "</script>");
   page += F("</body></html>");

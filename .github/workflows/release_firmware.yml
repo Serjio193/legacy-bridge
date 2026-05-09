@@ -120,9 +120,9 @@ jobs:
       - name: Validate recovery image size
         run: |
           $recovery = "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
-          $maxRecovery = 0x100000
+          $maxRecovery = 0x110000
           $flashSize = 0x400000
-          $recoveryOffset = 0x300000
+          $recoveryOffset = 0x2F0000
           $size = (Get-Item $recovery).Length
           Write-Host "Recovery size: $size bytes / max $maxRecovery"
           if ($size -gt $maxRecovery) {
@@ -148,8 +148,8 @@ jobs:
             0x8000 "esp32_tes02_ctrl/.pio/build/esp32c3/partitions.bin" `
             0xe000 $bootApp0 `
             0x10000 "esp32_tes02_ctrl/.pio/build/esp32c3/firmware.bin" `
-            0x238000 "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin" `
-            0x300000 "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
+            0x230000 "esp32_tes02_ctrl/.pio/build/esp32c3/littlefs.bin" `
+            0x2F0000 "esp32_tes02_ctrl/.pio/build/esp32c3_recovery/firmware.bin"
 
           $factory = "esp32_tes02_ctrl/.pio/build/esp32c3/factory.bin"
           $flashSize = 0x400000

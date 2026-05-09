@@ -3,13 +3,12 @@ nvs,      data, nvs,     0x9000,  0x5000,
 otadata,  data, ota,     0xe000,  0x2000,
 
 # Single OTA app slot (ota_0 only). We keep recovery as dedicated fallback image.
-# Enlarged to use space previously occupied by ota_b.
-ota_a,    app,  ota_0,   0x10000, 0x228000,
+ota_a,    app,  ota_0,   0x10000, 0x220000,
 
 # Filesystem for UI/assets (LittleFS mounted on the "spiffs" subtype partition)
-# Reduced to make room for a larger recovery image.
-spiffs,   data, spiffs,  0x238000,0x0C8000,
+# Keep enough room for compressed UI while leaving space for online recovery.
+spiffs,   data, spiffs,  0x230000,0x0C0000,
 
 # Recovery image (factory partition). Flash a dedicated recovery build here.
-# Increased to 1 MiB to avoid overflow from current recovery build.
-recovery, app,  factory, 0x300000,0x100000,
+# Online update support needs more than 1 MiB.
+recovery, app,  factory, 0x2F0000,0x110000,
