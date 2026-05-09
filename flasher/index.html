@@ -45,12 +45,12 @@
   <div class="wrap">
     <div class="card">
       <h1>Legacy Bridge USB Flasher</h1>
-      <p>Эта страница прошивает только зафиксированную базовую USB-прошивку <b>v110</b> для ESP32-C3.</p>
+      <p>Эта страница прошивает только зафиксированную базовую USB-прошивку <b>v112</b> для ESP32-C3.</p>
       <p>Новые версии ставьте уже через Recovery/OTA пакетом <span class="mono">update.lbpack</span>. Другие factory-версии сюда больше не добавляются.</p>
       <p>Для первичной прошивки выбирайте полное стирание, чтобы старые NVS/OTA-data не мешали старту.</p>
 
       <div class="row">
-        <span class="mono">Version: v110 USB base</span>
+        <span class="mono">Version: v112 USB base</span>
       </div>
 
       <div class="row">
@@ -94,7 +94,7 @@
         <p>2. При необходимости войдите в boot mode: удерживайте <span class="mono">BOOT</span>, нажмите <span class="mono">RESET</span>, отпустите <span class="mono">BOOT</span>.</p>
         <p>3. Нажмите кнопку установки. Согласитесь на erase, если браузер спросит.</p>
         <p>4. Дайте браузеру доступ к serial-порту устройства.</p>
-        <p>5. После перезагрузки устройство должно стартовать в рабочей прошивке v110.</p>
+        <p>5. После перезагрузки устройство должно стартовать в рабочей прошивке v112.</p>
       </div>
     </div>
   </div>
@@ -102,11 +102,11 @@
   <script type="module" src="https://unpkg.com/esp-web-tools/dist/web/install-button.js?module"></script>
   <script>
     const RELEASE = {
-      tag: "v110",
-      version: "110",
-      published: "2026-05-08T11:37:41Z",
-      factoryPath: "./releases/v110/factory-4194304-b43a5ae5be32.bin.jpg",
-      sha256: "B43A5AE5BE320B5F86178E72A3D27D50F0E8D903E27305CE17F588240DCA4D53",
+      tag: "v112",
+      version: "112",
+      published: "2026-05-09T18:38:01Z",
+      factoryPath: "./releases/v112/factory-4194304-9467480e00a3.bin.jpg",
+      sha256: "9467480E00A31F0615D0B696DFE98112A12B79E1086B1C31CCDEDC574C9EDA4B",
       size: 4194304
     };
 
@@ -162,7 +162,7 @@
       u.searchParams.set("lb_published", RELEASE.published);
       u.searchParams.set("lb_full", "1");
       return {
-        name: "Legacy Bridge v110 USB Factory",
+        name: "Legacy Bridge v112 USB Factory",
         version: RELEASE.version,
         new_install_prompt_erase: true,
         builds: [{
@@ -193,7 +193,7 @@
       tr.innerHTML =
         `<td class="mono">${part.path.split("/").pop()}</td>` +
         `<td class="mono">0x000000</td>` +
-        `<td style="${ok ? "" : "color:var(--bad)"}">${fmtBytes(size)}${ok ? "" : " | ОШИБКА: размер не v110"}</td>` +
+        `<td style="${ok ? "" : "color:var(--bad)"}">${fmtBytes(size)}${ok ? "" : " | ОШИБКА: размер не v112"}</td>` +
         `<td class="mono"><a href="${part.path}" target="_blank" rel="noopener">${part.path}</a></td>`;
       partsBody.appendChild(tr);
 
@@ -208,7 +208,7 @@
       installBtn.manifest = manifestUrl;
       installBtn.disabled = false;
       log("Manifest создан", currentManifest);
-      setStatus("Готово: v110 USB base", "ok");
+      setStatus("Готово: v112 USB base", "ok");
     }
 
     btnClearLog.addEventListener("click", () => {
@@ -248,8 +248,9 @@
       log("Unhandled promise rejection", String(e.reason || ""));
     });
 
-    log("Страница flasher v110 загружена");
+    log("Страница flasher v112 загружена");
     prepare();
   </script>
 </body>
 </html>
+

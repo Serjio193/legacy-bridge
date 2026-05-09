@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 
 REPO = "Serjio193/legacy-bridge"
-PINNED_FACTORY_TAG = "v110"
+PINNED_FACTORY_TAG = "v112"
 API = f"https://api.github.com/repos/{REPO}/releases/tags/{PINNED_FACTORY_TAG}"
 REQUIRED = [
     "update.lbpack",

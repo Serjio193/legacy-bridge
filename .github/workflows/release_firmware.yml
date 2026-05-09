@@ -261,7 +261,7 @@ jobs:
               }
             );
 
-            const protectedTags = new Set(["v110"]);
+            const protectedTags = new Set(["v110", "v112"]);
             const fwReleases = releases
               .filter(r => !r.draft)
               .map(r => ({ r, n: parseVer(r.tag_name) }))
