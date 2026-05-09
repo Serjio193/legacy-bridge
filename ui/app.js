@@ -73,6 +73,7 @@
           msg_wifi_autooff5_fail: "Failed to set Wi-Fi auto-off",
           msg_wifi_shortcut_saved: "Link copied",
           btn_install_app: "Install App",
+          btn_download_cmd: "Download Windows installer",
           btn_download_shortcut: "Add to Desktop",
           btn_open_recovery: "Recovery",
           btn_logout: "Logout",
@@ -89,7 +90,7 @@
           shortcut_offer_title: "Install Desktop Shortcut?",
           shortcut_offer_question: "Install LB-Control shortcut now?",
           shortcut_offer_detected: "Detected OS",
-          shortcut_offer_windows_notice: "Windows setup uses PowerShell. Auto mode copies one command. Manual mode copies full script. Browser auto-launch needs one-time protocol registration.",
+          shortcut_offer_windows_notice: "Windows: download the .cmd file, run it, and it will create a Desktop shortcut to this device.",
           shortcut_offer_mobile_hint: "On Android/iOS use browser menu: Add to Home Screen.",
           shortcut_offer_macos_hint: "Run the command in Terminal to create a .webloc on Desktop.",
           shortcut_offer_linux_hint: "Run the command in terminal to create a .desktop link.",
@@ -505,6 +506,7 @@
           msg_wifi_autooff5_fail: "Не удалось установить автовыключение Wi-Fi",
           msg_wifi_shortcut_saved: "Ссылка скопирована",
           btn_install_app: "Установить",
+          btn_download_cmd: "Скачать установщик Windows",
           btn_download_shortcut: "Добавить на рабочий стол",
           btn_open_recovery: "Recovery",
           btn_logout: "Выход",
@@ -521,7 +523,7 @@
           shortcut_offer_title: "Установить ярлык на рабочий стол?",
           shortcut_offer_question: "Установить ярлык LB-Control сейчас?",
           shortcut_offer_detected: "Определена ОС",
-          shortcut_offer_windows_notice: "Для Windows используется PowerShell. Авто-режим копирует одну команду. Ручной режим копирует полный скрипт. Запуск прямо из браузера требует одноразовой регистрации протокола.",
+          shortcut_offer_windows_notice: "Windows: скачайте .cmd файл, запустите его, и он создаст ярлык на рабочем столе для этого устройства.",
           shortcut_offer_mobile_hint: "На Android/iOS используйте меню браузера: Добавить на главный экран.",
           shortcut_offer_macos_hint: "Выполните команду в Terminal, чтобы создать .webloc на рабочем столе.",
           shortcut_offer_linux_hint: "Выполните команду в терминале, чтобы создать .desktop ярлык.",
@@ -937,6 +939,7 @@
           msg_wifi_autooff5_fail: "Не вдалося встановити автовимкнення Wi-Fi",
           msg_wifi_shortcut_saved: "Посилання скопійовано",
           btn_install_app: "Встановити",
+          btn_download_cmd: "Завантажити інсталятор Windows",
           btn_download_shortcut: "Додати на робочий стіл",
           btn_open_recovery: "Recovery",
           btn_logout: "Вихід",
@@ -953,7 +956,7 @@
           shortcut_offer_title: "Встановити ярлик на робочий стіл?",
           shortcut_offer_question: "Встановити ярлик LB-Control зараз?",
           shortcut_offer_detected: "Визначена ОС",
-          shortcut_offer_windows_notice: "Для Windows використовується PowerShell. Авто-режим копіює одну команду. Ручний режим копіює повний скрипт. Запуск прямо з браузера потребує одноразової реєстрації протоколу.",
+          shortcut_offer_windows_notice: "Windows: завантажте .cmd файл, запустіть його, і він створить ярлик на робочому столі для цього пристрою.",
           shortcut_offer_mobile_hint: "На Android/iOS використайте меню браузера: Додати на головний екран.",
           shortcut_offer_macos_hint: "Виконайте команду в Terminal, щоб створити .webloc на робочому столі.",
           shortcut_offer_linux_hint: "Виконайте команду в терміналі, щоб створити .desktop ярлик.",
@@ -4190,6 +4193,43 @@
           "Write-Host ('Created: ' + $shortcut)",
         ].join("\n");
       }
+      function buildWindowsCmdShortcutInstaller(url) {
+        const target = scriptTargetUrl(url).replace(/"/g, "");
+        return [
+          "@echo off",
+          "setlocal",
+          `set "LB_URL=${target}"`,
+          "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$url=$env:LB_URL; $base=Join-Path $env:LOCALAPPDATA 'LB-Control'; New-Item -ItemType Directory -Force -Path $base | Out-Null; $icon=Join-Path $base 'LB.ico'; try { Invoke-WebRequest -Uri ($url + 'LB.ico') -UseBasicParsing -OutFile $icon -TimeoutSec 8 } catch {}; $desktop=[Environment]::GetFolderPath('Desktop'); $shortcut=Join-Path $desktop 'LB-Control.lnk'; $ws=New-Object -ComObject WScript.Shell; $sc=$ws.CreateShortcut($shortcut); $sc.TargetPath=($env:WINDIR + '\\explorer.exe'); $sc.Arguments=$url; if (Test-Path $icon) { $sc.IconLocation=($icon + ',0') }; $sc.WorkingDirectory=$desktop; $sc.Description='LB Control'; $sc.Save(); Write-Host ('Created: ' + $shortcut)\"",
+          "echo.",
+          "echo LB-Control shortcut installer finished.",
+          "pause",
+        ].join("\r\n");
+      }
+      function downloadTextFile(name, content, mime) {
+        try {
+          const blob = new Blob([String(content || "")], { type: mime || "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = String(name || "download.txt");
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try { URL.revokeObjectURL(url); } catch (_) {}
+            try { document.body.removeChild(a); } catch (_) {}
+          }, 1000);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+      function shortcutInstallerName(url) {
+        let host = "device";
+        try { host = String(new URL(scriptTargetUrl(url)).hostname || host); } catch (_) {}
+        host = host.replace(/[^a-zA-Z0-9._-]/g, "-");
+        return `Install-LB-Control-${host}.cmd`;
+      }
       function buildWindowsAutoCommand(script) {
         const oneLine = String(script || "")
           .replace(/\r/g, "")
@@ -4334,16 +4374,22 @@
         function setupForDetectedOs() {
           activeOs = detectShortcutOs();
           detectedEl.textContent = `${tr("shortcut_offer_detected", "Detected OS")}: ${osLabel(activeOs)}`;
+          btnPwa.textContent = tr("btn_install_app", "Install App");
+          btnCopyScript.textContent = tr("btn_copy_script", "Copy Script");
           if (activeOs === "windows") {
-            activeScript = buildWindowsShortcutScript(activeUrl);
-            activeAutoCommand = buildWindowsAutoCommand(activeScript);
-            hintEl.textContent = tr("shortcut_offer_windows_notice", "Windows setup uses PowerShell. Auto mode copies one command. Manual mode copies full script.");
-            btnAuto.classList.remove("hidden");
+            activeScript = buildWindowsCmdShortcutInstaller(activeUrl);
+            activeAutoCommand = "";
+            hintEl.textContent = tr("shortcut_offer_windows_notice", "Windows: download the .cmd file, run it, and it will create a Desktop shortcut to this device.");
+            btnPwa.textContent = tr("btn_download_cmd", "Download Windows installer");
+            btnCopyScript.textContent = tr("btn_copy_script", "Copy Script");
+            btnPwa.classList.remove("hidden");
+            btnAuto.classList.add("hidden");
             btnCopyScript.classList.remove("hidden");
-            scriptEl.classList.remove("hidden");
+            scriptEl.classList.add("hidden");
             scriptEl.value = activeScript;
             return;
           }
+          btnPwa.classList.add("hidden");
           btnAuto.classList.add("hidden");
           btnCopyScript.classList.remove("hidden");
           if (activeOs === "linux") {
@@ -4377,9 +4423,16 @@
             } catch (_) {}
           }
           question.textContent = tr("shortcut_offer_question", "Install LB-Control shortcut now?");
-          choiceRow.classList.remove("hidden");
-          question.classList.remove("hidden");
-          actions.classList.add("hidden");
+          if (onlyIfFirst) {
+            choiceRow.classList.remove("hidden");
+            question.classList.remove("hidden");
+            actions.classList.add("hidden");
+          } else {
+            setupForDetectedOs();
+            choiceRow.classList.add("hidden");
+            question.classList.add("hidden");
+            actions.classList.remove("hidden");
+          }
           modal.classList.remove("hidden");
         }
         btnYes.addEventListener("click", () => {
@@ -4395,6 +4448,17 @@
         });
         btnClose.addEventListener("click", () => closeModal());
         btnPwa.addEventListener("click", async () => {
+          if ((activeOs || detectShortcutOs()) === "windows") {
+            const script = activeScript || buildWindowsCmdShortcutInstaller(activeUrl || getShortcutTargetUrl());
+            if (!downloadTextFile(shortcutInstallerName(activeUrl || getShortcutTargetUrl()), script, "application/x-msdownload")) {
+              scriptEl.classList.remove("hidden");
+              scriptEl.value = script;
+              scriptEl.focus();
+              scriptEl.select();
+              alert(tr("shortcut_offer_copy_failed", "Copy blocked. Copy text manually from the field below."));
+            }
+            return;
+          }
           await tryPwaInstallFlow(activeOs || detectShortcutOs());
         });
         btnCopyLink.addEventListener("click", async () => {
