@@ -5009,7 +5009,7 @@ static void handleShortcutInstallerCmd() {
   if (!localLanRequestGuard()) return;
   const String host = gStaHostname + ".local";
   const String url = String("http://") + host + "/";
-  const String iconName = String("LB-") + host + ".ico";
+  const String iconName = String("LB-v2-") + host + ".ico";
 
   String cmd;
   cmd.reserve(2300);
