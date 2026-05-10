@@ -4995,6 +4995,45 @@ static bool tryServeFile(String path) {
   return true;
 }
 
+static bool localLanRequestGuard() {
+  IPAddress rip = server.client().remoteIP();
+  if (!ipIsLocalLan(rip)) {
+    extractorCmdLogPushf("[security] deny non-local ip=%s uri=%s", rip.toString().c_str(), server.uri().c_str());
+    server.send(403, "text/plain", "local network only");
+    return false;
+  }
+  return true;
+}
+
+static void handleShortcutInstallerCmd() {
+  if (!localLanRequestGuard()) return;
+  const String host = gStaHostname + ".local";
+  const String url = String("http://") + host + "/";
+  const String iconName = String("LB-") + host + ".ico";
+
+  String cmd;
+  cmd.reserve(2300);
+  cmd += F("@echo off\r\n");
+  cmd += F("setlocal\r\n");
+  cmd += F("set \"LB_URL=");
+  cmd += url;
+  cmd += F("\"\r\n");
+  cmd += F("set \"LB_HOST=");
+  cmd += host;
+  cmd += F("\"\r\n");
+  cmd += F("set \"LB_ICON=");
+  cmd += iconName;
+  cmd += F("\"\r\n");
+  cmd += F("powershell -NoProfile -ExecutionPolicy Bypass -Command \"$url=$env:LB_URL; $hostName=$env:LB_HOST; $iconFile=$env:LB_ICON; $base=Join-Path $env:LOCALAPPDATA 'LB-Control'; New-Item -ItemType Directory -Force -Path $base | Out-Null; $icon=Join-Path $base $iconFile; try { Invoke-WebRequest -Uri ($url + 'LB.ico') -UseBasicParsing -OutFile $icon -TimeoutSec 8 } catch { Write-Host ('Icon download failed: ' + $_.Exception.Message) }; $desktop=[Environment]::GetFolderPath('Desktop'); $shortcut=Join-Path $desktop 'LB-Control.lnk'; if (Test-Path $shortcut) { Remove-Item -Force $shortcut }; $ws=New-Object -ComObject WScript.Shell; $sc=$ws.CreateShortcut($shortcut); $sc.TargetPath=($env:WINDIR + '\\explorer.exe'); $sc.Arguments=$url; if (Test-Path $icon) { $sc.IconLocation=($icon + ',0') }; $sc.WorkingDirectory=$desktop; $sc.Description=('LB Control ' + $hostName); $sc.Save(); if (Test-Path ($env:WINDIR + '\\System32\\ie4uinit.exe')) { & ($env:WINDIR + '\\System32\\ie4uinit.exe') -show | Out-Null }; Write-Host ('Created: ' + $shortcut); Write-Host ('Target: ' + $url); Write-Host ('Icon: ' + $icon)\"\r\n");
+  cmd += F("echo.\r\n");
+  cmd += F("echo LB-Control shortcut installer finished.\r\n");
+  cmd += F("pause\r\n");
+
+  server.sendHeader("Cache-Control", "no-store");
+  server.sendHeader("Content-Disposition", "attachment; filename=\"Install-LB-Control.cmd\"");
+  server.send(200, "application/x-msdownload", cmd);
+}
+
 static void handleWifiPost() {
   String ssid = server.arg("ssid");
   String pass = server.arg("pass");
@@ -8080,6 +8119,14 @@ static void setupWeb() {
     }
     if (tryServeFile("/recovery.html")) return;
     sendRecoveryMinPage("recovery page not found");
+  });
+  server.on("/Install-LB-Control.cmd", HTTP_GET, []() {
+    handleShortcutInstallerCmd();
+  });
+  server.on("/LB.ico", HTTP_GET, []() {
+    if (!localLanRequestGuard()) return;
+    if (tryServeFile("/LB.ico")) return;
+    server.send(404, "text/plain", "icon not found");
   });
   server.on("/wifi", HTTP_POST, []() {
     if (!webAuthGuard()) return;

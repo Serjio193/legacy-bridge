@@ -4230,6 +4230,23 @@
         host = host.replace(/[^a-zA-Z0-9._-]/g, "-");
         return `Install-LB-Control-${host}.cmd`;
       }
+      function downloadWindowsInstallerFromDevice(url) {
+        try {
+          const endpoint = new URL("Install-LB-Control.cmd", scriptTargetUrl(url)).href;
+          const a = document.createElement("a");
+          a.href = endpoint;
+          a.download = shortcutInstallerName(url);
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try { document.body.removeChild(a); } catch (_) {}
+          }, 1000);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
       function buildWindowsAutoCommand(script) {
         const oneLine = String(script || "")
           .replace(/\r/g, "")
@@ -4450,7 +4467,8 @@
         btnPwa.addEventListener("click", async () => {
           if ((activeOs || detectShortcutOs()) === "windows") {
             const script = activeScript || buildWindowsCmdShortcutInstaller(activeUrl || getShortcutTargetUrl());
-            if (!downloadTextFile(shortcutInstallerName(activeUrl || getShortcutTargetUrl()), script, "application/x-msdownload")) {
+            if (!downloadWindowsInstallerFromDevice(activeUrl || getShortcutTargetUrl()) &&
+                !downloadTextFile(shortcutInstallerName(activeUrl || getShortcutTargetUrl()), script, "application/x-msdownload")) {
               scriptEl.classList.remove("hidden");
               scriptEl.value = script;
               scriptEl.focus();
