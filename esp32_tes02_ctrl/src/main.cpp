@@ -668,6 +668,15 @@ static String normalizeDeviceInstallMode(const String &raw) {
   return "station";
 }
 
+static const char *deviceRoleText(const String &mode) {
+  return normalizeDeviceInstallMode(mode) == "station" ? "master" : "slave";
+}
+
+static String slaveKindText(const String &mode) {
+  String normalized = normalizeDeviceInstallMode(mode);
+  return normalized == "station" ? "" : normalized;
+}
+
 static String normalizeSlaveGpioMode(const String &raw) {
   String s = raw;
   s.trim();
@@ -6488,6 +6497,11 @@ static void handleApiConfigGet() {
   body += String((uint32_t)wifiAutoOffMin);
   body += F(",\"device_mode\":\"");
   body += jsonEscape(deviceInstallMode);
+  body += F("\"");
+  body += F(",\"device_role\":\"");
+  body += deviceRoleText(deviceInstallMode);
+  body += F("\",\"slave_kind\":\"");
+  body += jsonEscape(slaveKindText(deviceInstallMode));
   body += F("\"");
   body += F(",\"slave_wifi_enabled\":");
   body += (slaveWifiEnabled ? "true" : "false");

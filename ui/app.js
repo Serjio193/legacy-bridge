@@ -291,6 +291,12 @@
           mode_fume_extractor: "Fume extractor",
           mode_preheater: "Preheater for PCB rework",
           mode_custom: "Custom module",
+          mode_station_master_hint: "This mode is the master. Choose which fume extractor it should control.",
+          mode_slave_hint: "This installation is always a slave module. GPIO and link settings are configured on this device.",
+          mode_master_fume_none: "No fume extractor yet",
+          mode_master_fume_es02: "Aixun ES02",
+          mode_master_fume_esp32: "ESP32 fume module",
+          mode_master_fume_both: "ES02 + ESP32 module",
           mode_cancel: "Cancel",
           mode_save: "Save Mode",
           btn_add_device: "Add equipment",
@@ -724,6 +730,12 @@
           mode_fume_extractor: "Дымоуловитель",
           mode_preheater: "Прехиттер для ремонта плат",
           mode_custom: "Кастомный модуль",
+          mode_station_master_hint: "Этот режим является master. Выберите, каким дымоуловителем он будет управлять.",
+          mode_slave_hint: "Такая установка всегда является slave-модулем. GPIO и связь настраиваются на этом устройстве.",
+          mode_master_fume_none: "Пока без дымоуловителя",
+          mode_master_fume_es02: "Aixun ES02",
+          mode_master_fume_esp32: "ESP32-модуль дымоуловителя",
+          mode_master_fume_both: "ES02 + ESP32-модуль",
           mode_cancel: "Отмена",
           mode_save: "Сохранить режим",
           btn_add_device: "Добавить оборудование",
@@ -1157,6 +1169,12 @@
           mode_fume_extractor: "Димовідсмоктувач",
           mode_preheater: "Прехітер для ремонту плат",
           mode_custom: "Кастомний модуль",
+          mode_station_master_hint: "Цей режим є master. Оберіть, яким димовідсмоктувачем він керуватиме.",
+          mode_slave_hint: "Таке встановлення завжди є slave-модулем. GPIO та зв'язок налаштовуються на цьому пристрої.",
+          mode_master_fume_none: "Поки без димовідсмоктувача",
+          mode_master_fume_es02: "Aixun ES02",
+          mode_master_fume_esp32: "ESP32-модуль димовідсмоктувача",
+          mode_master_fume_both: "ES02 + ESP32-модуль",
           mode_cancel: "Скасувати",
           mode_save: "Зберегти режим",
           btn_add_device: "Додати обладнання",
@@ -7037,6 +7055,50 @@
       function saveLocalDeviceMode(mode) {
         try { localStorage.setItem("alb_device_mode", normalizeDeviceMode(mode)); } catch (_) {}
       }
+      function normalizeMasterFumeTarget(value) {
+        const v = String(value || "").trim().toLowerCase();
+        if (v === "aixun_es02" || v === "es02") return "aixun_es02";
+        if (v === "esp32_fume" || v === "esp32_fume_extractor" || v === "fume_extractor") return "esp32_fume";
+        if (v === "both" || v === "all") return "both";
+        return "none";
+      }
+      function getLocalMasterFumeTarget() {
+        try { return normalizeMasterFumeTarget(localStorage.getItem("alb_master_fume_target") || "none"); } catch (_) { return "none"; }
+      }
+      function saveLocalMasterFumeTarget(value) {
+        try { localStorage.setItem("alb_master_fume_target", normalizeMasterFumeTarget(value)); } catch (_) {}
+      }
+      function readEsp32DeviceListForMode() {
+        try {
+          const arr = JSON.parse(localStorage.getItem("alb_esp32_devices_v2") || "[]");
+          return Array.isArray(arr) ? arr : [];
+        } catch (_) {
+          return [];
+        }
+      }
+      function writeEsp32DeviceListForMode(list) {
+        try { localStorage.setItem("alb_esp32_devices_v2", JSON.stringify(Array.isArray(list) ? list : [])); } catch (_) {}
+      }
+      function applyMasterFumeTargetToUi(value) {
+        const target = normalizeMasterFumeTarget(value);
+        const useEs02 = target === "aixun_es02" || target === "both";
+        const useEsp32 = target === "esp32_fume" || target === "both";
+        try {
+          localStorage.setItem("alb_lb_es02", useEs02 ? "1" : "0");
+          localStorage.setItem("alb_esp32_fume_extractor", useEsp32 ? "1" : "0");
+          const list = readEsp32DeviceListForMode().filter((d) => String(d && d.type || "") !== "esp32_fume_extractor");
+          if (useEsp32) {
+            list.push({
+              id: "esp32_fume_extractor_master",
+              type: "esp32_fume_extractor",
+              label: tr("add_device_esp32_fume", "Fume extractor")
+            });
+          }
+          writeEsp32DeviceListForMode(list);
+        } catch (_) {}
+        saveLocalMasterFumeTarget(target);
+        if (typeof window.__refreshDeviceTileLayout === "function") window.__refreshDeviceTileLayout();
+      }
       function defaultDeviceIdentityName(mode) {
         const currentMode = normalizeDeviceMode(mode);
         if (currentMode === "hot_air") return tr("add_device_esp32_hot_air", "Hot air");
@@ -7087,19 +7149,34 @@
         const modeCancelBtn = document.getElementById("modeCancelBtn");
         const modeSaveBtn = document.getElementById("modeSaveBtn");
         const modeChoiceBtns = Array.from(document.querySelectorAll(".modeChoiceBtn"));
+        const modeMasterFumeBtns = Array.from(document.querySelectorAll(".modeMasterFumeBtn"));
+        const stationMasterOptions = document.getElementById("modeStationMasterOptions");
+        const slaveHint = document.getElementById("modeSlaveHint");
         if (!btnMode || !modeDialog) return;
         let selectedMode = "station";
+        let selectedMasterFume = getLocalMasterFumeTarget();
         let persistedMode = getLocalDeviceMode();
+        let persistedMasterFume = selectedMasterFume;
+        function setSelectedMasterFume(value) {
+          selectedMasterFume = normalizeMasterFumeTarget(value);
+          modeMasterFumeBtns.forEach((btn) => {
+            btn.classList.toggle("active", String(btn.getAttribute("data-master-fume-choice") || "") === selectedMasterFume);
+          });
+        }
         function setSelectedMode(mode) {
           selectedMode = normalizeDeviceMode(mode);
           modeChoiceBtns.forEach((btn) => {
             btn.classList.toggle("active", String(btn.getAttribute("data-mode-choice") || "") === selectedMode);
           });
+          const stationMode = selectedMode === "station";
+          if (stationMasterOptions) stationMasterOptions.classList.toggle("hidden", !stationMode);
+          if (slaveHint) slaveHint.classList.toggle("hidden", stationMode);
           applyDeviceModeLayout(selectedMode);
         }
         function openModeDialog() { modeDialog.classList.remove("hidden"); }
         function closeModeDialog() { modeDialog.classList.add("hidden"); }
         setSelectedMode(getLocalDeviceMode());
+        setSelectedMasterFume(selectedMasterFume);
         apiJson("/api/config", { method: "GET", timeout_ms: 4000 }).then((r) => {
           if (!r || !r.ok || !r.device_mode) return;
           persistedMode = normalizeDeviceMode(r.device_mode);
@@ -7109,9 +7186,13 @@
         modeChoiceBtns.forEach((btn) => {
           btn.addEventListener("click", () => setSelectedMode(btn.getAttribute("data-mode-choice") || "station"));
         });
+        modeMasterFumeBtns.forEach((btn) => {
+          btn.addEventListener("click", () => setSelectedMasterFume(btn.getAttribute("data-master-fume-choice") || "none"));
+        });
         btnMode.addEventListener("click", openModeDialog);
         if (modeCancelBtn) modeCancelBtn.addEventListener("click", () => {
           setSelectedMode(persistedMode);
+          setSelectedMasterFume(persistedMasterFume);
           closeModeDialog();
         });
         if (modeSaveBtn) modeSaveBtn.addEventListener("click", async () => {
@@ -7129,6 +7210,10 @@
             return;
           }
           persistedMode = selectedMode;
+          if (selectedMode === "station") {
+            applyMasterFumeTargetToUi(selectedMasterFume);
+            persistedMasterFume = selectedMasterFume;
+          }
           appendEventLog(`[mode] selected=${selectedMode}`);
           applyDeviceModeLayout(selectedMode);
           closeModeDialog();
@@ -7136,6 +7221,7 @@
         modeDialog.addEventListener("click", (ev) => {
           if (ev.target === modeDialog) {
             setSelectedMode(persistedMode);
+            setSelectedMasterFume(persistedMasterFume);
             closeModeDialog();
           }
         });

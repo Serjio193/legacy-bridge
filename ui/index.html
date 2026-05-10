@@ -779,6 +779,16 @@
         <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="preheater" data-i18n="mode_preheater">Preheater for PCB rework</button>
         <button type="button" class="pillBtn gray modeChoiceBtn" data-mode-choice="custom" data-i18n="mode_custom">Custom module</button>
       </div>
+      <div id="modeStationMasterOptions" class="addDevicePanel">
+        <div class="hint" data-i18n="mode_station_master_hint">This mode is the master. Choose which fume extractor it should control.</div>
+        <div class="btnRow" style="justify-content:center;flex-wrap:wrap">
+          <button type="button" class="pillBtn gray modeMasterFumeBtn" data-master-fume-choice="none" data-i18n="mode_master_fume_none">No fume extractor yet</button>
+          <button type="button" class="pillBtn gray modeMasterFumeBtn" data-master-fume-choice="aixun_es02" data-i18n="mode_master_fume_es02">Aixun ES02</button>
+          <button type="button" class="pillBtn gray modeMasterFumeBtn" data-master-fume-choice="esp32_fume" data-i18n="mode_master_fume_esp32">ESP32 fume module</button>
+          <button type="button" class="pillBtn gray modeMasterFumeBtn" data-master-fume-choice="both" data-i18n="mode_master_fume_both">ES02 + ESP32 module</button>
+        </div>
+      </div>
+      <div id="modeSlaveHint" class="hint hidden" data-i18n="mode_slave_hint">This installation is always a slave module. GPIO and link settings are configured on this device.</div>
       <div class="btnRow" style="justify-content:center">
         <button id="modeCancelBtn" type="button" data-i18n="mode_cancel">Cancel</button>
         <button id="modeSaveBtn" type="button" class="primary" data-i18n="mode_save">Save Mode</button>
