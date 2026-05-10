@@ -4400,6 +4400,7 @@
             btnPwa.textContent = tr("btn_download_cmd", "Download Windows installer");
             btnCopyScript.textContent = tr("btn_copy_script", "Copy Script");
             btnPwa.classList.remove("hidden");
+            btnCopyLink.classList.add("hidden");
             btnAuto.classList.add("hidden");
             btnCopyScript.classList.remove("hidden");
             scriptEl.classList.add("hidden");
@@ -4407,6 +4408,7 @@
             return;
           }
           btnPwa.classList.add("hidden");
+          btnCopyLink.classList.remove("hidden");
           btnAuto.classList.add("hidden");
           btnCopyScript.classList.remove("hidden");
           if (activeOs === "linux") {
